@@ -5,13 +5,12 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
-	"github.com/goccy/go-json"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -147,25 +146,6 @@ func TestAlchemyProvider_Send(t *testing.T) {
 	})
 
 	t.Run("error case", func(t *testing.T) {
-		t.Run("if failed to marshal parameter -> core.ErrFailedToMarshalParameter", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Mock
-			patches.ApplyFunc(
-				json.Marshal,
-				func(v interface{}) ([]byte, error) {
-					return nil, errors.New("error")
-				},
-			)
-
-			// Act
-			_, err := provider.Send("hoge")
-
-			// Assert
-			assert.ErrorIs(t, core.ErrFailedToMarshalParameter, err)
-		})
-
 		t.Run("if failed to create request -> core.ErrFailedToCreateRequest", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
@@ -185,16 +165,18 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			assert.ErrorIs(t, core.ErrFailedToCreateRequest, err)
 		})
 
-		t.Run("if failed to request -> core.ErrFailedToConnect", func(t *testing.T) {
+		t.Run("error on AlchemyFetch", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
+			// Arrange
+			errExpected := errors.New("error")
+
 			// Mock
-			patches.ApplyMethod(
-				reflect.TypeOf(http.DefaultClient),
-				"Do",
-				func(c *http.Client, req *http.Request) (*http.Response, error) {
-					return nil, errors.New("error")
+			patches.ApplyFunc(
+				utils.AlchemyFetch,
+				func(req types.AlchemyRequest) (types.AlchemyResponse, error) {
+					return types.AlchemyResponse{}, errExpected
 				},
 			)
 
@@ -202,7 +184,7 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			_, err := provider.Send("hoge")
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToConnect, err)
+			assert.ErrorIs(t, errExpected, err)
 		})
 	})
 }

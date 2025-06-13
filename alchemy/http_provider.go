@@ -1,11 +1,8 @@
 package alchemy
 
 import (
-	"bytes"
-	"io"
 	"net/http"
 
-	"github.com/goccy/go-json"
 	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -45,34 +42,28 @@ func (provider *AlchemyProvider) send(method string, params ...string) (string, 
 		params = []string{}
 	}
 
-	reqParam := types.AlchemyRequest{
+	body := types.AlchemyRequestBody{
 		Jsonrpc: "2.0",
 		Method:  method,
 		Params:  params,
 		Id:      provider.id,
 	}
 
-	paramJson, err := json.Marshal(reqParam)
-	if err != nil {
-		return "", core.ErrFailedToMarshalParameter
-	}
-
-	req, err := http.NewRequest("POST", provider.config.GetUrl(), bytes.NewBuffer(paramJson))
+	req, err := http.NewRequest("POST", provider.config.GetUrl(), nil)
 	if err != nil {
 		return "", core.ErrFailedToCreateRequest
 	}
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
 
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", core.ErrFailedToConnect
+	request := types.AlchemyRequest{
+		Body:    body,
+		Request: req,
 	}
-	defer res.Body.Close()
 
-	body, _ := io.ReadAll(res.Body)
-	result := types.AlchemyResponse{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return "", core.ErrFailedToUnmarshalResponse
+	result, err := utils.AlchemyFetch(request)
+	if err != nil {
+		return "", err
 	}
 
 	provider.id++

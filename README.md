@@ -11,12 +11,13 @@ import (
 	"fmt"
 
 	"github.com/poteto-go/go-alchemy-sdk/alchemy"
+  "github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 func main() {
   setting := alchemy.AlchemySetting{
     ApiKey:  "<api-key>",
-    Network: "<network>",
+    Network: types.EthMainnet,
   }
 
   alchemy := alchemy.NewAlchemy(setting)
