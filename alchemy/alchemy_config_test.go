@@ -3,6 +3,7 @@ package alchemy
 import (
 	"testing"
 
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,14 +12,14 @@ func TestNewAlchemyConfig(t *testing.T) {
 	config := NewAlchemyConfig(
 		AlchemySetting{
 			ApiKey:  "api-key",
-			Network: "network",
+			Network: types.MaticMainnet,
 		},
 	)
 
 	// Assert
 	assert.Equal(t, config.apiKey, "api-key")
-	assert.Equal(t, config.network, "network")
-	assert.Equal(t, config.url, "https://network.g.alchemy.com/v2/api-key")
+	assert.Equal(t, string(config.network), "matic-mainnet")
+	assert.Equal(t, config.url, "https://matic-mainnet.g.alchemy.com/v2/api-key")
 }
 
 func TestAlchemyConfig_GetUrl(t *testing.T) {
@@ -26,7 +27,7 @@ func TestAlchemyConfig_GetUrl(t *testing.T) {
 	config := NewAlchemyConfig(
 		AlchemySetting{
 			ApiKey:  "api-key",
-			Network: "network",
+			Network: types.MaticMainnet,
 		},
 	)
 
@@ -34,5 +35,5 @@ func TestAlchemyConfig_GetUrl(t *testing.T) {
 	url := config.GetUrl()
 
 	// Assert
-	assert.Equal(t, url, "https://network.g.alchemy.com/v2/api-key")
+	assert.Equal(t, url, "https://matic-mainnet.g.alchemy.com/v2/api-key")
 }

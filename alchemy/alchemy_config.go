@@ -1,8 +1,10 @@
 package alchemy
 
+import "github.com/poteto-go/go-alchemy-sdk/types"
+
 type AlchemyConfig struct {
 	apiKey  string
-	network string
+	network types.Network
 	url     string
 }
 
@@ -15,7 +17,7 @@ func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
 }
 
 func settingToUrl(setting AlchemySetting) string {
-	return "https://" + setting.Network + ".g.alchemy.com/v2/" + setting.ApiKey
+	return "https://" + string(setting.Network) + ".g.alchemy.com/v2/" + setting.ApiKey
 }
 
 func (config *AlchemyConfig) GetUrl() string {
