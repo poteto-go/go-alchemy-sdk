@@ -1,75 +1,17 @@
 package internal
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
-	"io"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/jarcoal/httpmock"
-	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
-	"github.com/poteto-go/tslice"
 	"github.com/stretchr/testify/assert"
 )
-
-func alchemyBatchFetch(reqs []types.AlchemyRequest) ([]types.AlchemyResponse, error) {
-	request := reqs[0].Request
-	bodies := tslice.Map(reqs, func(req types.AlchemyRequest) types.AlchemyRequestBody {
-		return req.Body
-	})
-
-	if len(bodies) == 1 {
-		paramJson, _ := json.Marshal(bodies[0])
-
-		request.Body = io.NopCloser(bytes.NewBuffer(paramJson))
-		res, err := http.DefaultClient.Do(request)
-		if err != nil {
-			return []types.AlchemyResponse{}, core.ErrFailedToConnect
-		}
-		defer res.Body.Close()
-
-		body, _ := io.ReadAll(res.Body)
-		result := types.AlchemyResponse{}
-		if err := json.Unmarshal(body, &result); err != nil {
-			return []types.AlchemyResponse{}, core.ErrFailedToUnmarshalResponse
-		}
-
-		return []types.AlchemyResponse{result}, nil
-	}
-
-	paramJson, _ := json.Marshal(bodies)
-
-	request.Body = io.NopCloser(bytes.NewBuffer(paramJson))
-	res, err := http.DefaultClient.Do(request)
-	if err != nil {
-		return []types.AlchemyResponse{}, core.ErrFailedToConnect
-	}
-	defer res.Body.Close()
-
-	body, _ := io.ReadAll(res.Body)
-	results := []types.AlchemyResponse{}
-	if err := json.Unmarshal(body, &results); err != nil {
-		return []types.AlchemyResponse{}, core.ErrFailedToUnmarshalResponse
-	}
-
-	return results, nil
-}
-
-func timeoutFetch(reqs []types.AlchemyRequest) ([]types.AlchemyResponse, error) {
-	results := make([]types.AlchemyResponse, len(reqs))
-	time.Sleep(time.Millisecond * 30)
-	return results, nil
-}
-
-func errorFetch(reqs []types.AlchemyRequest) ([]types.AlchemyResponse, error) {
-	return nil, errors.New("error")
-}
 
 func TestNewRequestBatcher(t *testing.T) {
 	// Arrange
@@ -81,7 +23,7 @@ func TestNewRequestBatcher(t *testing.T) {
 		BatcherConfig{
 			MaxBatchSize: 10,
 			MaxBatchTime: time.Millisecond * 10,
-			Fetch:        alchemyBatchFetch,
+			Fetch:        utils.AlchemyBatchFetch,
 		},
 	).(*RequestBatcher)
 
@@ -89,14 +31,14 @@ func TestNewRequestBatcher(t *testing.T) {
 	assert.True(t, batcher.IsRun)
 }
 
-func newBatcher() *RequestBatcher {
+func newBenchmarkBatcher() *RequestBatcher {
 	ctx := context.Background()
 	return NewRequestBatcher(
 		ctx,
 		BatcherConfig{
 			MaxBatchSize: 100,
 			MaxBatchTime: time.Millisecond * 10,
-			Fetch:        alchemyBatchFetch,
+			Fetch:        utils.AlchemyBatchFetch,
 		},
 	).(*RequestBatcher)
 }
@@ -114,21 +56,43 @@ func Benchmark_BatchRequest(b *testing.B) {
 		Id:      1,
 	}
 	req, _ := http.NewRequest("POST", targetUrl, nil)
+	mockResult := []types.AlchemyResponse{
+		{
+			Jsonrpc: "2.0",
+			Id:      1,
+			Result:  "0x1234",
+		},
+	}
+	resultJson, _ := json.Marshal(mockResult)
+
+	// Mock
+	httpmock.RegisterResponder(
+		"POST",
+		targetUrl,
+		httpmock.NewStringResponder(200, string(resultJson)),
+	)
 
 	b.ResetTimer()
-	for range b.N {
-		batcher := newBatcher()
+	for b.Loop() {
+		batcher := newBenchmarkBatcher()
 
 		requestEvent := make(chan types.AlchemyRequest, 1)
-		go batcher.RecordRequest(requestEvent)
+		done := make(chan struct{}, 1)
+		go func() {
+			batcher.RecordRequest(requestEvent)
+			done <- struct{}{}
+		}()
 
-		for j := 0; j < 100; j++ {
+		for range 100 {
 			request := types.AlchemyRequest{
 				Request: req,
 				Body:    body,
 			}
 			requestEvent <- request
 		}
+
+		subscribers := batcher.Subscribe(done)
+		assert.Equal(b, 100, len(subscribers.Responses))
 	}
 }
 
@@ -145,10 +109,23 @@ func Benchmark_Parallel(b *testing.B) {
 		Id:      1,
 	}
 	req, _ := http.NewRequest("POST", targetUrl, nil)
+	mockResult := types.AlchemyResponse{
+		Jsonrpc: "2.0",
+		Id:      1,
+		Result:  "0x1234",
+	}
+	resultJson, _ := json.Marshal(mockResult)
+
+	// Mock
+	httpmock.RegisterResponder(
+		"POST",
+		targetUrl,
+		httpmock.NewStringResponder(200, string(resultJson)),
+	)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		for j := 0; j < 100; j++ {
+	for b.Loop() {
+		for range 100 {
 			request := types.AlchemyRequest{
 				Request: req,
 				Body:    body,
