@@ -46,8 +46,6 @@ func Test_RecordRequest(t *testing.T) {
 		Id:      1,
 	}
 	req, _ := http.NewRequest("POST", targetUrl, nil)
-
-	// Mock
 	httpmock.Activate(t)
 	defer httpmock.DeactivateAndReset()
 	mockResult := []types.AlchemyResponse{
@@ -148,24 +146,30 @@ func Test_RecordRequest(t *testing.T) {
 			assert.NotNil(t, subscribers.JoinedError)
 			assert.Nil(t, batcher.Subscribers.JoinedError)
 		})
+
+		t.Run("no request for batch timeout", func(t *testing.T) {
+			batcher := newBatcher()
+
+			requestChan := make(chan types.AlchemyRequest, 1)
+			done := make(chan struct{}, 1)
+			go func() {
+				batcher.RecordRequest(requestChan)
+				done <- struct{}{}
+			}()
+
+			subscribers := batcher.Subscribe(done)
+
+			assert.Equal(t, 0, len(subscribers.Responses))
+		})
 	})
 
-	t.Run("error case:", func(t *testing.T) {
+	t.Run("abnormal case:", func(t *testing.T) {
 		t.Run("not running", func(t *testing.T) {
 			batcher := newBatcher()
 			batcher.IsRun = false
-			defer func() {
-				batcher.IsRun = true
-			}()
 
 			requestEvent := make(chan types.AlchemyRequest, 1)
 			go batcher.RecordRequest(requestEvent)
-
-			request := types.AlchemyRequest{
-				Request: req,
-				Body:    body,
-			}
-			requestEvent <- request
 
 			assert.Equal(t, 0, len(batcher.requests))
 		})

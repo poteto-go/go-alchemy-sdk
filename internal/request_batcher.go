@@ -13,6 +13,12 @@ type BatchSubscriber struct {
 	JoinedError error
 }
 
+type BatcherConfig struct {
+	MaxBatchSize int
+	MaxBatchTime time.Duration
+	Fetch        func([]types.AlchemyRequest) ([]types.AlchemyResponse, error)
+}
+
 type IRequestBatcher interface {
 	// Subscribe wait for responses
 	//
@@ -65,12 +71,6 @@ type IRequestBatcher interface {
 
 	send()
 	release()
-}
-
-type BatcherConfig struct {
-	MaxBatchSize int
-	MaxBatchTime time.Duration
-	Fetch        func([]types.AlchemyRequest) ([]types.AlchemyResponse, error)
 }
 
 type RequestBatcher struct {

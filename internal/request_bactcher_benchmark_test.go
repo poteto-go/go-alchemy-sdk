@@ -43,7 +43,7 @@ func newBenchmarkBatcher() *RequestBatcher {
 	).(*RequestBatcher)
 }
 
-func Benchmark_BatchRequest(b *testing.B) {
+func BenchmarkRequest_Batch(b *testing.B) {
 	httpmock.Activate(b)
 	defer httpmock.DeactivateAndReset()
 
@@ -96,7 +96,7 @@ func Benchmark_BatchRequest(b *testing.B) {
 	}
 }
 
-func Benchmark_Parallel(b *testing.B) {
+func BenchmarkRequest_Parallel(b *testing.B) {
 	httpmock.Activate(b)
 	defer httpmock.DeactivateAndReset()
 
