@@ -1,19 +1,33 @@
 package alchemy
 
-import "github.com/poteto-go/go-alchemy-sdk/types"
+import (
+	"github.com/poteto-go/go-alchemy-sdk/internal"
+	"github.com/poteto-go/go-alchemy-sdk/types"
+)
 
 type AlchemyConfig struct {
-	apiKey  string
-	network types.Network
-	url     string
+	apiKey         string
+	network        types.Network
+	url            string
+	isRequestBatch bool
+	backoffConfig  internal.BackoffConfig
 }
 
 func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
-	return AlchemyConfig{
-		apiKey:  setting.ApiKey,
-		network: setting.Network,
-		url:     settingToUrl(setting),
+	config := AlchemyConfig{
+		apiKey:         setting.ApiKey,
+		network:        setting.Network,
+		url:            settingToUrl(setting),
+		isRequestBatch: setting.IsRequestBatch,
 	}
+
+	if setting.BackoffConfig != nil {
+		config.backoffConfig = *setting.BackoffConfig
+	} else {
+		config.backoffConfig = internal.DefaultBackoffConfig
+	}
+
+	return config
 }
 
 func settingToUrl(setting AlchemySetting) string {

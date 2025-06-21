@@ -4,20 +4,24 @@ import (
 	"net/http"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
 
 type AlchemyProvider struct {
-	config AlchemyConfig
-	id     int
+	config  AlchemyConfig
+	id      int
+	batcher internal.IRequestBatcher
 }
 
 func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
-	return &AlchemyProvider{
+	provider := &AlchemyProvider{
 		config: config,
 		id:     1,
 	}
+
+	return provider
 }
 
 /* get  the number of the most recent block. */
