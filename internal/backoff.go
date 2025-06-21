@@ -10,7 +10,7 @@ import (
 )
 
 type BackoffConfig struct {
-	Mode           string  `yaml"mode"`
+	Mode           string  `yaml:"mode"`
 	MaxRetries     int     `yaml:"max_retries"`
 	InitialDelayMs float64 `yaml:"initial_delay_ms"`
 	MaxDelayMs     float64 `yaml:"max_delay_ms"`
