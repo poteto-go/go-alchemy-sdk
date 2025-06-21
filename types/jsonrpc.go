@@ -19,3 +19,5 @@ type AlchemyResponse struct {
 	Id      int    `json:"id"`
 	Jsonrpc string `json:"jsonrpc"`
 }
+
+type AlchemyFetchHandler func(AlchemyRequest) (AlchemyResponse, error)
