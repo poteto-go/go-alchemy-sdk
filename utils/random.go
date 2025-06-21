@@ -1,11 +1,14 @@
 package utils
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
+	"math/big"
 )
 
 func RandomF64(min, max float64) float64 {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Float64()*(max-min) + min
+	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	if err != nil {
+		panic(err)
+	}
+	return float64(nBig.Int64() / int64(max))
 }

@@ -10,9 +10,8 @@ import (
 )
 
 type AlchemyProvider struct {
-	config  AlchemyConfig
-	id      int
-	batcher internal.IRequestBatcher
+	config AlchemyConfig
+	id     int
 }
 
 func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
@@ -34,7 +33,7 @@ func (provider *AlchemyProvider) GetBlockNumber() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return int(blockNumber), nil
+	return blockNumber, nil
 }
 
 func (provider *AlchemyProvider) Send(method string, params ...string) (string, error) {
