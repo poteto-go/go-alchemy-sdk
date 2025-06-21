@@ -20,4 +20,4 @@ jobs:
       - id: lint
         name: Run linter
         continue-on-error: true
-        run: golangci-lint run -c .golanci.yaml
+        run: golangci-lint run -c .golangci.yaml
