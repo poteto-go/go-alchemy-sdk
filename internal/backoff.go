@@ -79,5 +79,5 @@ func (b *BackoffManager) exponentialBackoff() float64 {
 	if b.retries == 0 {
 		return float64(0)
 	}
-	return math.Min(b.lastDelay+(utils.RandomF64(1)-0.5), b.config.MaxDelayMs)
+	return math.Min(b.lastDelay+(utils.RandomF64(1)-0.5)*b.lastDelay, b.config.MaxDelayMs)
 }
