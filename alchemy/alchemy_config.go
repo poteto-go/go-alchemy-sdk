@@ -1,6 +1,8 @@
 package alchemy
 
 import (
+	"time"
+
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
@@ -9,8 +11,9 @@ type AlchemyConfig struct {
 	apiKey         string
 	network        types.Network
 	url            string
+	requestTimeout time.Duration
 	isRequestBatch bool
-	backoffConfig  internal.BackoffConfig
+	backoffConfig  *internal.BackoffConfig
 }
 
 func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
@@ -18,13 +21,17 @@ func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
 		apiKey:         setting.ApiKey,
 		network:        setting.Network,
 		url:            settingToUrl(setting),
+		requestTimeout: setting.RequestTimeout,
 		isRequestBatch: setting.IsRequestBatch,
+		backoffConfig:  setting.BackoffConfig,
 	}
 
-	if setting.BackoffConfig != nil {
-		config.backoffConfig = *setting.BackoffConfig
-	} else {
-		config.backoffConfig = internal.DefaultBackoffConfig
+	if config.requestTimeout == 0 {
+		config.requestTimeout = time.Second * 10
+	}
+
+	if setting.BackoffConfig == nil {
+		config.backoffConfig = &internal.DefaultBackoffConfig
 	}
 
 	return config

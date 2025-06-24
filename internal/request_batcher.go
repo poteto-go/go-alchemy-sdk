@@ -16,7 +16,7 @@ type BatchSubscriber struct {
 type BatcherConfig struct {
 	MaxBatchSize int
 	MaxBatchTime time.Duration
-	Fetch        func([]types.AlchemyRequest) ([]types.AlchemyResponse, error)
+	Fetch        types.BatchAlchemyFetchHandler
 }
 
 type IRequestBatcher interface {
@@ -74,20 +74,23 @@ type IRequestBatcher interface {
 }
 
 type RequestBatcher struct {
-	config      BatcherConfig
-	IsRun       bool
-	requests    []types.AlchemyRequest
-	Subscribers BatchSubscriber
+	config        BatcherConfig
+	requestConfig types.RequestConfig
+	IsRun         bool
+	requests      []types.AlchemyRequest
+	Subscribers   BatchSubscriber
 }
 
 func NewRequestBatcher(
 	ctx context.Context,
 	config BatcherConfig,
+	requestConfig types.RequestConfig,
 ) IRequestBatcher {
 	return &RequestBatcher{
-		config:   config,
-		IsRun:    true,
-		requests: []types.AlchemyRequest{},
+		config:        config,
+		requestConfig: requestConfig,
+		IsRun:         true,
+		requests:      []types.AlchemyRequest{},
 		Subscribers: BatchSubscriber{
 			Responses:   []types.AlchemyResponse{},
 			JoinedError: nil,
@@ -144,7 +147,7 @@ func (b *RequestBatcher) RecordRequest(newRequest <-chan types.AlchemyRequest) {
 }
 
 func (b *RequestBatcher) send() {
-	batchedRes, err := b.config.Fetch(b.requests)
+	batchedRes, err := b.config.Fetch(b.requests, b.requestConfig)
 	for i := len(b.requests) - 1; i >= 0; i-- {
 		b.Subscribers.Responses = append(b.Subscribers.Responses, batchedRes...)
 		if err != nil {

@@ -11,14 +11,18 @@ import (
 	"github.com/poteto-go/tslice"
 )
 
-func AlchemyFetch(req types.AlchemyRequest) (types.AlchemyResponse, error) {
+func AlchemyFetch(req types.AlchemyRequest, requestConfig types.RequestConfig) (types.AlchemyResponse, error) {
 	paramJson, err := json.Marshal(req.Body)
 	if err != nil {
 		return types.AlchemyResponse{}, core.ErrFailedToMarshalParameter
 	}
 
+	client := &http.Client{
+		Timeout: requestConfig.Timeout,
+	}
+
 	req.Request.Body = io.NopCloser(bytes.NewBuffer(paramJson))
-	res, err := http.DefaultClient.Do(req.Request)
+	res, err := client.Do(req.Request)
 	if err != nil {
 		return types.AlchemyResponse{}, core.ErrFailedToConnect
 	}
@@ -33,17 +37,21 @@ func AlchemyFetch(req types.AlchemyRequest) (types.AlchemyResponse, error) {
 	return result, nil
 }
 
-func AlchemyBatchFetch(reqs []types.AlchemyRequest) ([]types.AlchemyResponse, error) {
+func AlchemyBatchFetch(reqs []types.AlchemyRequest, requestConfig types.RequestConfig) ([]types.AlchemyResponse, error) {
 	request := reqs[0].Request
 	bodies := tslice.Map(reqs, func(req types.AlchemyRequest) types.AlchemyRequestBody {
 		return req.Body
 	})
 
+	client := &http.Client{
+		Timeout: requestConfig.Timeout,
+	}
+
 	if len(bodies) == 1 {
 		paramJson, _ := json.Marshal(bodies[0])
 
 		request.Body = io.NopCloser(bytes.NewBuffer(paramJson))
-		res, err := http.DefaultClient.Do(request)
+		res, err := client.Do(request)
 		if err != nil {
 			return []types.AlchemyResponse{}, core.ErrFailedToConnect
 		}
@@ -61,7 +69,7 @@ func AlchemyBatchFetch(reqs []types.AlchemyRequest) ([]types.AlchemyResponse, er
 	paramJson, _ := json.Marshal(bodies)
 
 	request.Body = io.NopCloser(bytes.NewBuffer(paramJson))
-	res, err := http.DefaultClient.Do(request)
+	res, err := client.Do(request)
 	if err != nil {
 		return []types.AlchemyResponse{}, core.ErrFailedToConnect
 	}

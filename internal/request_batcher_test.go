@@ -14,13 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func timeoutFetch(reqs []types.AlchemyRequest) ([]types.AlchemyResponse, error) {
+func timeoutFetch(reqs []types.AlchemyRequest, _ types.RequestConfig) ([]types.AlchemyResponse, error) {
 	results := make([]types.AlchemyResponse, len(reqs))
 	time.Sleep(time.Millisecond * 30)
 	return results, nil
 }
 
-func errorFetch(reqs []types.AlchemyRequest) ([]types.AlchemyResponse, error) {
+func errorFetch(reqs []types.AlchemyRequest, _ types.RequestConfig) ([]types.AlchemyResponse, error) {
 	return nil, errors.New("error")
 }
 
@@ -32,6 +32,9 @@ func newBatcher() *RequestBatcher {
 			MaxBatchSize: 2,
 			MaxBatchTime: time.Millisecond * 10,
 			Fetch:        utils.AlchemyBatchFetch,
+		},
+		types.RequestConfig{
+			Timeout: time.Second * 10,
 		},
 	).(*RequestBatcher)
 }

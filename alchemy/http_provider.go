@@ -65,7 +65,10 @@ func (provider *AlchemyProvider) send(method string, params ...string) (string, 
 	}
 
 	result, err := internal.RequestHttpWithBackoff(
-		provider.config.backoffConfig,
+		*provider.config.backoffConfig,
+		types.RequestConfig{
+			Timeout: provider.config.requestTimeout,
+		},
 		utils.AlchemyFetch,
 		request,
 	)

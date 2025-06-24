@@ -1,6 +1,9 @@
 package types
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 type AlchemyRequestBody struct {
 	Method  string   `json:"method"`
@@ -20,4 +23,10 @@ type AlchemyResponse struct {
 	Jsonrpc string `json:"jsonrpc"`
 }
 
-type AlchemyFetchHandler func(AlchemyRequest) (AlchemyResponse, error)
+type AlchemyFetchHandler func(AlchemyRequest, RequestConfig) (AlchemyResponse, error)
+
+type BatchAlchemyFetchHandler func([]AlchemyRequest, RequestConfig) ([]AlchemyResponse, error)
+
+type RequestConfig struct {
+	Timeout time.Duration
+}
