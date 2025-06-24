@@ -175,7 +175,7 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			// Mock
 			patches.ApplyFunc(
 				utils.AlchemyFetch,
-				func(req types.AlchemyRequest) (types.AlchemyResponse, error) {
+				func(req types.AlchemyRequest, _ types.RequestConfig) (types.AlchemyResponse, error) {
 					return types.AlchemyResponse{}, errExpected
 				},
 			)

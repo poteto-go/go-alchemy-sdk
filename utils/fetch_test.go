@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/jarcoal/httpmock"
@@ -51,7 +52,9 @@ func TestAlchemyFetch(t *testing.T) {
 		)
 
 		// Act
-		result, err := utils.AlchemyFetch(request)
+		result, err := utils.AlchemyFetch(request, types.RequestConfig{
+			Timeout: 10 * time.Second,
+		})
 
 		// Assert
 		assert.Nil(t, err)
@@ -79,7 +82,9 @@ func TestAlchemyFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyFetch(request)
+			_, err := utils.AlchemyFetch(request, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToMarshalParameter, err)
@@ -106,7 +111,9 @@ func TestAlchemyFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyFetch(request)
+			_, err := utils.AlchemyFetch(request, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -143,7 +150,9 @@ func TestAlchemyFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyFetch(request)
+			_, err := utils.AlchemyFetch(request, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
@@ -201,7 +210,9 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			result, err := utils.AlchemyBatchFetch(requests)
+			result, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.Nil(t, err)
@@ -234,7 +245,9 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			result, err := utils.AlchemyBatchFetch(requests)
+			result, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.Nil(t, err)
@@ -269,7 +282,9 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyBatchFetch(requests)
+			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -297,7 +312,9 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyBatchFetch(requests)
+			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -343,7 +360,9 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyBatchFetch(requests)
+			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
@@ -385,7 +404,9 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyBatchFetch(requests)
+			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+				Timeout: 10 * time.Second,
+			})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)

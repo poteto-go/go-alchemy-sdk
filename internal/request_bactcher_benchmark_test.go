@@ -25,6 +25,9 @@ func TestNewRequestBatcher(t *testing.T) {
 			MaxBatchTime: time.Millisecond * 10,
 			Fetch:        utils.AlchemyBatchFetch,
 		},
+		types.RequestConfig{
+			Timeout: time.Second * 10,
+		},
 	).(*RequestBatcher)
 
 	// Assert
@@ -39,6 +42,9 @@ func newBenchmarkBatcher() *RequestBatcher {
 			MaxBatchSize: 100,
 			MaxBatchTime: time.Millisecond * 10,
 			Fetch:        utils.AlchemyBatchFetch,
+		},
+		types.RequestConfig{
+			Timeout: time.Second * 10,
 		},
 	).(*RequestBatcher)
 }
@@ -130,7 +136,9 @@ func BenchmarkRequest_Parallel(b *testing.B) {
 				Request: req,
 				Body:    body,
 			}
-			utils.AlchemyFetch(request)
+			utils.AlchemyFetch(request, types.RequestConfig{
+				Timeout: time.Second * 10,
+			})
 		}
 	}
 }

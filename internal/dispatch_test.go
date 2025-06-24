@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -18,13 +19,16 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 			InitialDelayMs: 10,
 			MaxDelayMs:     30,
 		}
-		mockHandler := func(request types.AlchemyRequest) (types.AlchemyResponse, error) {
+		requestConfig := types.RequestConfig{
+			Timeout: 10 * time.Second,
+		}
+		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig) (types.AlchemyResponse, error) {
 			return types.AlchemyResponse{}, nil
 		}
 		request := types.AlchemyRequest{}
 
 		// Act
-		response, err := RequestHttpWithBackoff(backoffConfig, mockHandler, request)
+		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)
 
 		// Assert
 		assert.NoError(t, err)
@@ -39,8 +43,11 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 			InitialDelayMs: 10,
 			MaxDelayMs:     30,
 		}
+		requestConfig := types.RequestConfig{
+			Timeout: 10 * time.Second,
+		}
 		callCount := 0
-		mockHandler := func(request types.AlchemyRequest) (types.AlchemyResponse, error) {
+		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig) (types.AlchemyResponse, error) {
 			callCount++
 			if callCount < 3 {
 				return types.AlchemyResponse{}, errors.New("test error")
@@ -50,7 +57,7 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 		request := types.AlchemyRequest{}
 
 		// Act
-		response, err := RequestHttpWithBackoff(backoffConfig, mockHandler, request)
+		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)
 
 		// Assert
 		assert.NoError(t, err)
@@ -66,13 +73,16 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 			InitialDelayMs: 10,
 			MaxDelayMs:     30,
 		}
-		mockHandler := func(request types.AlchemyRequest) (types.AlchemyResponse, error) {
+		requestConfig := types.RequestConfig{
+			Timeout: 10 * time.Second,
+		}
+		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig) (types.AlchemyResponse, error) {
 			return types.AlchemyResponse{}, errors.New("test error")
 		}
 		request := types.AlchemyRequest{}
 
 		// Act
-		_, err := RequestHttpWithBackoff(backoffConfig, mockHandler, request)
+		_, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)
 
 		// Assert
 		assert.Error(t, err)
