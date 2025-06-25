@@ -1,26 +1,35 @@
 package types
 
 import (
+	"errors"
 	"net/http"
 	"time"
 )
 
+var ErrNoResultFound = errors.New("no result found")
+
+type AlchemyRequest struct {
+	Request *http.Request
+	Body    AlchemyRequestBody
+}
+
 type AlchemyRequestBody struct {
+	Jsonrpc string   `json:"jsonrpc"`
 	Method  string   `json:"method"`
 	Params  []string `json:"params"`
 	Id      int      `json:"id"`
-	Jsonrpc string   `json:"jsonrpc"`
-}
-
-type AlchemyRequest struct {
-	Body    AlchemyRequestBody `json:"-"`
-	Request *http.Request      `json:"-"`
 }
 
 type AlchemyResponse struct {
-	Result  string `json:"result"`
-	Id      int    `json:"id"`
 	Jsonrpc string `json:"jsonrpc"`
+	Id      int    `json:"id"`
+	Result  string `json:"result"`
+	Error   error  `json:"-"`
+}
+
+type IAlchemyProvider interface {
+	GetBlockNumber() (int, error)
+	Send(method string, params ...string) (string, error)
 }
 
 type AlchemyFetchHandler func(AlchemyRequest, RequestConfig) (AlchemyResponse, error)
