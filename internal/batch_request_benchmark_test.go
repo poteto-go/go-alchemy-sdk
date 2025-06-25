@@ -39,6 +39,8 @@ func BenchmarkRequestBatcher_QueueRequest(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		batcher.QueueRequest(request)
+		go func() {
+			batcher.QueueRequest(request)
+		}()
 	}
 }

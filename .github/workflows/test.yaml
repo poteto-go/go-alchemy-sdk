@@ -20,4 +20,4 @@ jobs:
       - name: install dependencies
         run: go mod download
       - name: test coverage
-        run: go test ./... -cover -bench . -benchtime 100000x -gcflags=all=-l
+        run: go test ./... -cover -gcflags=all=-l

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -15,7 +16,7 @@ import (
 
 func TestRequestBatcher_QueueRequest(t *testing.T) {
 	var (
-		mu          sync.Mutex
+		mu           sync.Mutex
 		requestCount int
 	)
 
@@ -72,4 +73,126 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 	time.Sleep(time.Millisecond * 200)
 
 	assert.Equal(t, 1, requestCount)
+}
+
+func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	config := BatcherConfig{
+		MaxBatchSize: 1,
+		MaxBatchTime: time.Millisecond * 100,
+		Fetch:        utils.AlchemyBatchFetch,
+	}
+
+	requestConfig := types.RequestConfig{
+		Timeout: time.Second,
+	}
+
+	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
+
+	req, _ := http.NewRequest("POST", server.URL, nil)
+	request := types.AlchemyRequest{
+		Request: req,
+		Body:    types.AlchemyRequestBody{Id: 1},
+	}
+
+	_, err := batcher.QueueRequest(request)
+	assert.Error(t, err)
+}
+
+func TestRequestBatcher_Context_Cancel(t *testing.T) {
+	config := BatcherConfig{
+		MaxBatchSize: 1,
+		MaxBatchTime: time.Millisecond * 100,
+		Fetch:        utils.AlchemyBatchFetch,
+	}
+
+	requestConfig := types.RequestConfig{
+		Timeout: time.Second,
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	batcher := NewRequestBatcher(ctx, config, requestConfig)
+
+	cancel()
+
+	req, _ := http.NewRequest("POST", "", nil)
+	request := types.AlchemyRequest{
+		Request: req,
+		Body:    types.AlchemyRequestBody{Id: 1},
+	}
+
+	_, err := batcher.QueueRequest(request)
+	assert.Error(t, err)
+}
+
+func TestRequestBatcher_Flush_Fetch_Error(t *testing.T) {
+	config := BatcherConfig{
+		MaxBatchSize: 1,
+		MaxBatchTime: time.Millisecond * 100,
+		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig) ([]types.AlchemyResponse, error) {
+			return nil, errors.New("fetch error")
+		},
+	}
+
+	requestConfig := types.RequestConfig{
+		Timeout: time.Second,
+	}
+
+	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
+
+	req, _ := http.NewRequest("POST", "", nil)
+	request := types.AlchemyRequest{
+		Request: req,
+		Body:    types.AlchemyRequestBody{Id: 1},
+	}
+
+	_, err := batcher.QueueRequest(request)
+	assert.Error(t, err)
+}
+
+func TestRequestBatcher_Flush_No_Response(t *testing.T) {
+	config := BatcherConfig{
+		MaxBatchSize: 1,
+		MaxBatchTime: time.Millisecond * 100,
+		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig) ([]types.AlchemyResponse, error) {
+			return []types.AlchemyResponse{}, nil
+		},
+	}
+
+	requestConfig := types.RequestConfig{
+		Timeout: time.Second,
+	}
+
+	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
+
+	req, _ := http.NewRequest("POST", "", nil)
+	request := types.AlchemyRequest{
+		Request: req,
+		Body:    types.AlchemyRequestBody{Id: 1},
+	}
+
+	_, err := batcher.QueueRequest(request)
+	assert.Error(t, err)
+}
+
+func TestRequestBatcher_ProcessQueue_Timeout(t *testing.T) {
+	config := BatcherConfig{
+		MaxBatchSize: 1,
+		MaxBatchTime: time.Millisecond * 10,
+		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig) ([]types.AlchemyResponse, error) {
+			return []types.AlchemyResponse{}, nil
+		},
+	}
+
+	requestConfig := types.RequestConfig{
+		Timeout: time.Second,
+	}
+
+	NewRequestBatcher(context.Background(), config, requestConfig)
+
+	time.Sleep(time.Millisecond * 20)
 }
