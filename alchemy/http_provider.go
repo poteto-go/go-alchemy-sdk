@@ -1,7 +1,9 @@
 package alchemy
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
@@ -10,14 +12,29 @@ import (
 )
 
 type AlchemyProvider struct {
-	config AlchemyConfig
-	id     int
+	config  AlchemyConfig
+	id      int
+	batcher *internal.RequestBatcher
 }
 
 func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	provider := &AlchemyProvider{
 		config: config,
 		id:     1,
+	}
+
+	if config.maxRetries > 0 {
+		provider.batcher = internal.NewRequestBatcher(
+			context.Background(),
+			internal.BatcherConfig{
+				MaxBatchSize: 100,
+				MaxBatchTime: time.Millisecond * 10,
+				Fetch:        utils.AlchemyBatchFetch,
+			},
+			types.RequestConfig{
+				Timeout: config.requestTimeout,
+			},
+		)
 	}
 
 	return provider
@@ -62,6 +79,15 @@ func (provider *AlchemyProvider) send(method string, params ...string) (string, 
 	request := types.AlchemyRequest{
 		Body:    body,
 		Request: req,
+	}
+
+	if provider.batcher != nil {
+		response, err := provider.batcher.QueueRequest(request)
+		if err != nil {
+			return "", err
+		}
+		provider.id++
+		return response.Result, nil
 	}
 
 	result, err := internal.RequestHttpWithBackoff(

@@ -11,6 +11,7 @@ type AlchemyConfig struct {
 	apiKey         string
 	network        types.Network
 	url            string
+	maxRetries     int
 	requestTimeout time.Duration
 	isRequestBatch bool
 	backoffConfig  *internal.BackoffConfig
@@ -21,6 +22,7 @@ func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
 		apiKey:         setting.ApiKey,
 		network:        setting.Network,
 		url:            settingToUrl(setting),
+		maxRetries:     setting.MaxRetries,
 		requestTimeout: setting.RequestTimeout,
 		isRequestBatch: setting.IsRequestBatch,
 		backoffConfig:  setting.BackoffConfig,
