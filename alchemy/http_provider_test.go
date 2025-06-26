@@ -45,6 +45,7 @@ func newProviderForTest() *AlchemyProvider {
 func TestAlchemyProvider_GetBlockNumber(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
+	provider.config.backoffConfig.MaxRetries = 0
 
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("success request", func(t *testing.T) {
@@ -199,6 +200,7 @@ func TestAlchemyProvider_GetGasPrice(t *testing.T) {
 func TestAlchemyProvider_Send(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
+	provider.config.backoffConfig.MaxRetries = 0
 
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("success request & increment id", func(t *testing.T) {
