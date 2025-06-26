@@ -41,7 +41,7 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 }
 
 func (provider *AlchemyProvider) GetBlockNumber() (int, error) {
-	blockNumberHex, err := provider.Send("eth_blockNumber")
+	blockNumberHex, err := provider.Send(core.Eth_BlockNumber)
 	if err != nil {
 		return 0, err
 	}
@@ -54,7 +54,7 @@ func (provider *AlchemyProvider) GetBlockNumber() (int, error) {
 }
 
 func (provider *AlchemyProvider) GetGasPrice() (int, error) {
-	priceHex, err := provider.Send("eth_gasPrice")
+	priceHex, err := provider.Send(core.Eth_GasPrice)
 	if err != nil {
 		return 0, err
 	}
