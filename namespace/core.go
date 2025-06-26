@@ -6,6 +6,7 @@ import (
 
 type ICore interface {
 	GetBlockNumber() (int, error)
+	GetGasPrice() (int, error)
 }
 
 type Core struct {
@@ -24,4 +25,12 @@ func (c *Core) GetBlockNumber() (int, error) {
 		return 0, err
 	}
 	return blockNumber, nil
+}
+
+func (c *Core) GetGasPrice() (int, error) {
+	price, err := c.provider.GetGasPrice()
+	if err != nil {
+		return 0, err
+	}
+	return price, nil
 }

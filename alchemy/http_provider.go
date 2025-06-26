@@ -40,17 +40,30 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	return provider
 }
 
-/* get  the number of the most recent block. */
 func (provider *AlchemyProvider) GetBlockNumber() (int, error) {
-	blockNumberHex, err := provider.Send("eth_blockNumber")
+	blockNumberHex, err := provider.Send(core.Eth_BlockNumber)
 	if err != nil {
 		return 0, err
 	}
+
 	blockNumber, err := utils.FromHex(blockNumberHex)
 	if err != nil {
 		return 0, err
 	}
 	return blockNumber, nil
+}
+
+func (provider *AlchemyProvider) GetGasPrice() (int, error) {
+	priceHex, err := provider.Send(core.Eth_GasPrice)
+	if err != nil {
+		return 0, err
+	}
+
+	price, err := utils.FromHex(priceHex)
+	if err != nil {
+		return 0, err
+	}
+	return price, nil
 }
 
 func (provider *AlchemyProvider) Send(method string, params ...string) (string, error) {

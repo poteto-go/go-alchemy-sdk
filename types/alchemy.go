@@ -28,7 +28,13 @@ type AlchemyResponse struct {
 }
 
 type IAlchemyProvider interface {
+	/* get  the number of the most recent block. */
 	GetBlockNumber() (int, error)
+
+	/* Returns the best guess of the current gas price to use in a transaction. */
+	GetGasPrice() (int, error)
+
+	/* Send raw transaction */
 	Send(method string, params ...string) (string, error)
 }
 
