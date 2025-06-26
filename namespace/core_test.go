@@ -2,6 +2,7 @@ package namespace_test
 
 import (
 	"errors"
+	"math/big"
 	"reflect"
 	"testing"
 
@@ -144,6 +145,72 @@ func TestCore_GetGasPrice(t *testing.T) {
 			// Assert
 			assert.ErrorIs(t, errExpected, err)
 			assert.Equal(t, 0, price)
+		})
+	})
+}
+
+func TestCore_GetBalance(t *testing.T) {
+	// Arrange
+	provider := newProvider()
+	core := namespace.NewCore(provider).(*namespace.Core)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("return balance", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedBalance := big.NewInt(1000000000000000000) // 1 ETH
+			address := "0x1234567890abcdef1234567890abcdef12345678"
+			blockTag := "latest"
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"GetBalance",
+				func(_ *alchemy.AlchemyProvider, _address string, _blockTag string) (*big.Int, error) {
+					assert.Equal(t, address, _address)
+					assert.Equal(t, blockTag, _blockTag)
+					return expectedBalance, nil
+				},
+			)
+
+			// Act
+			balance, err := core.GetBalance(address, blockTag)
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, expectedBalance, balance)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("return 0 & provider error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			errExpected := errors.New("error")
+			address := "0x1234567890abcdef1234567890abcdef12345678"
+			blockTag := "latest"
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"GetBalance",
+				func(_ *alchemy.AlchemyProvider, _address string, _blockTag string) (*big.Int, error) {
+					assert.Equal(t, address, _address)
+					assert.Equal(t, blockTag, _blockTag)
+					return big.NewInt(0), errExpected
+				},
+			)
+
+			// Act
+			balance, err := core.GetBalance(address, blockTag)
+
+			// Assert
+			assert.ErrorIs(t, errExpected, err)
+			assert.Equal(t, big.NewInt(0), balance)
 		})
 	})
 }

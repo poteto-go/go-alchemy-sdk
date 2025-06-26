@@ -14,6 +14,8 @@ const (
 	ArbMainnet          = Network("arb-mainnet")
 	ArbGoerli           = Network("arb-goerli")
 	ArbSepolia          = Network("arb-sepolia")
+	PolygonMainnet      = Network("polygon-mainnet")
+	PolygonAmoy         = Network("polygon-amoy")
 	MaticMainnet        = Network("matic-mainnet")
 	MaticMumbai         = Network("matic-mumbai")
 	MaticAmoy           = Network("matic-amoy")

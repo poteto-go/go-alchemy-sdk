@@ -2,7 +2,9 @@ package alchemy
 
 import (
 	"context"
+	"math/big"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
@@ -64,6 +66,23 @@ func (provider *AlchemyProvider) GetGasPrice() (int, error) {
 		return 0, err
 	}
 	return price, nil
+}
+
+func (provider *AlchemyProvider) GetBalance(address string, blockTag string) (*big.Int, error) {
+	balanceHex, err := provider.Send(
+		core.Eth_GetBalance,
+		strings.ToLower(address),
+		blockTag,
+	)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	balance, err := utils.FromBigHex(balanceHex)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+	return balance, nil
 }
 
 func (provider *AlchemyProvider) Send(method string, params ...string) (string, error) {

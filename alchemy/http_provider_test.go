@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math/big"
 	"net/http"
 	"testing"
 
@@ -191,6 +192,84 @@ func TestAlchemyProvider_GetGasPrice(t *testing.T) {
 			)
 			// Act
 			_, err := provider.GetGasPrice()
+
+			// Assert
+			assert.ErrorIs(t, core.ErrInvalidHexString, err)
+		})
+	})
+}
+
+func TestAlchemyProvider_GetBalance(t *testing.T) {
+	// Arrange
+	provider := newProviderForTest()
+	provider.config.backoffConfig.MaxRetries = 0
+
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			httpmock.Activate(t)
+			patches := gomonkey.NewPatches()
+			defer func() {
+				httpmock.DeactivateAndReset()
+				patches.Reset()
+			}()
+
+			// Mock
+			httpmock.RegisterResponder(
+				"POST",
+				provider.config.GetUrl(),
+				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
+			)
+
+			patches.ApplyFunc(
+				utils.FromBigHex,
+				func(s string) (*big.Int, error) {
+					return big.NewInt(1234), nil
+				},
+			)
+			// Act
+			result, err := provider.GetBalance("hoge", "fuga")
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, big.NewInt(1234), result)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if failed to send request -> core.ErrFailedToConnect", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Act
+			_, err := provider.GetBalance("hoge", "fuga")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrFailedToConnect, err)
+		})
+
+		t.Run("if failed from hex -> error", func(t *testing.T) {
+			httpmock.Activate(t)
+			patches := gomonkey.NewPatches()
+			defer func() {
+				httpmock.DeactivateAndReset()
+				patches.Reset()
+			}()
+
+			// Mock
+			httpmock.RegisterResponder(
+				"POST",
+				provider.config.GetUrl(),
+				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
+			)
+
+			patches.ApplyFunc(
+				utils.FromBigHex,
+				func(s string) (*big.Int, error) {
+					return big.NewInt(0), core.ErrInvalidHexString
+				},
+			)
+			// Act
+			_, err := provider.GetBalance("hoge", "fuga")
 
 			// Assert
 			assert.ErrorIs(t, core.ErrInvalidHexString, err)
