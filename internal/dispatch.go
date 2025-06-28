@@ -15,9 +15,9 @@ func RequestHttpWithBackoff(
 		response, err := handler(request, requestConfig)
 		if err == nil {
 			return response, nil
-		} else {
-			lastHttpError = err
 		}
+
+		lastHttpError = err
 
 		if err := backoffManager.Backoff(); err != nil {
 			return types.AlchemyResponse{}, lastHttpError
