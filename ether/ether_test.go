@@ -8,12 +8,13 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/alchemy"
 	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func newProviderForTest() *alchemy.AlchemyProvider {
+func newEtherApiForTest() *ether.Ether {
 	config := alchemy.NewAlchemyConfig(
 		alchemy.AlchemySetting{
 			ApiKey:  "hoge",
@@ -23,12 +24,13 @@ func newProviderForTest() *alchemy.AlchemyProvider {
 			},
 		},
 	)
-	return alchemy.NewAlchemyProvider(config).(*alchemy.AlchemyProvider)
+	provider := alchemy.NewAlchemyProvider(config).(*alchemy.AlchemyProvider)
+	return ether.NewEtherApi(provider).(*ether.Ether)
 }
 
 func TestGetBlockNumber(t *testing.T) {
 	// Arrange
-	provider := newProviderForTest()
+	ether := newEtherApiForTest()
 
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("success request", func(t *testing.T) {
@@ -53,7 +55,7 @@ func TestGetBlockNumber(t *testing.T) {
 				},
 			)
 			// Act
-			result, err := provider.GetBlockNumber()
+			result, err := ether.GetBlockNumber()
 
 			// Assert
 			assert.NoError(t, err)
@@ -67,7 +69,7 @@ func TestGetBlockNumber(t *testing.T) {
 			defer patches.Reset()
 
 			// Act
-			_, err := provider.GetBlockNumber()
+			_, err := ether.GetBlockNumber()
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -95,7 +97,7 @@ func TestGetBlockNumber(t *testing.T) {
 				},
 			)
 			// Act
-			_, err := provider.GetBlockNumber()
+			_, err := ether.GetBlockNumber()
 
 			// Assert
 			assert.ErrorIs(t, core.ErrInvalidHexString, err)
@@ -105,7 +107,7 @@ func TestGetBlockNumber(t *testing.T) {
 
 func TestGetGasPrice(t *testing.T) {
 	// Arrange
-	provider := newProviderForTest()
+	ether := newEtherApiForTest()
 
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("success request", func(t *testing.T) {
@@ -130,7 +132,7 @@ func TestGetGasPrice(t *testing.T) {
 				},
 			)
 			// Act
-			result, err := provider.GetGasPrice()
+			result, err := ether.GetGasPrice()
 
 			// Assert
 			assert.NoError(t, err)
@@ -144,7 +146,7 @@ func TestGetGasPrice(t *testing.T) {
 			defer patches.Reset()
 
 			// Act
-			_, err := provider.GetGasPrice()
+			_, err := ether.GetGasPrice()
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -172,7 +174,7 @@ func TestGetGasPrice(t *testing.T) {
 				},
 			)
 			// Act
-			_, err := provider.GetGasPrice()
+			_, err := ether.GetGasPrice()
 
 			// Assert
 			assert.ErrorIs(t, core.ErrInvalidHexString, err)
@@ -182,7 +184,7 @@ func TestGetGasPrice(t *testing.T) {
 
 func TestGetBalance(t *testing.T) {
 	// Arrange
-	provider := newProviderForTest()
+	ether := newEtherApiForTest()
 
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("success request", func(t *testing.T) {
@@ -207,7 +209,7 @@ func TestGetBalance(t *testing.T) {
 				},
 			)
 			// Act
-			result, err := provider.GetBalance("hoge", "latest")
+			result, err := ether.GetBalance("hoge", "latest")
 
 			// Assert
 			assert.NoError(t, err)
@@ -221,7 +223,7 @@ func TestGetBalance(t *testing.T) {
 			defer patches.Reset()
 
 			// Act
-			_, err := provider.GetBalance("hoge", "unexpected")
+			_, err := ether.GetBalance("hoge", "unxpected")
 
 			// Assert
 			assert.ErrorIs(t, core.ErrInvalidBlockTag, err)
@@ -232,7 +234,7 @@ func TestGetBalance(t *testing.T) {
 			defer patches.Reset()
 
 			// Act
-			_, err := provider.GetBalance("hoge", "latest")
+			_, err := ether.GetBalance("hoge", "latest")
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -260,7 +262,7 @@ func TestGetBalance(t *testing.T) {
 				},
 			)
 			// Act
-			_, err := provider.GetBalance("hoge", "latest")
+			_, err := ether.GetBalance("hoge", "latest")
 
 			// Assert
 			assert.ErrorIs(t, core.ErrInvalidHexString, err)

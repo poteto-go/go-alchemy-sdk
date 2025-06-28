@@ -2,7 +2,6 @@ package types
 
 import (
 	"errors"
-	"math/big"
 	"net/http"
 	"time"
 )
@@ -29,15 +28,6 @@ type AlchemyResponse struct {
 }
 
 type IAlchemyProvider interface {
-	/* get  the number of the most recent block. */
-	GetBlockNumber() (int, error)
-
-	/* Returns the best guess of the current gas price to use in a transaction. */
-	GetGasPrice() (int, error)
-
-	/* Returns the balance of a given address as of the provided block. */
-	GetBalance(address string, blockTag string) (*big.Int, error)
-
 	/* Send raw transaction */
 	Send(method string, params ...string) (string, error)
 }

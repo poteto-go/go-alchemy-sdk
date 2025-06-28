@@ -4,14 +4,12 @@ import (
 	"context"
 	"errors"
 	"io"
-	"math/big"
 	"net/http"
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/core"
-	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -42,75 +40,6 @@ func newProviderForTest() *AlchemyProvider {
 		},
 	)
 	return NewAlchemyProvider(config).(*AlchemyProvider)
-}
-
-func TestAlchemyProvider_GetBlockNumber(t *testing.T) {
-	patches := gomonkey.NewPatches()
-	defer patches.Reset()
-
-	// Arrange
-	provider := newProviderForTest()
-
-	// Mock
-	patches.ApplyFunc(
-		ether.GetBlockNumber,
-		func(_ types.IAlchemyProvider) (int, error) {
-			return 1234, nil
-		},
-	)
-
-	// Act
-	result, err := provider.GetBlockNumber()
-
-	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, 1234, result)
-}
-
-func TestAlchemyProvider_GetGasPrice(t *testing.T) {
-	patches := gomonkey.NewPatches()
-	defer patches.Reset()
-
-	// Arrange
-	provider := newProviderForTest()
-
-	// Mock
-	patches.ApplyFunc(
-		ether.GetGasPrice,
-		func(_ types.IAlchemyProvider) (int, error) {
-			return 1234, nil
-		},
-	)
-
-	// Act
-	result, err := provider.GetGasPrice()
-
-	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, 1234, result)
-}
-
-func TestAlchemyProvider_GetBalance(t *testing.T) {
-	patches := gomonkey.NewPatches()
-	defer patches.Reset()
-
-	// Arrange
-	provider := newProviderForTest()
-
-	// Mock
-	patches.ApplyFunc(
-		ether.GetBalance,
-		func(_ types.IAlchemyProvider, address string, blockTag string) (*big.Int, error) {
-			return big.NewInt(1234), nil
-		},
-	)
-
-	// Act
-	result, err := provider.GetBalance("hoge", "latest")
-
-	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, big.NewInt(1234), result)
 }
 
 func TestAlchemyProvider_Send(t *testing.T) {

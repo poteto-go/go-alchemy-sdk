@@ -9,8 +9,29 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
 
-func GetBlockNumber(provider types.IAlchemyProvider) (int, error) {
-	blockNumberHex, err := provider.Send(core.Eth_BlockNumber)
+type EtherApi interface {
+	/* get  the number of the most recent block. */
+	GetBlockNumber() (int, error)
+
+	/* Returns the best guess of the current gas price to use in a transaction. */
+	GetGasPrice() (int, error)
+
+	/* Returns the balance of a given address as of the provided block. */
+	GetBalance(address string, blockTag string) (*big.Int, error)
+}
+
+type Ether struct {
+	provider types.IAlchemyProvider
+}
+
+func NewEtherApi(provider types.IAlchemyProvider) EtherApi {
+	return &Ether{
+		provider: provider,
+	}
+}
+
+func (ether *Ether) GetBlockNumber() (int, error) {
+	blockNumberHex, err := ether.provider.Send(core.Eth_BlockNumber)
 	if err != nil {
 		return 0, err
 	}
@@ -22,8 +43,8 @@ func GetBlockNumber(provider types.IAlchemyProvider) (int, error) {
 	return blockNumber, nil
 }
 
-func GetGasPrice(provider types.IAlchemyProvider) (int, error) {
-	priceHex, err := provider.Send(core.Eth_GasPrice)
+func (ether *Ether) GetGasPrice() (int, error) {
+	priceHex, err := ether.provider.Send(core.Eth_GasPrice)
 	if err != nil {
 		return 0, err
 	}
@@ -35,12 +56,12 @@ func GetGasPrice(provider types.IAlchemyProvider) (int, error) {
 	return price, nil
 }
 
-func GetBalance(provider types.IAlchemyProvider, address string, blockTag string) (*big.Int, error) {
+func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error) {
 	if err := utils.ValidateBlockTag(blockTag); err != nil {
 		return big.NewInt(0), err
 	}
 
-	balanceHex, err := provider.Send(
+	balanceHex, err := ether.provider.Send(
 		core.Eth_GetBalance,
 		strings.ToLower(address),
 		blockTag,
