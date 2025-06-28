@@ -3,7 +3,7 @@ package namespace
 import (
 	"math/big"
 
-	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/ether"
 )
 
 type ICore interface {
@@ -18,17 +18,17 @@ type ICore interface {
 }
 
 type Core struct {
-	provider types.IAlchemyProvider
+	ether ether.EtherApi
 }
 
-func NewCore(provider types.IAlchemyProvider) ICore {
+func NewCore(ether ether.EtherApi) ICore {
 	return &Core{
-		provider: provider,
+		ether: ether,
 	}
 }
 
 func (c *Core) GetBlockNumber() (int, error) {
-	blockNumber, err := c.provider.GetBlockNumber()
+	blockNumber, err := c.ether.GetBlockNumber()
 	if err != nil {
 		return 0, err
 	}
@@ -36,7 +36,7 @@ func (c *Core) GetBlockNumber() (int, error) {
 }
 
 func (c *Core) GetGasPrice() (int, error) {
-	price, err := c.provider.GetGasPrice()
+	price, err := c.ether.GetGasPrice()
 	if err != nil {
 		return 0, err
 	}
@@ -44,7 +44,7 @@ func (c *Core) GetGasPrice() (int, error) {
 }
 
 func (c *Core) GetBalance(address string, blockTag string) (*big.Int, error) {
-	balance, err := c.provider.GetBalance(address, blockTag)
+	balance, err := c.ether.GetBalance(address, blockTag)
 	if err != nil {
 		return big.NewInt(0), err
 	}

@@ -8,13 +8,13 @@ import (
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/poteto-go/go-alchemy-sdk/alchemy"
+	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
-	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
 
-func newProvider() types.IAlchemyProvider {
+func newEtherApi() *ether.Ether {
 	setting := alchemy.AlchemySetting{
 		ApiKey:  "hoge",
 		Network: "fuga",
@@ -23,15 +23,16 @@ func newProvider() types.IAlchemyProvider {
 		},
 	}
 	config := alchemy.NewAlchemyConfig(setting)
-	return alchemy.NewAlchemyProvider(config)
+	provider := alchemy.NewAlchemyProvider(config)
+	return ether.NewEtherApi(provider).(*ether.Ether)
 }
 
 func TestNewCore(t *testing.T) {
 	// Arrange
-	provider := newProvider()
+	ether := newEtherApi()
 
 	// Act
-	core := namespace.NewCore(provider)
+	core := namespace.NewCore(ether)
 
 	// Assert
 	assert.NotNil(t, core)
@@ -39,8 +40,8 @@ func TestNewCore(t *testing.T) {
 
 func TestCore_GetBlockNumber(t *testing.T) {
 	// Arrange
-	provider := newProvider()
-	core := namespace.NewCore(provider).(*namespace.Core)
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("return block number", func(t *testing.T) {
@@ -52,9 +53,9 @@ func TestCore_GetBlockNumber(t *testing.T) {
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
+				reflect.TypeOf(api),
 				"GetBlockNumber",
-				func(_ *alchemy.AlchemyProvider) (int, error) {
+				func(_ *ether.Ether) (int, error) {
 					return expectedNumber, nil
 				},
 			)
@@ -78,9 +79,9 @@ func TestCore_GetBlockNumber(t *testing.T) {
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
+				reflect.TypeOf(api),
 				"GetBlockNumber",
-				func(_ *alchemy.AlchemyProvider) (int, error) {
+				func(_ *ether.Ether) (int, error) {
 					return 0, errExpected
 				},
 			)
@@ -97,8 +98,8 @@ func TestCore_GetBlockNumber(t *testing.T) {
 
 func TestCore_GetGasPrice(t *testing.T) {
 	// Arrange
-	provider := newProvider()
-	core := namespace.NewCore(provider).(*namespace.Core)
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("return block number", func(t *testing.T) {
@@ -110,9 +111,9 @@ func TestCore_GetGasPrice(t *testing.T) {
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
+				reflect.TypeOf(api),
 				"GetGasPrice",
-				func(_ *alchemy.AlchemyProvider) (int, error) {
+				func(_ *ether.Ether) (int, error) {
 					return expectedNumber, nil
 				},
 			)
@@ -136,9 +137,9 @@ func TestCore_GetGasPrice(t *testing.T) {
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
+				reflect.TypeOf(api),
 				"GetGasPrice",
-				func(_ *alchemy.AlchemyProvider) (int, error) {
+				func(_ *ether.Ether) (int, error) {
 					return 0, errExpected
 				},
 			)
@@ -155,8 +156,8 @@ func TestCore_GetGasPrice(t *testing.T) {
 
 func TestCore_GetBalance(t *testing.T) {
 	// Arrange
-	provider := newProvider()
-	core := namespace.NewCore(provider).(*namespace.Core)
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("return balance", func(t *testing.T) {
@@ -170,9 +171,9 @@ func TestCore_GetBalance(t *testing.T) {
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
+				reflect.TypeOf(api),
 				"GetBalance",
-				func(_ *alchemy.AlchemyProvider, _address string, _blockTag string) (*big.Int, error) {
+				func(_ *ether.Ether, _address string, _blockTag string) (*big.Int, error) {
 					assert.Equal(t, address, _address)
 					assert.Equal(t, blockTag, _blockTag)
 					return expectedBalance, nil
@@ -200,9 +201,9 @@ func TestCore_GetBalance(t *testing.T) {
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
+				reflect.TypeOf(api),
 				"GetBalance",
-				func(_ *alchemy.AlchemyProvider, _address string, _blockTag string) (*big.Int, error) {
+				func(_ *ether.Ether, _address string, _blockTag string) (*big.Int, error) {
 					assert.Equal(t, address, _address)
 					assert.Equal(t, blockTag, _blockTag)
 					return big.NewInt(0), errExpected

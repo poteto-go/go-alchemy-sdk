@@ -2,12 +2,10 @@ package alchemy
 
 import (
 	"context"
-	"math/big"
 	"net/http"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
-	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -40,18 +38,6 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	}
 
 	return provider
-}
-
-func (provider *AlchemyProvider) GetBlockNumber() (int, error) {
-	return ether.GetBlockNumber(provider)
-}
-
-func (provider *AlchemyProvider) GetGasPrice() (int, error) {
-	return ether.GetGasPrice(provider)
-}
-
-func (provider *AlchemyProvider) GetBalance(address string, blockTag string) (*big.Int, error) {
-	return ether.GetBalance(provider, address, blockTag)
 }
 
 func (provider *AlchemyProvider) Send(method string, params ...string) (string, error) {
