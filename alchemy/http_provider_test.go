@@ -11,6 +11,7 @@ import (
 	"github.com/agiledragon/gomonkey"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -44,248 +45,72 @@ func newProviderForTest() *AlchemyProvider {
 }
 
 func TestAlchemyProvider_GetBlockNumber(t *testing.T) {
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+
 	// Arrange
 	provider := newProviderForTest()
-	provider.config.backoffConfig.MaxRetries = 0
 
-	t.Run("normal case", func(t *testing.T) {
-		t.Run("success request", func(t *testing.T) {
-			httpmock.Activate(t)
-			patches := gomonkey.NewPatches()
-			defer func() {
-				httpmock.DeactivateAndReset()
-				patches.Reset()
-			}()
+	// Mock
+	patches.ApplyFunc(
+		ether.GetBlockNumber,
+		func(_ types.IAlchemyProvider) (int, error) {
+			return 1234, nil
+		},
+	)
 
-			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				provider.config.GetUrl(),
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
-			)
+	// Act
+	result, err := provider.GetBlockNumber()
 
-			patches.ApplyFunc(
-				utils.FromHex,
-				func(s string) (int, error) {
-					return 1234, nil
-				},
-			)
-			// Act
-			result, err := provider.GetBlockNumber()
-
-			// Assert
-			assert.NoError(t, err)
-			assert.Equal(t, 1234, result)
-		})
-	})
-
-	t.Run("error case", func(t *testing.T) {
-		t.Run("if failed to send request -> core.ErrFailedToConnect", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Act
-			_, err := provider.GetBlockNumber()
-
-			// Assert
-			assert.ErrorIs(t, core.ErrFailedToConnect, err)
-		})
-
-		t.Run("if failed from hex -> error", func(t *testing.T) {
-			httpmock.Activate(t)
-			patches := gomonkey.NewPatches()
-			defer func() {
-				httpmock.DeactivateAndReset()
-				patches.Reset()
-			}()
-
-			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				provider.config.GetUrl(),
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
-			)
-
-			patches.ApplyFunc(
-				utils.FromHex,
-				func(s string) (int, error) {
-					return 0, core.ErrInvalidHexString
-				},
-			)
-			// Act
-			_, err := provider.GetBlockNumber()
-
-			// Assert
-			assert.ErrorIs(t, core.ErrInvalidHexString, err)
-		})
-	})
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, 1234, result)
 }
 
 func TestAlchemyProvider_GetGasPrice(t *testing.T) {
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+
 	// Arrange
 	provider := newProviderForTest()
-	provider.config.backoffConfig.MaxRetries = 0
 
-	t.Run("normal case", func(t *testing.T) {
-		t.Run("success request", func(t *testing.T) {
-			httpmock.Activate(t)
-			patches := gomonkey.NewPatches()
-			defer func() {
-				httpmock.DeactivateAndReset()
-				patches.Reset()
-			}()
+	// Mock
+	patches.ApplyFunc(
+		ether.GetGasPrice,
+		func(_ types.IAlchemyProvider) (int, error) {
+			return 1234, nil
+		},
+	)
 
-			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				provider.config.GetUrl(),
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
-			)
+	// Act
+	result, err := provider.GetGasPrice()
 
-			patches.ApplyFunc(
-				utils.FromHex,
-				func(s string) (int, error) {
-					return 1234, nil
-				},
-			)
-			// Act
-			result, err := provider.GetGasPrice()
-
-			// Assert
-			assert.NoError(t, err)
-			assert.Equal(t, 1234, result)
-		})
-	})
-
-	t.Run("error case:", func(t *testing.T) {
-		t.Run("if failed to send request -> core.ErrFailedToConnect", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Act
-			_, err := provider.GetGasPrice()
-
-			// Assert
-			assert.ErrorIs(t, core.ErrFailedToConnect, err)
-		})
-
-		t.Run("if failed from hex -> error", func(t *testing.T) {
-			httpmock.Activate(t)
-			patches := gomonkey.NewPatches()
-			defer func() {
-				httpmock.DeactivateAndReset()
-				patches.Reset()
-			}()
-
-			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				provider.config.GetUrl(),
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
-			)
-
-			patches.ApplyFunc(
-				utils.FromHex,
-				func(s string) (int, error) {
-					return 0, core.ErrInvalidHexString
-				},
-			)
-			// Act
-			_, err := provider.GetGasPrice()
-
-			// Assert
-			assert.ErrorIs(t, core.ErrInvalidHexString, err)
-		})
-	})
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, 1234, result)
 }
 
 func TestAlchemyProvider_GetBalance(t *testing.T) {
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+
 	// Arrange
 	provider := newProviderForTest()
-	provider.config.backoffConfig.MaxRetries = 0
 
-	t.Run("normal case", func(t *testing.T) {
-		t.Run("success request", func(t *testing.T) {
-			httpmock.Activate(t)
-			patches := gomonkey.NewPatches()
-			defer func() {
-				httpmock.DeactivateAndReset()
-				patches.Reset()
-			}()
+	// Mock
+	patches.ApplyFunc(
+		ether.GetBalance,
+		func(_ types.IAlchemyProvider, address string, blockTag string) (*big.Int, error) {
+			return big.NewInt(1234), nil
+		},
+	)
 
-			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				provider.config.GetUrl(),
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
-			)
+	// Act
+	result, err := provider.GetBalance("hoge", "latest")
 
-			patches.ApplyFunc(
-				utils.FromBigHex,
-				func(s string) (*big.Int, error) {
-					return big.NewInt(1234), nil
-				},
-			)
-			// Act
-			result, err := provider.GetBalance("hoge", "latest")
-
-			// Assert
-			assert.NoError(t, err)
-			assert.Equal(t, big.NewInt(1234), result)
-		})
-	})
-
-	t.Run("error case:", func(t *testing.T) {
-		t.Run("if failed to validate block tag -> core.ErrInvalidBlockTag", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Act
-			_, err := provider.GetBalance("hoge", "unexpected")
-
-			// Assert
-			assert.ErrorIs(t, core.ErrInvalidBlockTag, err)
-		})
-
-		t.Run("if failed to send request -> core.ErrFailedToConnect", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Act
-			_, err := provider.GetBalance("hoge", "latest")
-
-			// Assert
-			assert.ErrorIs(t, core.ErrFailedToConnect, err)
-		})
-
-		t.Run("if failed from hex -> error", func(t *testing.T) {
-			httpmock.Activate(t)
-			patches := gomonkey.NewPatches()
-			defer func() {
-				httpmock.DeactivateAndReset()
-				patches.Reset()
-			}()
-
-			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				provider.config.GetUrl(),
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
-			)
-
-			patches.ApplyFunc(
-				utils.FromBigHex,
-				func(s string) (*big.Int, error) {
-					return big.NewInt(0), core.ErrInvalidHexString
-				},
-			)
-			// Act
-			_, err := provider.GetBalance("hoge", "latest")
-
-			// Assert
-			assert.ErrorIs(t, core.ErrInvalidHexString, err)
-		})
-	})
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, big.NewInt(1234), result)
 }
 
 func TestAlchemyProvider_Send(t *testing.T) {

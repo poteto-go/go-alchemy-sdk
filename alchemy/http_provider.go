@@ -4,10 +4,10 @@ import (
 	"context"
 	"math/big"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -43,50 +43,15 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 }
 
 func (provider *AlchemyProvider) GetBlockNumber() (int, error) {
-	blockNumberHex, err := provider.Send(core.Eth_BlockNumber)
-	if err != nil {
-		return 0, err
-	}
-
-	blockNumber, err := utils.FromHex(blockNumberHex)
-	if err != nil {
-		return 0, err
-	}
-	return blockNumber, nil
+	return ether.GetBlockNumber(provider)
 }
 
 func (provider *AlchemyProvider) GetGasPrice() (int, error) {
-	priceHex, err := provider.Send(core.Eth_GasPrice)
-	if err != nil {
-		return 0, err
-	}
-
-	price, err := utils.FromHex(priceHex)
-	if err != nil {
-		return 0, err
-	}
-	return price, nil
+	return ether.GetGasPrice(provider)
 }
 
 func (provider *AlchemyProvider) GetBalance(address string, blockTag string) (*big.Int, error) {
-	if err := utils.ValidateBlockTag(blockTag); err != nil {
-		return big.NewInt(0), err
-	}
-
-	balanceHex, err := provider.Send(
-		core.Eth_GetBalance,
-		strings.ToLower(address),
-		blockTag,
-	)
-	if err != nil {
-		return big.NewInt(0), err
-	}
-
-	balance, err := utils.FromBigHex(balanceHex)
-	if err != nil {
-		return big.NewInt(0), err
-	}
-	return balance, nil
+	return ether.GetBalance(provider, address, blockTag)
 }
 
 func (provider *AlchemyProvider) Send(method string, params ...string) (string, error) {
