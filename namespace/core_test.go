@@ -8,6 +8,7 @@ import (
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/poteto-go/go-alchemy-sdk/alchemy"
+	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,9 @@ func newProvider() types.IAlchemyProvider {
 	setting := alchemy.AlchemySetting{
 		ApiKey:  "hoge",
 		Network: "fuga",
+		BackoffConfig: &internal.BackoffConfig{
+			MaxRetries: 0,
+		},
 	}
 	config := alchemy.NewAlchemyConfig(setting)
 	return alchemy.NewAlchemyProvider(config)

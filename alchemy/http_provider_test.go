@@ -227,7 +227,7 @@ func TestAlchemyProvider_GetBalance(t *testing.T) {
 				},
 			)
 			// Act
-			result, err := provider.GetBalance("hoge", "fuga")
+			result, err := provider.GetBalance("hoge", "latest")
 
 			// Assert
 			assert.NoError(t, err)
@@ -236,12 +236,23 @@ func TestAlchemyProvider_GetBalance(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
+		t.Run("if failed to validate block tag -> core.ErrInvalidBlockTag", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Act
+			_, err := provider.GetBalance("hoge", "unexpected")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrInvalidBlockTag, err)
+		})
+
 		t.Run("if failed to send request -> core.ErrFailedToConnect", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
 			// Act
-			_, err := provider.GetBalance("hoge", "fuga")
+			_, err := provider.GetBalance("hoge", "latest")
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -269,7 +280,7 @@ func TestAlchemyProvider_GetBalance(t *testing.T) {
 				},
 			)
 			// Act
-			_, err := provider.GetBalance("hoge", "fuga")
+			_, err := provider.GetBalance("hoge", "latest")
 
 			// Assert
 			assert.ErrorIs(t, core.ErrInvalidHexString, err)
