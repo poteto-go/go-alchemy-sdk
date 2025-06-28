@@ -69,6 +69,10 @@ func (provider *AlchemyProvider) GetGasPrice() (int, error) {
 }
 
 func (provider *AlchemyProvider) GetBalance(address string, blockTag string) (*big.Int, error) {
+	if err := utils.ValidateBlockTag(blockTag); err != nil {
+		return big.NewInt(0), err
+	}
+
 	balanceHex, err := provider.Send(
 		core.Eth_GetBalance,
 		strings.ToLower(address),

@@ -12,4 +12,5 @@ var (
 	ErrRequestTimeoutTooShort    = errors.New("request timeout should be longer than batch timeout")
 	ErrRequestTimeout            = errors.New("request timeout")
 	ErrOverMaxRetries            = errors.New("over max retries")
+	ErrInvalidBlockTag           = errors.New("invalid block tag")
 )
