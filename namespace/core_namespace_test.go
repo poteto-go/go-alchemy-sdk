@@ -219,3 +219,130 @@ func TestCore_GetBalance(t *testing.T) {
 		})
 	})
 }
+
+func TestCore_GetCode(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call ether.GetCode", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expected := "0x123"
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetCode",
+				func(_ *ether.Ether, _address string, _blockTag string) (string, error) {
+					return expected, nil
+				},
+			)
+
+			// Act
+			actual, err := core.GetCode("0x123", "latest")
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expected, actual)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if ether occur error, return empty string & error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expected := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetCode",
+				func(_ *ether.Ether, _address string, _blockTag string) (string, error) {
+					return "", expected
+				},
+			)
+
+			// Act
+			actual, err := core.GetCode("0x123", "latest")
+
+			// Assert
+			assert.ErrorIs(t, expected, err)
+			assert.Equal(t, "", actual)
+		})
+	})
+}
+
+func TestCore_IsContractAddress(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("call with latest & if valid code hexString, return true", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(core),
+			"GetCode",
+			func(_ *namespace.Core, _ string, blockTag string) (string, error) {
+				assert.Equal(t, "latest", blockTag)
+				return "0x123", nil
+			},
+		)
+
+		// Act
+		actual := core.IsContractAddress("address")
+
+		// Assert
+		assert.True(t, actual)
+	})
+
+	t.Run("call with latest & if 0x, return false", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(core),
+			"GetCode",
+			func(_ *namespace.Core, _ string, blockTag string) (string, error) {
+				assert.Equal(t, "latest", blockTag)
+				return "0x", nil
+			},
+		)
+
+		// Act
+		actual := core.IsContractAddress("address")
+
+		// Assert
+		assert.False(t, actual)
+	})
+
+	t.Run("call with latest & if error, return false", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(core),
+			"GetCode",
+			func(_ *namespace.Core, _ string, blockTag string) (string, error) {
+				assert.Equal(t, "latest", blockTag)
+				return "", errors.New("error")
+			},
+		)
+
+		// Act
+		actual := core.IsContractAddress("address")
+
+		// Assert
+		assert.False(t, actual)
+	})
+}
