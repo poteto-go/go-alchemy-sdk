@@ -18,6 +18,12 @@ type EtherApi interface {
 
 	/* Returns the balance of a given address as of the provided block. */
 	GetBalance(address string, blockTag string) (*big.Int, error)
+
+	/*
+		Returns the contract code of the provided address at the block.
+		If there is no contract deployed, the result is 0x.
+	*/
+	GetCode(address, blockTag string) (string, error)
 }
 
 type Ether struct {
@@ -75,4 +81,21 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 		return big.NewInt(0), err
 	}
 	return balance, nil
+}
+
+func (ether *Ether) GetCode(address, blockTag string) (string, error) {
+	if err := utils.ValidateBlockTag(blockTag); err != nil {
+		return "", err
+	}
+
+	code, err := ether.provider.Send(
+		core.Eth_GetCode,
+		strings.ToLower(address),
+		blockTag,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return code, nil
 }

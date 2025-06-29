@@ -15,6 +15,12 @@ type ICore interface {
 
 	/* Returns the balance of a given address as of the provided block. */
 	GetBalance(address string, blockTag string) (*big.Int, error)
+
+	/*
+		Returns the contract code of the provided address at the block.
+		If there is no contract deployed, the result is 0x.
+	*/
+	GetCode(address, blockTag string) (string, error)
 }
 
 type Core struct {
@@ -49,4 +55,12 @@ func (c *Core) GetBalance(address string, blockTag string) (*big.Int, error) {
 		return big.NewInt(0), err
 	}
 	return balance, nil
+}
+
+func (c *Core) GetCode(address, blockTag string) (string, error) {
+	hexCode, err := c.ether.GetCode(address, blockTag)
+	if err != nil {
+		return "", err
+	}
+	return hexCode, nil
 }
