@@ -7,7 +7,7 @@ If there is no contract deployed, the result is 0x.
 
 ### Behavior
 
-- [ ] normal case
+- [x] normal case
 
   - [x] if exist, return code hex string
     - [x] temp impl
@@ -45,3 +45,9 @@ If there is no contract deployed, the result is 0x.
 Checks if the provided address is a smart contract.
 
 ### Behavior
+
+- [x] common check
+  - blockTag == "latest" on `Core.GetCode`
+- [x] if has valid code hexString (!="0x") return true
+- [x] if invalid code hexString (=="0x") return false
+- [x] if error occur in `Core.GetCode`, return false
