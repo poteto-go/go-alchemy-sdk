@@ -121,7 +121,7 @@ func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, erro
 
 	var txRaw types.TransactionRawResponse
 	if err := json.Unmarshal([]byte(result), &txRaw); err != nil {
-		return types.TransactionResponse{}, err
+		return types.TransactionResponse{}, core.ErrFailedToUnmarshalTransaction
 	}
 
 	tx, err := utils.TransformTransaction(txRaw)
