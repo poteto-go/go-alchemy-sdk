@@ -281,7 +281,7 @@ func TestGetBalance(t *testing.T) {
 func TestEther_GetCode(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := newEtherApiForTest()
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("call eth_getCode & if contract exist, return hex string of code", func(t *testing.T) {
