@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/poteto-go/go-alchemy-sdk/ether"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 type ICore interface {
@@ -24,6 +25,18 @@ type ICore interface {
 
 	/* Checks if the provided address is a smart contract. */
 	IsContractAddress(address string) bool
+
+	/*
+		Returns the transaction with hash or null if the transaction is unknown.
+
+		If a transaction has not been mined, this method will search the
+		transaction pool. Various backends may have more restrictive transaction
+		pool access (e.g. if the gas price is too low or the transaction was only
+		recently sent and not yet indexed) in which case this method may also return null.
+
+		NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
+	*/
+	GetTransaction(hash string) (types.TransactionResponse, error)
 }
 
 type Core struct {
@@ -83,4 +96,23 @@ func (c *Core) IsContractAddress(address string) bool {
 	}
 
 	return hexCode != "0x"
+}
+
+/*
+Returns the transaction with hash or null if the transaction is unknown.
+
+If a transaction has not been mined, this method will search the
+transaction pool. Various backends may have more restrictive transaction
+pool access (e.g. if the gas price is too low or the transaction was only
+recently sent and not yet indexed) in which case this method may also return null.
+
+NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
+*/
+func (c *Core) GetTransaction(hash string) (types.TransactionResponse, error) {
+	transaction, err := c.ether.GetTransaction(hash)
+	if err != nil {
+		return types.TransactionResponse{}, nil
+	}
+
+	return transaction, nil
 }

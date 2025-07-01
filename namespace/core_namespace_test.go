@@ -289,9 +289,9 @@ func TestCore_IsContractAddress(t *testing.T) {
 
 		// Mock & Assert
 		patches.ApplyMethod(
-			reflect.TypeOf(core),
+			reflect.TypeOf(api),
 			"GetCode",
-			func(_ *namespace.Core, _ string, blockTag string) (string, error) {
+			func(_ *ether.Ether, _ string, blockTag string) (string, error) {
 				assert.Equal(t, "latest", blockTag)
 				return "0x123", nil
 			},
@@ -310,9 +310,9 @@ func TestCore_IsContractAddress(t *testing.T) {
 
 		// Mock & Assert
 		patches.ApplyMethod(
-			reflect.TypeOf(core),
+			reflect.TypeOf(api),
 			"GetCode",
-			func(_ *namespace.Core, _ string, blockTag string) (string, error) {
+			func(_ *ether.Ether, _ string, blockTag string) (string, error) {
 				assert.Equal(t, "latest", blockTag)
 				return "0x", nil
 			},
@@ -331,9 +331,9 @@ func TestCore_IsContractAddress(t *testing.T) {
 
 		// Mock & Assert
 		patches.ApplyMethod(
-			reflect.TypeOf(core),
+			reflect.TypeOf(api),
 			"GetCode",
-			func(_ *namespace.Core, _ string, blockTag string) (string, error) {
+			func(_ *ether.Ether, _ string, blockTag string) (string, error) {
 				assert.Equal(t, "latest", blockTag)
 				return "", errors.New("error")
 			},

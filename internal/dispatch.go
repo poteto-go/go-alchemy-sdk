@@ -1,6 +1,8 @@
 package internal
 
-import "github.com/poteto-go/go-alchemy-sdk/types"
+import (
+	"github.com/poteto-go/go-alchemy-sdk/types"
+)
 
 func RequestHttpWithBackoff(
 	backoffConfig BackoffConfig,
