@@ -23,7 +23,7 @@ type AlchemyRequestBody struct {
 type AlchemyResponse struct {
 	Jsonrpc string `json:"jsonrpc"`
 	Id      int    `json:"id"`
-	Result  string `json:"result"`
+	Result  any    `json:"result"`
 	Error   error  `json:"-"`
 }
 

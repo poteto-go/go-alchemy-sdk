@@ -1,6 +1,8 @@
 package ether_test
 
 import (
+	"encoding/json"
+	"errors"
 	"math/big"
 	"reflect"
 	"testing"
@@ -11,6 +13,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -278,7 +281,7 @@ func TestGetBalance(t *testing.T) {
 func TestEther_GetCode(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := newEtherApiForTest()
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("call eth_getCode & if contract exist, return hex string of code", func(t *testing.T) {
@@ -347,6 +350,156 @@ func TestEther_GetCode(t *testing.T) {
 
 			// Assert
 			assert.Error(t, err)
+		})
+	})
+}
+
+func TestEther_GetTransaction(t *testing.T) {
+	// Arrange
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call eth_getTransactionByHash & return transaction", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedTransaction := types.TransactionResponse{
+				BlockHash:   "0x1",
+				Index:       1,
+				BlockNumber: 2,
+				From:        "0x3",
+				To:          "0x4",
+				GasLimit:    big.NewInt(5),
+				GasPrice:    big.NewInt(6),
+				Hash:        "0x7",
+				Data:        "0x8",
+				Nonce:       9,
+				Type:        17,
+				Value:       big.NewInt(10),
+				ChainID:     11,
+				Signature: types.Signature{
+					R: "0xd",
+					S: "0xe",
+					V: big.NewInt(12),
+				},
+				MaxPriorityFeePerGas: big.NewInt(0),
+				MaxFeePerGas:         big.NewInt(0),
+				AccessList:           []string{},
+				BlobVersionedHashes:  []string{},
+				AuthorizationList:    []string{},
+			}
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					assert.Equal(t, core.Eth_GetTransactionByHash, method)
+					return `{"hello": "world"}`, nil
+				},
+			)
+			patches.ApplyFunc(
+				utils.TransformTransaction,
+				func(rawTx types.TransactionRawResponse) (types.TransactionResponse, error) {
+					return expectedTransaction, nil
+				},
+			)
+
+			// Act
+			actual, err := ether.GetTransaction("hoge")
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expectedTransaction, actual)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if invalid send, throw error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					assert.Equal(t, core.Eth_GetTransactionByHash, method)
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetTransaction("hoge")
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+
+		t.Run("if error on unmarshal, throw core.ErrFailedToUnmarshalTransaction", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					return `{"hello": "world"}`, nil
+				},
+			)
+			patches.ApplyFunc(
+				json.Unmarshal,
+				func(data []byte, v any) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.GetTransaction("hoge")
+
+			// Assert
+			assert.ErrorIs(t, err, core.ErrFailedToUnmarshalTransaction)
+		})
+
+		t.Run("if error on transform, throw error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					return `{"hello": "world"}`, nil
+				},
+			)
+			patches.ApplyFunc(
+				json.Unmarshal,
+				func(data []byte, v any) error {
+					return nil
+				},
+			)
+			patches.ApplyFunc(
+				utils.TransformTransaction,
+				func(rawTx types.TransactionRawResponse) (types.TransactionResponse, error) {
+					return types.TransactionResponse{}, expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetTransaction("hoge")
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
 		})
 	})
 }

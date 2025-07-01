@@ -2,6 +2,7 @@ package alchemy
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -74,10 +75,10 @@ func (provider *AlchemyProvider) send(method string, params ...string) (string, 
 			return "", err
 		}
 		provider.id++
-		return response.Result, nil
+		return fmt.Sprintf("%v", response.Result), nil
 	}
 
-	result, err := internal.RequestHttpWithBackoff(
+	response, err := internal.RequestHttpWithBackoff(
 		*provider.config.backoffConfig,
 		types.RequestConfig{
 			Timeout: provider.config.requestTimeout,
@@ -91,5 +92,5 @@ func (provider *AlchemyProvider) send(method string, params ...string) (string, 
 
 	provider.id++
 
-	return result.Result, nil
+	return fmt.Sprintf("%v", response.Result), nil
 }

@@ -1,6 +1,7 @@
 package ether
 
 import (
+	"encoding/json"
 	"math/big"
 	"strings"
 
@@ -24,6 +25,18 @@ type EtherApi interface {
 		If there is no contract deployed, the result is 0x.
 	*/
 	GetCode(address, blockTag string) (string, error)
+
+	/*
+		Returns the transaction with hash or null if the transaction is unknown.
+
+		If a transaction has not been mined, this method will search the
+		transaction pool. Various backends may have more restrictive transaction
+		pool access (e.g. if the gas price is too low or the transaction was only
+		recently sent and not yet indexed) in which case this method may also return null.
+
+		NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
+	*/
+	GetTransaction(hash string) (types.TransactionResponse, error)
 }
 
 type Ether struct {
@@ -98,4 +111,23 @@ func (ether *Ether) GetCode(address, blockTag string) (string, error) {
 	}
 
 	return code, nil
+}
+
+func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, error) {
+	result, err := ether.provider.Send(core.Eth_GetTransactionByHash, hash)
+	if err != nil {
+		return types.TransactionResponse{}, err
+	}
+
+	var txRaw types.TransactionRawResponse
+	if err := json.Unmarshal([]byte(result), &txRaw); err != nil {
+		return types.TransactionResponse{}, core.ErrFailedToUnmarshalTransaction
+	}
+
+	tx, err := utils.TransformTransaction(txRaw)
+	if err != nil {
+		return types.TransactionResponse{}, err
+	}
+
+	return tx, nil
 }
