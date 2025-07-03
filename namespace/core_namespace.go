@@ -37,6 +37,12 @@ type ICore interface {
 		NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
 	*/
 	GetTransaction(hash string) (types.TransactionResponse, error)
+
+	/*
+		Return the value of the provided position at the provided address, at the provided block in `Bytes32` format.
+		For inspecting solidity code.
+	*/
+	GetStorageAt(address, position, blockTag string) (string, error)
 }
 
 type Core struct {
@@ -115,4 +121,12 @@ func (c *Core) GetTransaction(hash string) (types.TransactionResponse, error) {
 	}
 
 	return transaction, nil
+}
+
+func (c *Core) GetStorageAt(address, position, blockTag string) (string, error) {
+	value, err := c.ether.GetStorageAt(address, position, blockTag)
+	if err != nil {
+		return "", err
+	}
+	return value, nil
 }

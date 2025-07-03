@@ -37,6 +37,12 @@ type EtherApi interface {
 		NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
 	*/
 	GetTransaction(hash string) (types.TransactionResponse, error)
+
+	/*
+		Return the value of the provided position at the provided address, at the provided block in `Bytes32` format.
+		For inspecting solidity code.
+	*/
+	GetStorageAt(address, position, blockTag string) (string, error)
 }
 
 type Ether struct {
@@ -130,4 +136,22 @@ func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, erro
 	}
 
 	return tx, nil
+}
+
+func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, error) {
+	if err := utils.ValidateBlockTag(blockTag); err != nil {
+		return "", err
+	}
+
+	result, err := ether.provider.Send(
+		core.Eth_GetStorageAt,
+		strings.ToLower(address),
+		position,
+		blockTag,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 }

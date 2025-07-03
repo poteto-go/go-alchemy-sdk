@@ -503,3 +503,68 @@ func TestEther_GetTransaction(t *testing.T) {
 		})
 	})
 }
+
+func TestEther_GetStorageAt(t *testing.T) {
+	// Arrange
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call eth_getStorageAt & return provided block", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expected := "0xffff"
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					assert.Equal(t, core.Eth_GetStorageAt, method)
+					return expected, nil
+				},
+			)
+
+			// Act
+			actual, _ := ether.GetStorageAt("0x", "0x", "latest")
+
+			// Assert
+			assert.Equal(t, expected, actual)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if error occur, return error internal", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetStorageAt("0x", "0x", "latest")
+
+			// Assert
+			assert.ErrorIs(t, expectedErr, err)
+		})
+
+		t.Run("if invalid blockTag, return error", func(t *testing.T) {
+			// Act
+			_, err := ether.GetStorageAt("0x", "0x", "unxpected")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrInvalidBlockTag, err)
+		})
+	})
+}

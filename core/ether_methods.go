@@ -6,4 +6,5 @@ var (
 	Eth_GetBalance           = "eth_getBalance"
 	Eth_GetCode              = "eth_getCode"
 	Eth_GetTransactionByHash = "eth_getTransactionByHash"
+	Eth_GetStorageAt         = "eth_getStorageAt"
 )
