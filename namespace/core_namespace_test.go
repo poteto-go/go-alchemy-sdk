@@ -346,3 +346,55 @@ func TestCore_IsContractAddress(t *testing.T) {
 		assert.False(t, actual)
 	})
 }
+
+func TestCore_GetStorageAt(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("call Ether.GetStorageAt & return result", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expected := "0x123"
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetStorageAt",
+			func(_ *ether.Ether, _ string, _ string, _ string) (string, error) {
+				return expected, nil
+			},
+		)
+
+		// Act
+		actual, _ := core.GetStorageAt("address", "0", "latest")
+
+		// Assert
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("call Ether.GetStorageAt & return internal error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expectedErr := errors.New("error")
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetStorageAt",
+			func(_ *ether.Ether, _ string, _ string, _ string) (string, error) {
+				return "", expectedErr
+			},
+		)
+
+		// Act
+		_, err := core.GetStorageAt("address", "0", "latest")
+
+		// Assert
+		assert.ErrorIs(t, expectedErr, err)
+	})
+}
