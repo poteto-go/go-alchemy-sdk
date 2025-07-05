@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/goccy/go-json"
+	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/jarcoal/httpmock"
@@ -37,7 +37,7 @@ func newProviderForTest() *alchemy.AlchemyProvider {
 	return alchemy.NewAlchemyProvider(config).(*alchemy.AlchemyProvider)
 }
 
-func TestGetBlockNumber(t *testing.T) {
+func TestEther_GetBlockNumber(t *testing.T) {
 	// Arrange
 	ether := newEtherApiForTest()
 
@@ -114,7 +114,7 @@ func TestGetBlockNumber(t *testing.T) {
 	})
 }
 
-func TestGetGasPrice(t *testing.T) {
+func TestEther_GetGasPrice(t *testing.T) {
 	// Arrange
 	ether := newEtherApiForTest()
 
@@ -191,7 +191,7 @@ func TestGetGasPrice(t *testing.T) {
 	})
 }
 
-func TestGetBalance(t *testing.T) {
+func TestEther_GetBalance(t *testing.T) {
 	// Arrange
 	ether := newEtherApiForTest()
 
@@ -296,7 +296,7 @@ func TestEther_GetCode(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					assert.Equal(t, core.Eth_GetCode, method)
 					return expected, nil
 				},
@@ -321,7 +321,7 @@ func TestEther_GetCode(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					assert.Equal(t, core.Eth_GetCode, method)
 					return "0x", nil
 				},
@@ -396,9 +396,15 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					assert.Equal(t, core.Eth_GetTransactionByHash, method)
 					return `{"hello": "world"}`, nil
+				},
+			)
+			patches.ApplyFunc(
+				mapstructure.Decode,
+				func(_ any, _ any) error {
+					return nil
 				},
 			)
 			patches.ApplyFunc(
@@ -429,7 +435,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					assert.Equal(t, core.Eth_GetTransactionByHash, method)
 					return "", expectedErr
 				},
@@ -442,7 +448,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			assert.ErrorIs(t, err, expectedErr)
 		})
 
-		t.Run("if error on unmarshal, throw core.ErrFailedToUnmarshalTransaction", func(t *testing.T) {
+		t.Run("if error on mapstructure, throw core.ErrFailedToMapTransaction", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -450,13 +456,13 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					return `invalid json`, nil
 				},
 			)
 			patches.ApplyFunc(
-				json.Unmarshal,
-				func(data []byte, v any) error {
+				mapstructure.Decode,
+				func(_ any, _ any) error {
 					return errors.New("error")
 				},
 			)
@@ -465,7 +471,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			_, err := ether.GetTransaction("hoge")
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToUnmarshalTransaction)
+			assert.ErrorIs(t, err, core.ErrFailedToMapTransaction)
 		})
 
 		t.Run("if error on transform, throw error", func(t *testing.T) {
@@ -479,13 +485,13 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					return `{"hello": "world"}`, nil
 				},
 			)
 			patches.ApplyFunc(
-				json.Unmarshal,
-				func(data []byte, v any) error {
+				mapstructure.Decode,
+				func(_ any, _ any) error {
 					return nil
 				},
 			)
@@ -522,7 +528,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					assert.Equal(t, core.Eth_GetStorageAt, method)
 					return expected, nil
 				},
@@ -548,7 +554,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -574,18 +580,26 @@ func TestEther_GetTokenBalances(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
 	ether := ether.NewEtherApi(provider).(*ether.Ether)
-	expected := `
-	{
+	expectedResponse := map[string]any{
 		"address": "0x123",
-		"tokenBalances": [
+		"tokenBalances": []map[string]any{
 			{
 				"contractAddress": "0x456",
-				"tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
-				"error":null,
-			}
-		]
+				"tokenBalance":    "0x0000000000000000000000000000000000000000000000000000000000000000",
+				"error":           nil,
+			},
+		},
 	}
-	`
+	expected := types.TokenBalanceResponse{
+		Address: "0x123",
+		TokenBalances: []types.TokenBalance{
+			{
+				ContractAddress: "0x456",
+				TokenBalance:    "0x0000000000000000000000000000000000000000000000000000000000000000",
+				Error:           nil,
+			},
+		},
+	}
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("call with alchemy_getTokenBalances and params & return provided block", func(t *testing.T) {
@@ -599,9 +613,9 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
-					return expected, nil
+					return expectedResponse, nil
 				},
 			)
 
@@ -620,9 +634,9 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
-					return expected, nil
+					return expectedResponse, nil
 				},
 			)
 
@@ -631,6 +645,49 @@ func TestEther_GetTokenBalances(t *testing.T) {
 
 			// Assert
 			assert.Equal(t, expected, actual)
+		})
+
+		t.Run("mapping included error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErrResponse := map[string]any{
+				"address": "0x123",
+				"tokenBalances": []map[string]any{
+					{
+						"contractAddress": "0x456",
+						"tokenBalance":    "0x0000000000000000000000000000000000000000000000000000000000000000",
+						"error":           "error",
+					},
+				},
+			}
+			expectedWithErr := types.TokenBalanceResponse{
+				Address: "0x123",
+				TokenBalances: []types.TokenBalance{
+					{
+						ContractAddress: "0x456",
+						TokenBalance:    "0x0000000000000000000000000000000000000000000000000000000000000000",
+						Error:           errors.New("error"),
+					},
+				},
+			}
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
+					return expectedErrResponse, nil
+				},
+			)
+
+			// Act
+			actual, _ := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.Equal(t, expectedWithErr, actual)
 		})
 	})
 
@@ -646,7 +703,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -656,6 +713,33 @@ func TestEther_GetTokenBalances(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, expectedErr, err)
+		})
+
+		t.Run("mapstructure error, return core.ErrFailedToMapTokenResponse", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
+					return expectedResponse, nil
+				},
+			)
+			patches.ApplyFunc(
+				mapstructure.Decode,
+				func(_ any, _ any) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrFailedToMapTokenResponse, err)
 		})
 	})
 }

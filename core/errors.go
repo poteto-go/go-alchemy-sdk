@@ -9,6 +9,8 @@ var (
 	ErrFailedToConnect              = errors.New("failed to connect")
 	ErrFailedToUnmarshalResponse    = errors.New("failed to unmarshal response")
 	ErrFailedToUnmarshalTransaction = errors.New("failed to unmarshal transaction")
+	ErrFailedToMapTransaction       = errors.New("failed to map transaction")
+	ErrFailedToMapTokenResponse     = errors.New("failed to map token response")
 	ErrBatcherNotRunning            = errors.New("batcher not running")
 	ErrRequestTimeoutTooShort       = errors.New("request timeout should be longer than batch timeout")
 	ErrRequestTimeout               = errors.New("request timeout")

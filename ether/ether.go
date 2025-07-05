@@ -1,10 +1,11 @@
 package ether
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
-	"github.com/goccy/go-json"
+	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -48,7 +49,7 @@ type EtherApi interface {
 	/*
 		Returns the ERC-20 token balances for a specific owner address w, w/o params
 	*/
-	GetTokenBalances(address string, params ...string) (string, error)
+	GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error)
 }
 
 type Ether struct {
@@ -67,7 +68,7 @@ func (ether *Ether) GetBlockNumber() (int, error) {
 		return 0, err
 	}
 
-	blockNumber, err := utils.FromHex(blockNumberHex)
+	blockNumber, err := utils.FromHex(blockNumberHex.(string))
 	if err != nil {
 		return 0, err
 	}
@@ -80,7 +81,7 @@ func (ether *Ether) GetGasPrice() (int, error) {
 		return 0, err
 	}
 
-	price, err := utils.FromHex(priceHex)
+	price, err := utils.FromHex(priceHex.(string))
 	if err != nil {
 		return 0, err
 	}
@@ -101,7 +102,7 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 		return big.NewInt(0), err
 	}
 
-	balance, err := utils.FromBigHex(balanceHex)
+	balance, err := utils.FromBigHex(balanceHex.(string))
 	if err != nil {
 		return big.NewInt(0), err
 	}
@@ -122,7 +123,7 @@ func (ether *Ether) GetCode(address, blockTag string) (string, error) {
 		return "", err
 	}
 
-	return code, nil
+	return code.(string), nil
 }
 
 func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, error) {
@@ -132,8 +133,8 @@ func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, erro
 	}
 
 	var txRaw types.TransactionRawResponse
-	if err := json.Unmarshal([]byte(result), &txRaw); err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToUnmarshalTransaction
+	if err := mapstructure.Decode(result, &txRaw); err != nil {
+		return types.TransactionResponse{}, core.ErrFailedToMapTransaction
 	}
 
 	tx, err := utils.TransformTransaction(txRaw)
@@ -159,10 +160,10 @@ func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, er
 		return "", err
 	}
 
-	return result, nil
+	return result.(string), nil
 }
 
-func (ether *Ether) GetTokenBalances(address string, params ...string) (string, error) {
+func (ether *Ether) GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error) {
 	params = append([]string{address}, params...)
 
 	result, err := ether.provider.Send(
@@ -170,8 +171,22 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (string, 
 		params...,
 	)
 	if err != nil {
-		return "", err
+		return types.TokenBalanceResponse{}, err
 	}
 
-	return result, nil
+	resultMap := result.(map[string]any)
+	if balances, ok := resultMap["tokenBalances"]; ok {
+		for _, balance := range balances.([]map[string]any) {
+			if errStr, ok := balance["error"]; ok && errStr != nil {
+				balance["error"] = errors.New(errStr.(string))
+			}
+		}
+	}
+
+	var tokenBalanceResponse types.TokenBalanceResponse
+	if err := mapstructure.Decode(resultMap, &tokenBalanceResponse); err != nil {
+		return types.TokenBalanceResponse{}, core.ErrFailedToMapTokenResponse
+	}
+
+	return tokenBalanceResponse, nil
 }

@@ -3,8 +3,6 @@ package namespace
 import (
 	"math/big"
 
-	"github.com/goccy/go-json"
-	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
@@ -133,10 +131,5 @@ func (c *Core) GetTokenBalances(address string, option *types.TokenBalanceOption
 		return types.TokenBalanceResponse{}, err
 	}
 
-	tokenBalanceResponse := types.TokenBalanceResponse{}
-	if err := json.Unmarshal([]byte(result), &tokenBalanceResponse); err != nil {
-		return types.TokenBalanceResponse{}, core.ErrFailedToUnmarshalResponse
-	}
-
-	return tokenBalanceResponse, nil
+	return result, nil
 }

@@ -29,7 +29,7 @@ type AlchemyResponse struct {
 
 type IAlchemyProvider interface {
 	/* Send raw transaction */
-	Send(method string, params ...string) (string, error)
+	Send(method string, params ...string) (any, error)
 }
 
 type AlchemyFetchHandler func(AlchemyRequest, RequestConfig) (AlchemyResponse, error)
