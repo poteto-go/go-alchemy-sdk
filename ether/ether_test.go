@@ -582,8 +582,8 @@ func TestEther_GetTokenBalances(t *testing.T) {
 	ether := ether.NewEtherApi(provider).(*ether.Ether)
 	expectedResponse := map[string]any{
 		"address": "0x123",
-		"tokenBalances": []any{
-			map[string]any{
+		"tokenBalances": []map[string]any{
+			{
 				"contractAddress": "0x456",
 				"tokenBalance":    "0x0000000000000000000000000000000000000000000000000000000000000000",
 				"error":           nil,
@@ -645,6 +645,49 @@ func TestEther_GetTokenBalances(t *testing.T) {
 
 			// Assert
 			assert.Equal(t, expected, actual)
+		})
+
+		t.Run("mapping included error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErrResponse := map[string]any{
+				"address": "0x123",
+				"tokenBalances": []map[string]any{
+					{
+						"contractAddress": "0x456",
+						"tokenBalance":    "0x0000000000000000000000000000000000000000000000000000000000000000",
+						"error":           "error",
+					},
+				},
+			}
+			expectedWithErr := types.TokenBalanceResponse{
+				Address: "0x123",
+				TokenBalances: []types.TokenBalance{
+					{
+						ContractAddress: "0x456",
+						TokenBalance:    "0x0000000000000000000000000000000000000000000000000000000000000000",
+						Error:           errors.New("error"),
+					},
+				},
+			}
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
+					return expectedErrResponse, nil
+				},
+			)
+
+			// Act
+			actual, _ := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.Equal(t, expectedWithErr, actual)
 		})
 	})
 

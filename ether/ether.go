@@ -1,6 +1,7 @@
 package ether
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
@@ -173,8 +174,17 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 		return types.TokenBalanceResponse{}, err
 	}
 
+	resultMap := result.(map[string]any)
+	if balances, ok := resultMap["tokenBalances"]; ok {
+		for _, balance := range balances.([]map[string]any) {
+			if errStr, ok := balance["error"]; ok && errStr != nil {
+				balance["error"] = errors.New(errStr.(string))
+			}
+		}
+	}
+
 	var tokenBalanceResponse types.TokenBalanceResponse
-	if err := mapstructure.Decode(result, &tokenBalanceResponse); err != nil {
+	if err := mapstructure.Decode(resultMap, &tokenBalanceResponse); err != nil {
 		return types.TokenBalanceResponse{}, core.ErrFailedToMapTokenResponse
 	}
 
