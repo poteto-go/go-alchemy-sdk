@@ -451,7 +451,7 @@ func TestEther_GetTransaction(t *testing.T) {
 				reflect.TypeOf(provider),
 				"Send",
 				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
-					return `{"hello": "world"}`, nil
+					return `invalid json`, nil
 				},
 			)
 			patches.ApplyFunc(

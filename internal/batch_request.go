@@ -40,17 +40,26 @@ func NewRequestBatcher(
 	return batcher
 }
 
-func (b *RequestBatcher) QueueRequest(request types.AlchemyRequest) (types.AlchemyResponse, error) {
+func (b *RequestBatcher) QueueRequest(ctx context.Context, request types.AlchemyRequest) (types.AlchemyResponse, error) {
 	responseChan := make(chan types.AlchemyResponse, 1)
-	b.requestQueue <- QueuedRequest{
+	select {
+	case <-ctx.Done():
+		return types.AlchemyResponse{}, ctx.Err()
+	case b.requestQueue <- QueuedRequest{
 		Request:  request,
 		Response: responseChan,
+	}:
 	}
-	response := <-responseChan
-	if response.Error != nil {
-		return types.AlchemyResponse{}, response.Error
+
+	select {
+	case <-ctx.Done():
+		return types.AlchemyResponse{}, ctx.Err()
+	case response := <-responseChan:
+		if response.Error != nil {
+			return types.AlchemyResponse{}, response.Error
+		}
+		return response, nil
 	}
-	return response, nil
 }
 
 func (b *RequestBatcher) processQueue(ctx context.Context) {
@@ -60,6 +69,7 @@ func (b *RequestBatcher) processQueue(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			b.flushWithError(batch, ctx.Err())
 			return
 		case req := <-b.requestQueue:
 			batch = append(batch, req)
@@ -106,5 +116,11 @@ func (b *RequestBatcher) flush(batch []QueuedRequest) {
 		} else {
 			req.Response <- types.AlchemyResponse{Error: types.ErrNoResultFound}
 		}
+	}
+}
+
+func (b *RequestBatcher) flushWithError(batch []QueuedRequest, err error) {
+	for _, req := range batch {
+		req.Response <- types.AlchemyResponse{Error: err}
 	}
 }
