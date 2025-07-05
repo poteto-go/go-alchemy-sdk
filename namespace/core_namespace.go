@@ -3,6 +3,8 @@ package namespace
 import (
 	"math/big"
 
+	"github.com/goccy/go-json"
+	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
@@ -43,6 +45,11 @@ type ICore interface {
 		For inspecting solidity code.
 	*/
 	GetStorageAt(address, position, blockTag string) (string, error)
+
+	/*
+		Returns the ERC-20 token balances for a specific owner address
+	*/
+	GetTokenBalances(address string, option *types.TokenBalanceOption) (types.TokenBalanceResponse, error)
 }
 
 type Core struct {
@@ -128,5 +135,25 @@ func (c *Core) GetStorageAt(address, position, blockTag string) (string, error) 
 	if err != nil {
 		return "", err
 	}
+
 	return value, nil
+}
+
+func (c *Core) GetTokenBalances(address string, option *types.TokenBalanceOption) (types.TokenBalanceResponse, error) {
+	params := []string{}
+	if option != nil {
+		params = option.ContractAddresses
+	}
+
+	result, err := c.ether.GetTokenBalances(address, params...)
+	if err != nil {
+		return types.TokenBalanceResponse{}, err
+	}
+
+	tokenBalanceResponse := types.TokenBalanceResponse{}
+	if err := json.Unmarshal([]byte(result), &tokenBalanceResponse); err != nil {
+		return types.TokenBalanceResponse{}, core.ErrFailedToUnmarshalResponse
+	}
+
+	return tokenBalanceResponse, nil
 }
