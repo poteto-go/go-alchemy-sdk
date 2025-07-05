@@ -1,12 +1,13 @@
 package utils_test
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/jarcoal/httpmock"

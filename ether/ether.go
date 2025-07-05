@@ -1,9 +1,10 @@
 package ether
 
 import (
-	"encoding/json"
 	"math/big"
 	"strings"
+
+	"github.com/goccy/go-json"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/types"

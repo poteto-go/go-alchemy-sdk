@@ -1,11 +1,12 @@
 package ether_test
 
 import (
-	"encoding/json"
 	"errors"
 	"math/big"
 	"reflect"
 	"testing"
+
+	"github.com/goccy/go-json"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/jarcoal/httpmock"
