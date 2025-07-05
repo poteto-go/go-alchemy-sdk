@@ -671,5 +671,32 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			// Assert
 			assert.ErrorIs(t, expectedErr, err)
 		})
+
+		t.Run("mapstructure error, return core.ErrFailedToMapTokenResponse", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
+					return expectedResponse, nil
+				},
+			)
+			patches.ApplyFunc(
+				mapstructure.Decode,
+				func(_ any, _ any) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrFailedToMapTokenResponse, err)
+		})
 	})
 }

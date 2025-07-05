@@ -174,7 +174,9 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 	}
 
 	var tokenBalanceResponse types.TokenBalanceResponse
-	mapstructure.Decode(result, &tokenBalanceResponse)
+	if err := mapstructure.Decode(result, &tokenBalanceResponse); err != nil {
+		return types.TokenBalanceResponse{}, core.ErrFailedToMapTokenResponse
+	}
 
 	return tokenBalanceResponse, nil
 }
