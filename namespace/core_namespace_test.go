@@ -8,9 +8,11 @@ import (
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/poteto-go/go-alchemy-sdk/alchemy"
+	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -399,12 +401,172 @@ func TestCore_GetStorageAt(t *testing.T) {
 	})
 }
 
-func TestCore_GetTokenBalances_OnlyAddress(t *testing.T) {
+var tokenBalanceResponse = `
+{
+  "address": "0x123",
+  "tokenBalances": [
+    {
+      "contractAddress": "0x456",
+      "tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "error":null
+    },
+    {
+      "contractAddress": "0x789",
+      "tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "error":null
+    }
+  ]
+}
+`
+
+var tokenBalanceErrorResponse = `
+{
+  "address": "0x123",
+  "tokenBalances": [
+    {
+      "contractAddress": "0x456",
+      "tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "error": "error"
+    }
+  ]
+}
+`
+
+func TestCore_GetTokenBalances_WithOnlyAddress(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	coreNamespace := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call Ether.GetTokenBalances with just address & return result", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			callAddress := "0x123"
+			expected := types.TokenBalanceResponse{
+				Address: "0x123",
+				TokenBalances: []types.TokenBalance{
+					{
+						ContractAddress: "0x456",
+						TokenBalance:    "0x0000000000000000000000000000000000000000000000000000000000000000",
+						Error:           nil,
+					},
+					{
+						ContractAddress: "0x789",
+						TokenBalance:    "0x0000000000000000000000000000000000000000000000000000000000000000",
+						Error:           nil,
+					},
+				},
+			}
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetTokenBalances",
+				func(_ *ether.Ether, address string, params ...string) (string, error) {
+					assert.Equal(t, address, callAddress)
+					assert.Equal(t, 0, len(params))
+					return tokenBalanceResponse, nil
+				},
+			)
+
+			// Act
+			actual, _ := coreNamespace.GetTokenBalances(callAddress)
+
+			// Assert
+			assert.Equal(t, expected, actual)
+		})
+
+		t.Run("if response includes error, can mapping", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			callAddress := "0x123"
+			expected := types.TokenBalanceResponse{
+				Address: "0x123",
+				TokenBalances: []types.TokenBalance{
+					{
+						ContractAddress: "0x456",
+						TokenBalance:    "0x0000000000000000000000000000000000000000000000000000000000000000",
+						Error:           errors.New("error"),
+					},
+				},
+			}
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetTokenBalances",
+				func(_ *ether.Ether, address string, params ...string) (string, error) {
+					assert.Equal(t, address, callAddress)
+					assert.Equal(t, 0, len(params))
+					return tokenBalanceErrorResponse, nil
+				},
+			)
+
+			// Act
+			actual, _ := coreNamespace.GetTokenBalances(callAddress)
+
+			// Assert
+			assert.Equal(t, expected, actual)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("call `ether.GetTokenBalances` with just address & return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetTokenBalances",
+				func(_ *ether.Ether, address string, params ...string) (string, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := coreNamespace.GetTokenBalances("0x123")
+
+			// Assert
+			assert.Equal(t, expectedErr, err)
+		})
+
+		t.Run("if error on unmarshal, return core.ErrFailedToUnmarshalResponse", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetTokenBalances",
+				func(_ *ether.Ether, address string, params ...string) (string, error) {
+					return "hello", nil
+				},
+			)
+
+			// Act
+			_, err := coreNamespace.GetTokenBalances("0x123")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
+		})
+	})
+}
+
+/*
+func TestCore_GetTokenBalances_WithAddressNContracts(t *testing.T) {
 	// Arrange
 	api := newEtherApi()
 	core := namespace.NewCore(api).(*namespace.Core)
 
-	t.Run("call Ether.GetTokenBalances with just address & return result", func(t *testing.T) {
+	t.Run("call `ether.GetTokenBalances` with address & contracts & return filtered result", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
@@ -416,6 +578,11 @@ func TestCore_GetTokenBalances_OnlyAddress(t *testing.T) {
 			"tokenBalances": [
 				{
 					"contractAddress": "0x456",
+					"tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
+					"error":null,
+				},
+				{
+					"contractAddress": "0x789",
 					"tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
 					"error":null,
 				}
@@ -440,27 +607,5 @@ func TestCore_GetTokenBalances_OnlyAddress(t *testing.T) {
 		// Assert
 		assert.Equal(t, expected, actual)
 	})
-
-	t.Run("call `ether.GetTokenBalances` with just address & return internal error", func(t *testing.T) {
-		patches := gomonkey.NewPatches()
-		defer patches.Reset()
-
-		// Arrange
-		expectedErr := errors.New("error")
-
-		// Mock
-		patches.ApplyMethod(
-			reflect.TypeOf(api),
-			"GetTokenBalances",
-			func(_ *ether.Ether, address string, params ...string) (string, error) {
-				return "", expectedErr
-			},
-		)
-
-		// Act
-		_, err := core.GetTokenBalances("0x123")
-
-		// Assert
-		assert.Equal(t, expectedErr, err)
-	})
 }
+*/

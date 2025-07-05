@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
-	github.com/harakeishi/gats v0.0.0-20230219034858-055bc915842a
+	github.com/goccy/go-json v0.10.5
 	github.com/jarcoal/httpmock v1.4.0
 	github.com/poteto-go/tslice v0.4.1
 	github.com/stretchr/testify v1.10.0

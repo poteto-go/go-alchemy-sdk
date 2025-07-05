@@ -14,3 +14,16 @@ send with alchemy_getTplemBalances with params
 
 - [x] call `ether.GetTokenBalances` with just address & return result
 - [x] call `ether.GetTokenBalances` with just address & return internal error
+
+## FIX
+
+response type is TokenBalanceResponse
+
+- [x] normal
+- [x] if response includes error
+- [x] error on unmarshal
+
+## `Core.GetTokenBalances(address, contracts)`
+
+- [ ] call `ether.GetTokenBalances` with address & contracts & return filtered result
+- [ ] call `ether.GetTokenBalances` with address & contracts & return internal error
