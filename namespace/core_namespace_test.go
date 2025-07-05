@@ -398,3 +398,69 @@ func TestCore_GetStorageAt(t *testing.T) {
 		assert.ErrorIs(t, expectedErr, err)
 	})
 }
+
+func TestCore_GetTokenBalances_OnlyAddress(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("call Ether.GetTokenBalances with just address & return result", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		callAddress := "0x123"
+		expected := `
+		{
+			"address": "0x123",
+			"tokenBalances": [
+				{
+					"contractAddress": "0x456",
+					"tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
+					"error":null,
+				}
+			]
+		}
+		`
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTokenBalances",
+			func(_ *ether.Ether, address string, params ...string) (string, error) {
+				assert.Equal(t, address, callAddress)
+				assert.Equal(t, 0, len(params))
+				return expected, nil
+			},
+		)
+
+		// Act
+		actual, _ := core.GetTokenBalances(callAddress)
+
+		// Assert
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("call `ether.GetTokenBalances` with just address & return internal error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expectedErr := errors.New("error")
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTokenBalances",
+			func(_ *ether.Ether, address string, params ...string) (string, error) {
+				return "", expectedErr
+			},
+		)
+
+		// Act
+		_, err := core.GetTokenBalances("0x123")
+
+		// Assert
+		assert.Equal(t, expectedErr, err)
+	})
+}

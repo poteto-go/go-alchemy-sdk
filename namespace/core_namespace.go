@@ -43,6 +43,11 @@ type ICore interface {
 		For inspecting solidity code.
 	*/
 	GetStorageAt(address, position, blockTag string) (string, error)
+
+	/*
+		Returns the ERC-20 token balances for a specific owner address
+	*/
+	GetTokenBalances(address string) (string, error)
 }
 
 type Core struct {
@@ -128,5 +133,15 @@ func (c *Core) GetStorageAt(address, position, blockTag string) (string, error) 
 	if err != nil {
 		return "", err
 	}
+
 	return value, nil
+}
+
+func (c *Core) GetTokenBalances(address string) (string, error) {
+	result, err := c.ether.GetTokenBalances(address)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 }
