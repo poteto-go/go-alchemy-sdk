@@ -536,7 +536,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("if error occur, return error internal", func(t *testing.T) {
+		t.Run("if error occur, return error internal error", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -565,6 +565,96 @@ func TestEther_GetStorageAt(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, core.ErrInvalidBlockTag, err)
+		})
+	})
+}
+
+func TestEther_GetTokenBalances(t *testing.T) {
+	// Arrange
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	expected := `
+	{
+		"address": "0x123",
+		"tokenBalances": [
+			{
+				"contractAddress": "0x456",
+				"tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
+				"error":null,
+			}
+		]
+	}
+	`
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call with alchemy_getTokenBalances and params & return provided block", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			params := []string{"0x111"}
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
+					return expected, nil
+				},
+			)
+
+			// Act
+			actual, _ := ether.GetTokenBalances("0x123", params...)
+
+			// Assert
+			assert.Equal(t, expected, actual)
+		})
+
+		t.Run("call with alchemy_getTokenBalances and no params & return provided block", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
+					return expected, nil
+				},
+			)
+
+			// Act
+			actual, _ := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.Equal(t, expected, actual)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if error occur in send, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.ErrorIs(t, expectedErr, err)
 		})
 	})
 }

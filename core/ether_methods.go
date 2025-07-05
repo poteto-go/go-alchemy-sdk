@@ -8,3 +8,7 @@ var (
 	Eth_GetTransactionByHash = "eth_getTransactionByHash"
 	Eth_GetStorageAt         = "eth_getStorageAt"
 )
+
+var (
+	Alchemy_GetTokenBalances = "alchemy_getTokenBalances"
+)

@@ -43,6 +43,11 @@ type EtherApi interface {
 		For inspecting solidity code.
 	*/
 	GetStorageAt(address, position, blockTag string) (string, error)
+
+	/*
+		Returns the ERC-20 token balances for a specific owner address w, w/o params
+	*/
+	GetTokenBalances(address string, params ...string) (string, error)
 }
 
 type Ether struct {
@@ -148,6 +153,20 @@ func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, er
 		strings.ToLower(address),
 		position,
 		blockTag,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
+}
+
+func (ether *Ether) GetTokenBalances(address string, params ...string) (string, error) {
+	params = append([]string{address}, params...)
+
+	result, err := ether.provider.Send(
+		core.Alchemy_GetTokenBalances,
+		params...,
 	)
 	if err != nil {
 		return "", err
