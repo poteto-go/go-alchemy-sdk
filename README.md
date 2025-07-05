@@ -8,9 +8,9 @@ golang sdk for alchemy, inspired by https://github.com/alchemyplatform/alchemy-s
 package main
 
 import (
-	"fmt"
+  "fmt"
 
-	"github.com/poteto-go/go-alchemy-sdk/alchemy"
+  "github.com/poteto-go/go-alchemy-sdk/alchemy"
   "github.com/poteto-go/go-alchemy-sdk/types"
 )
 
