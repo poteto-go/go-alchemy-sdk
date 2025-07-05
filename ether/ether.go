@@ -171,5 +171,6 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (string, 
 	if err != nil {
 		return "", err
 	}
+
 	return result, nil
 }

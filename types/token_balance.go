@@ -1,8 +1,9 @@
 package types
 
 import (
-	"encoding/json"
 	"errors"
+
+	"github.com/goccy/go-json"
 )
 
 type TokenBalance struct {
@@ -30,5 +31,10 @@ func (t *TokenBalance) UnmarshalJSON(data []byte) error {
 
 type TokenBalanceResponse struct {
 	Address       string         `json:"address"`
+	PageKey       string         `json:"pageKey"`
 	TokenBalances []TokenBalance `json:"tokenBalances"`
+}
+
+type TokenBalanceOption struct {
+	ContractAddresses []string
 }

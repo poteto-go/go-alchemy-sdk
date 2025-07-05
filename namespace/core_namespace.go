@@ -49,7 +49,7 @@ type ICore interface {
 	/*
 		Returns the ERC-20 token balances for a specific owner address
 	*/
-	GetTokenBalances(address string, contractAddresses ...string) (types.TokenBalanceResponse, error)
+	GetTokenBalances(address string, option *types.TokenBalanceOption) (types.TokenBalanceResponse, error)
 }
 
 type Core struct {
@@ -139,8 +139,13 @@ func (c *Core) GetStorageAt(address, position, blockTag string) (string, error) 
 	return value, nil
 }
 
-func (c *Core) GetTokenBalances(address string, contractAddresses ...string) (types.TokenBalanceResponse, error) {
-	result, err := c.ether.GetTokenBalances(address, contractAddresses...)
+func (c *Core) GetTokenBalances(address string, option *types.TokenBalanceOption) (types.TokenBalanceResponse, error) {
+	params := []string{}
+	if option != nil {
+		params = option.ContractAddresses
+	}
+
+	result, err := c.ether.GetTokenBalances(address, params...)
 	if err != nil {
 		return types.TokenBalanceResponse{}, err
 	}

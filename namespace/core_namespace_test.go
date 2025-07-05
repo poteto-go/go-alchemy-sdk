@@ -419,6 +419,19 @@ var tokenBalanceResponse = `
 }
 `
 
+var tokenBalanceFilteredResponse = `
+{
+  "address": "0x123",
+  "tokenBalances": [
+    {
+      "contractAddress": "0x456",
+      "tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "error":null
+    }
+  ]
+}
+`
+
 var tokenBalanceErrorResponse = `
 {
   "address": "0x123",
@@ -472,7 +485,7 @@ func TestCore_GetTokenBalances_WithOnlyAddress(t *testing.T) {
 			)
 
 			// Act
-			actual, _ := coreNamespace.GetTokenBalances(callAddress)
+			actual, _ := coreNamespace.GetTokenBalances(callAddress, nil)
 
 			// Assert
 			assert.Equal(t, expected, actual)
@@ -507,7 +520,7 @@ func TestCore_GetTokenBalances_WithOnlyAddress(t *testing.T) {
 			)
 
 			// Act
-			actual, _ := coreNamespace.GetTokenBalances(callAddress)
+			actual, _ := coreNamespace.GetTokenBalances(callAddress, nil)
 
 			// Assert
 			assert.Equal(t, expected, actual)
@@ -532,7 +545,7 @@ func TestCore_GetTokenBalances_WithOnlyAddress(t *testing.T) {
 			)
 
 			// Act
-			_, err := coreNamespace.GetTokenBalances("0x123")
+			_, err := coreNamespace.GetTokenBalances("0x123", nil)
 
 			// Assert
 			assert.Equal(t, expectedErr, err)
@@ -552,7 +565,7 @@ func TestCore_GetTokenBalances_WithOnlyAddress(t *testing.T) {
 			)
 
 			// Act
-			_, err := coreNamespace.GetTokenBalances("0x123")
+			_, err := coreNamespace.GetTokenBalances("0x123", nil)
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
@@ -560,7 +573,6 @@ func TestCore_GetTokenBalances_WithOnlyAddress(t *testing.T) {
 	})
 }
 
-/*
 func TestCore_GetTokenBalances_WithAddressNContracts(t *testing.T) {
 	// Arrange
 	api := newEtherApi()
@@ -572,23 +584,20 @@ func TestCore_GetTokenBalances_WithAddressNContracts(t *testing.T) {
 
 		// Arrange
 		callAddress := "0x123"
-		expected := `
-		{
-			"address": "0x123",
-			"tokenBalances": [
-				{
-					"contractAddress": "0x456",
-					"tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
-					"error":null,
-				},
-				{
-					"contractAddress": "0x789",
-					"tokenBalance": "0x0000000000000000000000000000000000000000000000000000000000000000",
-					"error":null,
-				}
-			]
+		contracts := []string{"0x456"}
+		option := &types.TokenBalanceOption{
+			ContractAddresses: contracts,
 		}
-		`
+		expected := types.TokenBalanceResponse{
+			Address: "0x123",
+			TokenBalances: []types.TokenBalance{
+				{
+					ContractAddress: "0x456",
+					TokenBalance:    "0x0000000000000000000000000000000000000000000000000000000000000000",
+					Error:           nil,
+				},
+			},
+		}
 
 		// Mock & Assert
 		patches.ApplyMethod(
@@ -596,16 +605,15 @@ func TestCore_GetTokenBalances_WithAddressNContracts(t *testing.T) {
 			"GetTokenBalances",
 			func(_ *ether.Ether, address string, params ...string) (string, error) {
 				assert.Equal(t, address, callAddress)
-				assert.Equal(t, 0, len(params))
-				return expected, nil
+				assert.Equal(t, contracts, params)
+				return tokenBalanceFilteredResponse, nil
 			},
 		)
 
 		// Act
-		actual, _ := core.GetTokenBalances(callAddress)
+		actual, _ := core.GetTokenBalances(callAddress, option)
 
 		// Assert
 		assert.Equal(t, expected, actual)
 	})
 }
-*/
