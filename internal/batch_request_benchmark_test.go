@@ -40,7 +40,7 @@ func BenchmarkRequestBatcher_QueueRequest(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		go func() {
-			batcher.QueueRequest(request)
+			batcher.QueueRequest(context.Background(), request)
 		}()
 	}
 }

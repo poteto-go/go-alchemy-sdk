@@ -51,7 +51,7 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 			Request: req,
 			Body:    types.AlchemyRequestBody{Id: 1},
 		}
-		res, err := batcher.QueueRequest(request)
+		res, err := batcher.QueueRequest(context.Background(), request)
 		assert.NoError(t, err)
 		assert.Equal(t, "0x1", res.Result)
 	}()
@@ -63,7 +63,7 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 			Request: req,
 			Body:    types.AlchemyRequestBody{Id: 2},
 		}
-		res, err := batcher.QueueRequest(request)
+		res, err := batcher.QueueRequest(context.Background(), request)
 		assert.NoError(t, err)
 		assert.Equal(t, "0x2", res.Result)
 	}()
@@ -99,7 +99,7 @@ func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
 		Body:    types.AlchemyRequestBody{Id: 1},
 	}
 
-	_, err := batcher.QueueRequest(request)
+	_, err := batcher.QueueRequest(context.Background(), request)
 	assert.Error(t, err)
 }
 
@@ -125,7 +125,7 @@ func TestRequestBatcher_Context_Cancel(t *testing.T) {
 		Body:    types.AlchemyRequestBody{Id: 1},
 	}
 
-	_, err := batcher.QueueRequest(request)
+	_, err := batcher.QueueRequest(ctx, request)
 	assert.Error(t, err)
 }
 
@@ -150,7 +150,7 @@ func TestRequestBatcher_Flush_Fetch_Error(t *testing.T) {
 		Body:    types.AlchemyRequestBody{Id: 1},
 	}
 
-	_, err := batcher.QueueRequest(request)
+	_, err := batcher.QueueRequest(context.Background(), request)
 	assert.Error(t, err)
 }
 
@@ -175,7 +175,7 @@ func TestRequestBatcher_Flush_No_Response(t *testing.T) {
 		Body:    types.AlchemyRequestBody{Id: 1},
 	}
 
-	_, err := batcher.QueueRequest(request)
+	_, err := batcher.QueueRequest(context.Background(), request)
 	assert.Error(t, err)
 }
 

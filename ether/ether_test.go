@@ -1,11 +1,12 @@
 package ether_test
 
 import (
-	"encoding/json"
 	"errors"
 	"math/big"
 	"reflect"
 	"testing"
+
+	"github.com/goccy/go-json"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/jarcoal/httpmock"
@@ -450,7 +451,7 @@ func TestEther_GetTransaction(t *testing.T) {
 				reflect.TypeOf(provider),
 				"Send",
 				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (string, error) {
-					return `{"hello": "world"}`, nil
+					return `invalid json`, nil
 				},
 			)
 			patches.ApplyFunc(

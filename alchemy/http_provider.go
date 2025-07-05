@@ -70,7 +70,7 @@ func (provider *AlchemyProvider) send(method string, params ...string) (string, 
 	}
 
 	if provider.batcher != nil {
-		response, err := provider.batcher.QueueRequest(request)
+		response, err := provider.batcher.QueueRequest(context.Background(), request)
 		if err != nil {
 			return "", err
 		}

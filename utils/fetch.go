@@ -2,9 +2,10 @@ package utils
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
+
+	"github.com/goccy/go-json"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/types"
