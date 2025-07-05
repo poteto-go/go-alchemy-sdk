@@ -62,7 +62,6 @@ func NewCore(ether ether.EtherApi) ICore {
 	}
 }
 
-/* get  the number of the most recent block. */
 func (c *Core) GetBlockNumber() (int, error) {
 	blockNumber, err := c.ether.GetBlockNumber()
 	if err != nil {
@@ -71,7 +70,6 @@ func (c *Core) GetBlockNumber() (int, error) {
 	return blockNumber, nil
 }
 
-/* Returns the best guess of the current gas price to use in a transaction. */
 func (c *Core) GetGasPrice() (int, error) {
 	price, err := c.ether.GetGasPrice()
 	if err != nil {
@@ -80,7 +78,6 @@ func (c *Core) GetGasPrice() (int, error) {
 	return price, nil
 }
 
-/* Returns the balance of a given address as of the provided block. */
 func (c *Core) GetBalance(address string, blockTag string) (*big.Int, error) {
 	balance, err := c.ether.GetBalance(address, blockTag)
 	if err != nil {
@@ -89,10 +86,6 @@ func (c *Core) GetBalance(address string, blockTag string) (*big.Int, error) {
 	return balance, nil
 }
 
-/*
-Returns the contract code of the provided address at the block.
-If there is no contract deployed, the result is 0x.
-*/
 func (c *Core) GetCode(address, blockTag string) (string, error) {
 	hexCode, err := c.ether.GetCode(address, blockTag)
 	if err != nil {
@@ -111,16 +104,6 @@ func (c *Core) IsContractAddress(address string) bool {
 	return hexCode != "0x"
 }
 
-/*
-Returns the transaction with hash or null if the transaction is unknown.
-
-If a transaction has not been mined, this method will search the
-transaction pool. Various backends may have more restrictive transaction
-pool access (e.g. if the gas price is too low or the transaction was only
-recently sent and not yet indexed) in which case this method may also return null.
-
-NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
-*/
 func (c *Core) GetTransaction(hash string) (types.TransactionResponse, error) {
 	transaction, err := c.ether.GetTransaction(hash)
 	if err != nil {
