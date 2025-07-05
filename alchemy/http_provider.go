@@ -41,11 +41,11 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	return provider
 }
 
-func (provider *AlchemyProvider) Send(method string, params ...string) (string, error) {
+func (provider *AlchemyProvider) Send(method string, params ...string) (any, error) {
 	return provider.send(method, params...)
 }
 
-func (provider *AlchemyProvider) send(method string, params ...string) (string, error) {
+func (provider *AlchemyProvider) send(method string, params ...string) (any, error) {
 	if len(params) == 0 {
 		params = []string{}
 	}
@@ -92,5 +92,5 @@ func (provider *AlchemyProvider) send(method string, params ...string) (string, 
 
 	provider.id++
 
-	return fmt.Sprintf("%v", response.Result), nil
+	return response.Result, nil
 }
