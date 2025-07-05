@@ -3,7 +3,6 @@ package namespace
 import (
 	"math/big"
 
-	"github.com/go-viper/mapstructure/v2"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
@@ -132,8 +131,5 @@ func (c *Core) GetTokenBalances(address string, option *types.TokenBalanceOption
 		return types.TokenBalanceResponse{}, err
 	}
 
-	var tokenBalanceResponse types.TokenBalanceResponse
-	mapstructure.Decode(result, &tokenBalanceResponse)
-
-	return tokenBalanceResponse, nil
+	return result, nil
 }

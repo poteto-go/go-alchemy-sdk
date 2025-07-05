@@ -48,7 +48,7 @@ type EtherApi interface {
 	/*
 		Returns the ERC-20 token balances for a specific owner address w, w/o params
 	*/
-	GetTokenBalances(address string, params ...string) (map[string]any, error)
+	GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error)
 }
 
 type Ether struct {
@@ -132,7 +132,9 @@ func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, erro
 	}
 
 	var txRaw types.TransactionRawResponse
-	mapstructure.Decode(result, &txRaw)
+	if err := mapstructure.Decode(result, &txRaw); err != nil {
+		return types.TransactionResponse{}, core.ErrFailedToMapTransaction
+	}
 
 	tx, err := utils.TransformTransaction(txRaw)
 	if err != nil {
@@ -160,7 +162,7 @@ func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, er
 	return result.(string), nil
 }
 
-func (ether *Ether) GetTokenBalances(address string, params ...string) (map[string]any, error) {
+func (ether *Ether) GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error) {
 	params = append([]string{address}, params...)
 
 	result, err := ether.provider.Send(
@@ -168,8 +170,11 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (map[stri
 		params...,
 	)
 	if err != nil {
-		return map[string]any{}, err
+		return types.TokenBalanceResponse{}, err
 	}
 
-	return result.(map[string]any), nil
+	var tokenBalanceResponse types.TokenBalanceResponse
+	mapstructure.Decode(result, &tokenBalanceResponse)
+
+	return tokenBalanceResponse, nil
 }
