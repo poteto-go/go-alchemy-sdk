@@ -20,4 +20,4 @@ jobs:
       - name: install dependencies
         run: go mod download
       - name: test coverage
-        run: go test ./... -cover
+        run: go test ./... -cover -gcflags=all=-l
