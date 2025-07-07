@@ -50,16 +50,16 @@ type TransactionResponse struct {
 }
 
 type TransactionRequest struct {
-	Type                 *int      `json:"type"`
+	Type                 *int      `json:"type,omitempty"`
 	To                   string    `json:"to"`
 	From                 string    `json:"from"`
-	Nonce                *string   `json:"nonce"`
-	GasLimit             *big.Int  `json:"gasLimit"`
-	GasPrice             *big.Int  `json:"gasPrice"`
-	MaxPriorityFeePerGas *big.Int  `json:"maxPriorityFeePerGas"`
-	MaxFeePerGas         *big.Int  `json:"maxFeePerGas"`
-	Data                 *string   `json:"data"`
-	Value                *big.Int  `json:"value"`
-	ChainID              *int      `json:"chainId"`
-	AccessList           *[]string `json:"accessList"`
+	Nonce                *string   `json:"nonce,omitempty"`
+	GasLimit             *big.Int  `json:"gasLimit,omitempty"`
+	GasPrice             *big.Int  `json:"gasPrice,omitempty"`
+	MaxPriorityFeePerGas *big.Int  `json:"maxPriorityFeePerGas,omitempty"`
+	MaxFeePerGas         *big.Int  `json:"maxFeePerGas,omitempty"`
+	Data                 *string   `json:"data,omitempty"`
+	Value                string    `json:"value,omitempty"`
+	ChainID              *int      `json:"chainId,omitempty"`
+	AccessList           *[]string `json:"accessList,omitempty"`
 }

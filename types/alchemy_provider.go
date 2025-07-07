@@ -8,16 +8,16 @@ import (
 
 var ErrNoResultFound = errors.New("no result found")
 
-type AlchemyRequest struct {
+type AlchemyRequest[T string | TransactionRequest] struct {
 	Request *http.Request
-	Body    AlchemyRequestBody
+	Body    AlchemyRequestBody[T]
 }
 
-type AlchemyRequestBody struct {
-	Jsonrpc string   `json:"jsonrpc"`
-	Method  string   `json:"method"`
-	Params  []string `json:"params"`
-	Id      int      `json:"id"`
+type AlchemyRequestBody[T string | TransactionRequest] struct {
+	Jsonrpc string `json:"jsonrpc"`
+	Method  string `json:"method"`
+	Params  []T    `json:"params"`
+	Id      int    `json:"id"`
 }
 
 type AlchemyResponse struct {
@@ -30,11 +30,14 @@ type AlchemyResponse struct {
 type IAlchemyProvider interface {
 	/* Send raw transaction */
 	Send(method string, params ...string) (any, error)
+
+	/* Send transaction */
+	SendTransaction(method string, params ...TransactionRequest) (any, error)
 }
 
-type AlchemyFetchHandler func(AlchemyRequest, RequestConfig) (AlchemyResponse, error)
+type AlchemyFetchHandler[T string | TransactionRequest] func(AlchemyRequest[T], RequestConfig) (AlchemyResponse, error)
 
-type BatchAlchemyFetchHandler func([]AlchemyRequest, RequestConfig) ([]AlchemyResponse, error)
+type BatchAlchemyFetchHandler[T string | TransactionRequest] func([]AlchemyRequest[T], RequestConfig) ([]AlchemyResponse, error)
 
 type RequestConfig struct {
 	Timeout time.Duration

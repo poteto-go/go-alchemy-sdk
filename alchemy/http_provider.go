@@ -30,7 +30,7 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 			internal.BatcherConfig{
 				MaxBatchSize: 100,
 				MaxBatchTime: time.Millisecond * 10,
-				Fetch:        utils.AlchemyBatchFetch,
+				Fetch:        utils.AlchemyBatchFetch[string],
 			},
 			types.RequestConfig{
 				Timeout: config.requestTimeout,
@@ -50,7 +50,7 @@ func (provider *AlchemyProvider) send(method string, params ...string) (any, err
 		params = []string{}
 	}
 
-	body := types.AlchemyRequestBody{
+	body := types.AlchemyRequestBody[string]{
 		Jsonrpc: "2.0",
 		Method:  method,
 		Params:  params,
@@ -64,7 +64,7 @@ func (provider *AlchemyProvider) send(method string, params ...string) (any, err
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
 
-	request := types.AlchemyRequest{
+	request := types.AlchemyRequest[string]{
 		Body:    body,
 		Request: req,
 	}
@@ -83,7 +83,52 @@ func (provider *AlchemyProvider) send(method string, params ...string) (any, err
 		types.RequestConfig{
 			Timeout: provider.config.requestTimeout,
 		},
-		utils.AlchemyFetch,
+		utils.AlchemyFetch[string],
+		request,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	provider.id++
+
+	return response.Result, nil
+}
+
+func (provider *AlchemyProvider) SendTransaction(method string, params ...types.TransactionRequest) (any, error) {
+	return provider.sendTransaction(method, params...)
+}
+
+func (provider *AlchemyProvider) sendTransaction(method string, params ...types.TransactionRequest) (any, error) {
+	if len(params) == 0 {
+		params = []types.TransactionRequest{}
+	}
+
+	body := types.AlchemyRequestBody[types.TransactionRequest]{
+		Jsonrpc: "2.0",
+		Method:  method,
+		Params:  params,
+		Id:      provider.id,
+	}
+
+	req, err := http.NewRequest("POST", provider.config.GetUrl(), nil)
+	if err != nil {
+		return "", core.ErrFailedToCreateRequest
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
+
+	request := types.AlchemyRequest[types.TransactionRequest]{
+		Body:    body,
+		Request: req,
+	}
+
+	response, err := internal.RequestHttpWithBackoff(
+		*provider.config.backoffConfig,
+		types.RequestConfig{
+			Timeout: provider.config.requestTimeout,
+		},
+		utils.AlchemyFetch[types.TransactionRequest],
 		request,
 	)
 	if err != nil {

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/goccy/go-json"
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -202,12 +201,7 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 }
 
 func (ether *Ether) EstimateGas(transaction types.TransactionRequest) (*big.Int, error) {
-	param, err := json.Marshal(transaction)
-	if err != nil {
-		return big.NewInt(0), core.ErrFailedToMarshalParameter
-	}
-
-	result, err := ether.provider.Send(core.Eth_EstimateGas, string(param))
+	result, err := ether.provider.SendTransaction(core.Eth_EstimateGas, transaction)
 	if err != nil {
 		return big.NewInt(0), err
 	}
