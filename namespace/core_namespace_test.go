@@ -553,3 +553,63 @@ func TestCore_GetTokenBalances_WithAddressNContracts(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 }
+
+func TestCore_EstimateGas(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	transaction := types.TransactionRequest{
+		From:  "0x1234",
+		To:    "0x2345",
+		Value: big.NewInt(1000),
+	}
+
+	t.Run("call ether.EstimateGas & return result", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expected := big.NewInt(1234)
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"EstimateGas",
+			func(_ *ether.Ether, tx types.TransactionRequest) (*big.Int, error) {
+				assert.Equal(t, transaction, tx)
+				return expected, nil
+			},
+		)
+
+		// Act
+		actual, _ := core.EstimateGas(transaction)
+
+		// Assert
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("if error occur in ether.EstimateGas & return internal error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expectedErr := errors.New("error")
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"EstimateGas",
+			func(_ *ether.Ether, tx types.TransactionRequest) (*big.Int, error) {
+				assert.Equal(t, transaction, tx)
+				return big.NewInt(0), expectedErr
+			},
+		)
+
+		// Act
+		_, err := core.EstimateGas(transaction)
+
+		// Assert
+		assert.Equal(t, expectedErr, err)
+	})
+}
