@@ -7,6 +7,7 @@ var (
 	Eth_GetCode              = "eth_getCode"
 	Eth_GetTransactionByHash = "eth_getTransactionByHash"
 	Eth_GetStorageAt         = "eth_getStorageAt"
+	Eth_EstimateGas          = "eth_estimateGas"
 )
 
 var (

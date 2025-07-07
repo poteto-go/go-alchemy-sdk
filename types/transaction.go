@@ -48,3 +48,18 @@ type TransactionResponse struct {
 	BlobVersionedHashes  []string  `json:"blobVersionedHashes"`
 	AuthorizationList    []string  `json:"authorizationList"`
 }
+
+type TransactionRequest struct {
+	Type                 *int      `json:"type"`
+	To                   string    `json:"to"`
+	From                 string    `json:"from"`
+	Nonce                *string   `json:"nonce"`
+	GasLimit             *big.Int  `json:"gasLimit"`
+	GasPrice             *big.Int  `json:"gasPrice"`
+	MaxPriorityFeePerGas *big.Int  `json:"maxPriorityFeePerGas"`
+	MaxFeePerGas         *big.Int  `json:"maxFeePerGas"`
+	Data                 *string   `json:"data"`
+	Value                *big.Int  `json:"value"`
+	ChainID              *int      `json:"chainId"`
+	AccessList           *[]string `json:"accessList"`
+}
