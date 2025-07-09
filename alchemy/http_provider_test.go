@@ -8,10 +8,9 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/goccy/go-json"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/core"
-	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -93,14 +92,12 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
-			// Arrange
-			errExpected := errors.New("error")
-
 			// Mock
+			// NOTE: cannot mock generic func
 			patches.ApplyFunc(
-				utils.AlchemyFetch[string],
-				func(req types.AlchemyRequest[string], _ types.RequestConfig) (types.AlchemyResponse, error) {
-					return types.AlchemyResponse{}, errExpected
+				json.Marshal,
+				func(v any) ([]byte, error) {
+					return nil, errors.New("error")
 				},
 			)
 
@@ -108,7 +105,7 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			_, err := provider.Send("hoge")
 
 			// Assert
-			assert.ErrorIs(t, errExpected, err)
+			assert.ErrorIs(t, core.ErrFailedToMarshalParameter, err)
 		})
 	})
 }

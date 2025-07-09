@@ -2,7 +2,6 @@ package alchemy
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -42,15 +41,15 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 }
 
 func (provider *AlchemyProvider) Send(method string, params ...string) (any, error) {
-	return provider.send(method, params...)
+	return send(provider, method, params...)
 }
 
-func (provider *AlchemyProvider) send(method string, params ...string) (any, error) {
+func send[T string | types.TransactionRequest](provider *AlchemyProvider, method string, params ...T) (any, error) {
 	if len(params) == 0 {
-		params = []string{}
+		params = []T{}
 	}
 
-	body := types.AlchemyRequestBody[string]{
+	body := types.AlchemyRequestBody[T]{
 		Jsonrpc: "2.0",
 		Method:  method,
 		Params:  params,
@@ -62,26 +61,28 @@ func (provider *AlchemyProvider) send(method string, params ...string) (any, err
 		return "", err
 	}
 
-	request := types.AlchemyRequest[string]{
+	request := types.AlchemyRequest[T]{
 		Body:    body,
 		Request: req,
 	}
 
-	if provider.batcher != nil {
-		response, err := provider.batcher.QueueRequest(context.Background(), request)
-		if err != nil {
-			return "", err
+	/*
+		if provider.batcher != nil {
+			response, err := provider.batcher.QueueRequest(context.Background(), request)
+			if err != nil {
+				return "", err
+			}
+			provider.id++
+			return fmt.Sprintf("%v", response.Result), nil
 		}
-		provider.id++
-		return fmt.Sprintf("%v", response.Result), nil
-	}
+	*/
 
 	response, err := internal.RequestHttpWithBackoff(
 		*provider.config.backoffConfig,
 		types.RequestConfig{
 			Timeout: provider.config.requestTimeout,
 		},
-		utils.AlchemyFetch[string],
+		utils.AlchemyFetch[T],
 		request,
 	)
 	if err != nil {
@@ -94,46 +95,7 @@ func (provider *AlchemyProvider) send(method string, params ...string) (any, err
 }
 
 func (provider *AlchemyProvider) SendTransaction(method string, params ...types.TransactionRequest) (any, error) {
-	return provider.sendTransaction(method, params...)
-}
-
-func (provider *AlchemyProvider) sendTransaction(method string, params ...types.TransactionRequest) (any, error) {
-	if len(params) == 0 {
-		params = []types.TransactionRequest{}
-	}
-
-	body := types.AlchemyRequestBody[types.TransactionRequest]{
-		Jsonrpc: "2.0",
-		Method:  method,
-		Params:  params,
-		Id:      provider.id,
-	}
-
-	req, err := generateAlchemyRequest(provider.config.GetUrl())
-	if err != nil {
-		return "", err
-	}
-
-	request := types.AlchemyRequest[types.TransactionRequest]{
-		Body:    body,
-		Request: req,
-	}
-
-	response, err := internal.RequestHttpWithBackoff(
-		*provider.config.backoffConfig,
-		types.RequestConfig{
-			Timeout: provider.config.requestTimeout,
-		},
-		utils.AlchemyFetch[types.TransactionRequest],
-		request,
-	)
-	if err != nil {
-		return "", err
-	}
-
-	provider.id++
-
-	return response.Result, nil
+	return send(provider, method, params...)
 }
 
 func generateAlchemyRequest(url string) (*http.Request, error) {
