@@ -66,6 +66,7 @@ func send[T string | types.TransactionRequest](provider *AlchemyProvider, method
 		Request: req,
 	}
 
+	// TODO: not support generics in batch request for now.
 	/*
 		if provider.batcher != nil {
 			response, err := provider.batcher.QueueRequest(context.Background(), request)
