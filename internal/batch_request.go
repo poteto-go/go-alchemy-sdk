@@ -9,7 +9,7 @@ import (
 )
 
 type QueuedRequest struct {
-	Request  types.AlchemyRequest
+	Request  types.AlchemyRequest[string]
 	Response chan types.AlchemyResponse
 }
 
@@ -23,7 +23,7 @@ type RequestBatcher struct {
 type BatcherConfig struct {
 	MaxBatchSize int
 	MaxBatchTime time.Duration
-	Fetch        types.BatchAlchemyFetchHandler
+	Fetch        types.BatchAlchemyFetchHandler[string]
 }
 
 func NewRequestBatcher(
@@ -40,7 +40,7 @@ func NewRequestBatcher(
 	return batcher
 }
 
-func (b *RequestBatcher) QueueRequest(ctx context.Context, request types.AlchemyRequest) (types.AlchemyResponse, error) {
+func (b *RequestBatcher) QueueRequest(ctx context.Context, request types.AlchemyRequest[string]) (types.AlchemyResponse, error) {
 	responseChan := make(chan types.AlchemyResponse, 1)
 	select {
 	case <-ctx.Done():
@@ -92,7 +92,7 @@ func (b *RequestBatcher) flush(batch []QueuedRequest) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	requests := make([]types.AlchemyRequest, len(batch))
+	requests := make([]types.AlchemyRequest[string], len(batch))
 	for i, req := range batch {
 		requests[i] = req.Request
 	}

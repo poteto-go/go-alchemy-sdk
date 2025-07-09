@@ -50,6 +50,15 @@ type EtherApi interface {
 		Returns the ERC-20 token balances for a specific owner address w, w/o params
 	*/
 	GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error)
+
+	/*
+		Returns an estimate of the amount of gas that would be required to submit transaction to the network.
+
+		An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+		but after being mined affects the relevant state.
+		This is an alias for {@link TransactNamespace.estimateGas}.
+	*/
+	EstimateGas(transaction types.TransactionRequest) (*big.Int, error)
 }
 
 type Ether struct {
@@ -189,4 +198,18 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 	}
 
 	return tokenBalanceResponse, nil
+}
+
+func (ether *Ether) EstimateGas(transaction types.TransactionRequest) (*big.Int, error) {
+	result, err := ether.provider.SendTransaction(core.Eth_EstimateGas, transaction)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	estimatedGas, err := utils.FromBigHex(result.(string))
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return estimatedGas, nil
 }

@@ -48,6 +48,15 @@ type ICore interface {
 		Returns the ERC-20 token balances for a specific owner address
 	*/
 	GetTokenBalances(address string, option *types.TokenBalanceOption) (types.TokenBalanceResponse, error)
+
+	/*
+		Returns an estimate of the amount of gas that would be required to submit transaction to the network.
+
+		An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+		but after being mined affects the relevant state.
+		This is an alias for {@link TransactNamespace.estimateGas}.
+	*/
+	EstimateGas(transaction types.TransactionRequest) (*big.Int, error)
 }
 
 type Core struct {
@@ -132,4 +141,13 @@ func (c *Core) GetTokenBalances(address string, option *types.TokenBalanceOption
 	}
 
 	return result, nil
+}
+
+func (c *Core) EstimateGas(transaction types.TransactionRequest) (*big.Int, error) {
+	estimatedGas, err := c.ether.EstimateGas(transaction)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return estimatedGas, nil
 }

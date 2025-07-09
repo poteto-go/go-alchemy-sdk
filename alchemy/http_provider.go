@@ -2,7 +2,6 @@ package alchemy
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -30,7 +29,7 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 			internal.BatcherConfig{
 				MaxBatchSize: 100,
 				MaxBatchTime: time.Millisecond * 10,
-				Fetch:        utils.AlchemyBatchFetch,
+				Fetch:        utils.AlchemyBatchFetch[string],
 			},
 			types.RequestConfig{
 				Timeout: config.requestTimeout,
@@ -42,48 +41,49 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 }
 
 func (provider *AlchemyProvider) Send(method string, params ...string) (any, error) {
-	return provider.send(method, params...)
+	return send(provider, method, params...)
 }
 
-func (provider *AlchemyProvider) send(method string, params ...string) (any, error) {
+func send[T string | types.TransactionRequest](provider *AlchemyProvider, method string, params ...T) (any, error) {
 	if len(params) == 0 {
-		params = []string{}
+		params = []T{}
 	}
 
-	body := types.AlchemyRequestBody{
+	body := types.AlchemyRequestBody[T]{
 		Jsonrpc: "2.0",
 		Method:  method,
 		Params:  params,
 		Id:      provider.id,
 	}
 
-	req, err := http.NewRequest("POST", provider.config.GetUrl(), nil)
+	req, err := generateAlchemyRequest(provider.config.GetUrl())
 	if err != nil {
-		return "", core.ErrFailedToCreateRequest
+		return "", err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
 
-	request := types.AlchemyRequest{
+	request := types.AlchemyRequest[T]{
 		Body:    body,
 		Request: req,
 	}
 
-	if provider.batcher != nil {
-		response, err := provider.batcher.QueueRequest(context.Background(), request)
-		if err != nil {
-			return "", err
+	// TODO: not support generics in batch request for now.
+	/*
+		if provider.batcher != nil {
+			response, err := provider.batcher.QueueRequest(context.Background(), request)
+			if err != nil {
+				return "", err
+			}
+			provider.id++
+			return fmt.Sprintf("%v", response.Result), nil
 		}
-		provider.id++
-		return fmt.Sprintf("%v", response.Result), nil
-	}
+	*/
 
 	response, err := internal.RequestHttpWithBackoff(
 		*provider.config.backoffConfig,
 		types.RequestConfig{
 			Timeout: provider.config.requestTimeout,
 		},
-		utils.AlchemyFetch,
+		utils.AlchemyFetch[T],
 		request,
 	)
 	if err != nil {
@@ -93,4 +93,19 @@ func (provider *AlchemyProvider) send(method string, params ...string) (any, err
 	provider.id++
 
 	return response.Result, nil
+}
+
+func (provider *AlchemyProvider) SendTransaction(method string, params ...types.TransactionRequest) (any, error) {
+	return send(provider, method, params...)
+}
+
+func generateAlchemyRequest(url string) (*http.Request, error) {
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return &http.Request{}, core.ErrFailedToCreateRequest
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
+
+	return req, nil
 }

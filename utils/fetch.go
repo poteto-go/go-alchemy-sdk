@@ -12,7 +12,10 @@ import (
 	"github.com/poteto-go/tslice"
 )
 
-func AlchemyFetch(req types.AlchemyRequest, requestConfig types.RequestConfig) (types.AlchemyResponse, error) {
+func AlchemyFetch[T string | types.TransactionRequest](
+	req types.AlchemyRequest[T],
+	requestConfig types.RequestConfig,
+) (types.AlchemyResponse, error) {
 	paramJson, err := json.Marshal(req.Body)
 	if err != nil {
 		return types.AlchemyResponse{}, core.ErrFailedToMarshalParameter
@@ -34,13 +37,15 @@ func AlchemyFetch(req types.AlchemyRequest, requestConfig types.RequestConfig) (
 	if err := json.Unmarshal(body, &result); err != nil {
 		return types.AlchemyResponse{}, core.ErrFailedToUnmarshalResponse
 	}
-
 	return result, nil
 }
 
-func AlchemyBatchFetch(reqs []types.AlchemyRequest, requestConfig types.RequestConfig) ([]types.AlchemyResponse, error) {
+func AlchemyBatchFetch[T string | types.TransactionRequest](
+	reqs []types.AlchemyRequest[T],
+	requestConfig types.RequestConfig,
+) ([]types.AlchemyResponse, error) {
 	request := reqs[0].Request
-	bodies := tslice.Map(reqs, func(req types.AlchemyRequest) types.AlchemyRequestBody {
+	bodies := tslice.Map(reqs, func(req types.AlchemyRequest[T]) types.AlchemyRequestBody[T] {
 		return req.Body
 	})
 

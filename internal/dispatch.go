@@ -4,11 +4,11 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
-func RequestHttpWithBackoff(
+func RequestHttpWithBackoff[T string | types.TransactionRequest](
 	backoffConfig BackoffConfig,
 	requestConfig types.RequestConfig,
-	handler types.AlchemyFetchHandler,
-	request types.AlchemyRequest,
+	handler types.AlchemyFetchHandler[T],
+	request types.AlchemyRequest[T],
 ) (types.AlchemyResponse, error) {
 	var lastHttpError error
 

@@ -21,7 +21,7 @@ func TestAlchemyFetch(t *testing.T) {
 	// Arrange
 	targetUrl := "example.com"
 
-	body := types.AlchemyRequestBody{
+	body := types.AlchemyRequestBody[string]{
 		Jsonrpc: "2.0",
 		Method:  "method",
 		Params:  []string{"param1", "param2"},
@@ -34,7 +34,7 @@ func TestAlchemyFetch(t *testing.T) {
 
 		// Arrange
 		req, _ := http.NewRequest("POST", targetUrl, nil)
-		request := types.AlchemyRequest{
+		request := types.AlchemyRequest[string]{
 			Request: req,
 			Body:    body,
 		}
@@ -69,7 +69,7 @@ func TestAlchemyFetch(t *testing.T) {
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request := types.AlchemyRequest{
+			request := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body,
 			}
@@ -97,7 +97,7 @@ func TestAlchemyFetch(t *testing.T) {
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request := types.AlchemyRequest{
+			request := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body,
 			}
@@ -130,7 +130,7 @@ func TestAlchemyFetch(t *testing.T) {
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request := types.AlchemyRequest{
+			request := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body,
 			}
@@ -164,13 +164,13 @@ func TestAlchemyFetch(t *testing.T) {
 func TestAlchemyBatchFetch(t *testing.T) {
 	// Arrange
 	targetUrl := "example.com"
-	body1 := types.AlchemyRequestBody{
+	body1 := types.AlchemyRequestBody[string]{
 		Jsonrpc: "2.0",
 		Method:  "method1",
 		Params:  []string{"param1", "param2"},
 		Id:      1,
 	}
-	body2 := types.AlchemyRequestBody{
+	body2 := types.AlchemyRequestBody[string]{
 		Jsonrpc: "2.0",
 		Method:  "method2",
 		Params:  []string{"param3", "param4"},
@@ -193,15 +193,15 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			resultJson, _ := json.Marshal(mockResult)
 
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest{
+			request1 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body1,
 			}
-			request2 := types.AlchemyRequest{
+			request2 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body2,
 			}
-			requests := []types.AlchemyRequest{request1, request2}
+			requests := []types.AlchemyRequest[string]{request1, request2}
 
 			// Mock
 			httpmock.RegisterResponder(
@@ -232,11 +232,11 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}
 			resultJson, _ := json.Marshal(mockResult)
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest{
+			request1 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body1,
 			}
-			requests := []types.AlchemyRequest{request1}
+			requests := []types.AlchemyRequest[string]{request1}
 
 			// Mock
 			httpmock.RegisterResponder(
@@ -263,15 +263,15 @@ func TestAlchemyBatchFetch(t *testing.T) {
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest{
+			request1 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body1,
 			}
-			request2 := types.AlchemyRequest{
+			request2 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body2,
 			}
-			requests := []types.AlchemyRequest{request1, request2}
+			requests := []types.AlchemyRequest[string]{request1, request2}
 
 			// Mock
 			patches.ApplyMethod(
@@ -297,11 +297,11 @@ func TestAlchemyBatchFetch(t *testing.T) {
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest{
+			request1 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body1,
 			}
-			requests := []types.AlchemyRequest{request1}
+			requests := []types.AlchemyRequest[string]{request1}
 
 			// Mock
 			patches.ApplyMethod(
@@ -337,15 +337,15 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}
 			resultJson, _ := json.Marshal(mockResult)
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest{
+			request1 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body1,
 			}
-			request2 := types.AlchemyRequest{
+			request2 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body2,
 			}
-			requests := []types.AlchemyRequest{request1, request2}
+			requests := []types.AlchemyRequest[string]{request1, request2}
 
 			// Mock
 			patches.ApplyFunc(
@@ -385,11 +385,11 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}
 			resultJson, _ := json.Marshal(mockResult)
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest{
+			request1 := types.AlchemyRequest[string]{
 				Request: req,
 				Body:    body1,
 			}
-			requests := []types.AlchemyRequest{request1}
+			requests := []types.AlchemyRequest[string]{request1}
 
 			// Mock
 			patches.ApplyFunc(

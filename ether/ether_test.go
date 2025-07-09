@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/go-viper/mapstructure/v2"
-
 	"github.com/agiledragon/gomonkey"
+	"github.com/go-viper/mapstructure/v2"
+	"github.com/goccy/go-json"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/alchemy"
 	"github.com/poteto-go/go-alchemy-sdk/core"
@@ -740,6 +740,120 @@ func TestEther_GetTokenBalances(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToMapTokenResponse, err)
+		})
+	})
+}
+
+func TestEther_EstimateGas(t *testing.T) {
+	// Arrange
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+
+	transaction := types.TransactionRequest{
+		From:  "0x1234",
+		To:    "0x2345",
+		Value: "0x1",
+	}
+
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("call eth_estimateGas & estimate gas", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedRes := "0x1234"
+			expected, _ := utils.FromBigHex(expectedRes)
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"SendTransaction",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+					assert.Equal(t, core.Eth_EstimateGas, method)
+					return expectedRes, nil
+				},
+			)
+
+			// Act
+			actual, _ := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.Equal(t, expected, actual)
+		})
+	})
+
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if error occur in marshaling parameter, return core.ErrFailedToMarshalParameter", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyFunc(
+				json.Marshal,
+				func(v any) ([]byte, error) {
+					return nil, errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.ErrorIs(t, err, core.ErrFailedToMarshalParameter)
+		})
+
+		t.Run("if error occur in Send, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"SendTransaction",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+
+		t.Run("if error occur in FromBigHex, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+			expectedRes := "0x1234"
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"SendTransaction",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+					assert.Equal(t, core.Eth_EstimateGas, method)
+					return expectedRes, nil
+				},
+			)
+			patches.ApplyFunc(
+				utils.FromBigHex,
+				func(_ string) (*big.Int, error) {
+					return big.NewInt(0), expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
 		})
 	})
 }
