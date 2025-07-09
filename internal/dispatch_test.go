@@ -22,10 +22,10 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 		requestConfig := types.RequestConfig{
 			Timeout: 10 * time.Second,
 		}
-		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig) (types.AlchemyResponse, error) {
+		mockHandler := func(request types.AlchemyRequest[string], _ types.RequestConfig) (types.AlchemyResponse, error) {
 			return types.AlchemyResponse{}, nil
 		}
-		request := types.AlchemyRequest{}
+		request := types.AlchemyRequest[string]{}
 
 		// Act
 		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)
@@ -47,14 +47,14 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 			Timeout: 10 * time.Second,
 		}
 		callCount := 0
-		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig) (types.AlchemyResponse, error) {
+		mockHandler := func(request types.AlchemyRequest[string], _ types.RequestConfig) (types.AlchemyResponse, error) {
 			callCount++
 			if callCount < 3 {
 				return types.AlchemyResponse{}, errors.New("test error")
 			}
 			return types.AlchemyResponse{}, nil
 		}
-		request := types.AlchemyRequest{}
+		request := types.AlchemyRequest[string]{}
 
 		// Act
 		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)
@@ -76,10 +76,10 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 		requestConfig := types.RequestConfig{
 			Timeout: 10 * time.Second,
 		}
-		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig) (types.AlchemyResponse, error) {
+		mockHandler := func(request types.AlchemyRequest[string], _ types.RequestConfig) (types.AlchemyResponse, error) {
 			return types.AlchemyResponse{}, errors.New("test error")
 		}
-		request := types.AlchemyRequest{}
+		request := types.AlchemyRequest[string]{}
 
 		// Act
 		_, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)

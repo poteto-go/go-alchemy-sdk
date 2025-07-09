@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -22,8 +21,6 @@ func AlchemyFetch[T string | types.TransactionRequest](
 		return types.AlchemyResponse{}, core.ErrFailedToMarshalParameter
 	}
 
-	fmt.Println(string(paramJson))
-
 	client := &http.Client{
 		Timeout: requestConfig.Timeout,
 	}
@@ -40,7 +37,6 @@ func AlchemyFetch[T string | types.TransactionRequest](
 	if err := json.Unmarshal(body, &result); err != nil {
 		return types.AlchemyResponse{}, core.ErrFailedToUnmarshalResponse
 	}
-
 	return result, nil
 }
 

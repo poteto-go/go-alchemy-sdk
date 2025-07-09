@@ -562,7 +562,7 @@ func TestCore_EstimateGas(t *testing.T) {
 	transaction := types.TransactionRequest{
 		From:  "0x1234",
 		To:    "0x2345",
-		Value: big.NewInt(1000),
+		Value: "0x1",
 	}
 
 	t.Run("call ether.EstimateGas & return result", func(t *testing.T) {

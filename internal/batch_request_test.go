@@ -32,7 +32,7 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 2,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch:        utils.AlchemyBatchFetch,
+		Fetch:        utils.AlchemyBatchFetch[string],
 	}
 
 	requestConfig := types.RequestConfig{
@@ -47,9 +47,9 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		req, _ := http.NewRequest("POST", server.URL, nil)
-		request := types.AlchemyRequest{
+		request := types.AlchemyRequest[string]{
 			Request: req,
-			Body:    types.AlchemyRequestBody{Id: 1},
+			Body:    types.AlchemyRequestBody[string]{Id: 1},
 		}
 		res, err := batcher.QueueRequest(context.Background(), request)
 		assert.NoError(t, err)
@@ -59,9 +59,9 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		req, _ := http.NewRequest("POST", server.URL, nil)
-		request := types.AlchemyRequest{
+		request := types.AlchemyRequest[string]{
 			Request: req,
-			Body:    types.AlchemyRequestBody{Id: 2},
+			Body:    types.AlchemyRequestBody[string]{Id: 2},
 		}
 		res, err := batcher.QueueRequest(context.Background(), request)
 		assert.NoError(t, err)
@@ -84,7 +84,7 @@ func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch:        utils.AlchemyBatchFetch,
+		Fetch:        utils.AlchemyBatchFetch[string],
 	}
 
 	requestConfig := types.RequestConfig{
@@ -94,9 +94,9 @@ func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
 	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
 
 	req, _ := http.NewRequest("POST", server.URL, nil)
-	request := types.AlchemyRequest{
+	request := types.AlchemyRequest[string]{
 		Request: req,
-		Body:    types.AlchemyRequestBody{Id: 1},
+		Body:    types.AlchemyRequestBody[string]{Id: 1},
 	}
 
 	_, err := batcher.QueueRequest(context.Background(), request)
@@ -107,7 +107,7 @@ func TestRequestBatcher_Context_Cancel(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch:        utils.AlchemyBatchFetch,
+		Fetch:        utils.AlchemyBatchFetch[string],
 	}
 
 	requestConfig := types.RequestConfig{
@@ -120,9 +120,9 @@ func TestRequestBatcher_Context_Cancel(t *testing.T) {
 	cancel()
 
 	req, _ := http.NewRequest("POST", "", nil)
-	request := types.AlchemyRequest{
+	request := types.AlchemyRequest[string]{
 		Request: req,
-		Body:    types.AlchemyRequestBody{Id: 1},
+		Body:    types.AlchemyRequestBody[string]{Id: 1},
 	}
 
 	_, err := batcher.QueueRequest(ctx, request)
@@ -133,7 +133,7 @@ func TestRequestBatcher_Flush_Fetch_Error(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig) ([]types.AlchemyResponse, error) {
+		Fetch: func(reqs []types.AlchemyRequest[string], config types.RequestConfig) ([]types.AlchemyResponse, error) {
 			return nil, errors.New("fetch error")
 		},
 	}
@@ -145,9 +145,9 @@ func TestRequestBatcher_Flush_Fetch_Error(t *testing.T) {
 	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
 
 	req, _ := http.NewRequest("POST", "", nil)
-	request := types.AlchemyRequest{
+	request := types.AlchemyRequest[string]{
 		Request: req,
-		Body:    types.AlchemyRequestBody{Id: 1},
+		Body:    types.AlchemyRequestBody[string]{Id: 1},
 	}
 
 	_, err := batcher.QueueRequest(context.Background(), request)
@@ -158,7 +158,7 @@ func TestRequestBatcher_Flush_No_Response(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig) ([]types.AlchemyResponse, error) {
+		Fetch: func(reqs []types.AlchemyRequest[string], config types.RequestConfig) ([]types.AlchemyResponse, error) {
 			return []types.AlchemyResponse{}, nil
 		},
 	}
@@ -170,9 +170,9 @@ func TestRequestBatcher_Flush_No_Response(t *testing.T) {
 	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
 
 	req, _ := http.NewRequest("POST", "", nil)
-	request := types.AlchemyRequest{
+	request := types.AlchemyRequest[string]{
 		Request: req,
-		Body:    types.AlchemyRequestBody{Id: 1},
+		Body:    types.AlchemyRequestBody[string]{Id: 1},
 	}
 
 	_, err := batcher.QueueRequest(context.Background(), request)
@@ -183,7 +183,7 @@ func TestRequestBatcher_ProcessQueue_Timeout(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 10,
-		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig) ([]types.AlchemyResponse, error) {
+		Fetch: func(reqs []types.AlchemyRequest[string], config types.RequestConfig) ([]types.AlchemyResponse, error) {
 			return []types.AlchemyResponse{}, nil
 		},
 	}

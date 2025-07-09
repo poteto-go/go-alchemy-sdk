@@ -57,12 +57,10 @@ func (provider *AlchemyProvider) send(method string, params ...string) (any, err
 		Id:      provider.id,
 	}
 
-	req, err := http.NewRequest("POST", provider.config.GetUrl(), nil)
+	req, err := generateAlchemyRequest(provider.config.GetUrl())
 	if err != nil {
-		return "", core.ErrFailedToCreateRequest
+		return "", err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
 
 	request := types.AlchemyRequest[string]{
 		Body:    body,
@@ -111,12 +109,10 @@ func (provider *AlchemyProvider) sendTransaction(method string, params ...types.
 		Id:      provider.id,
 	}
 
-	req, err := http.NewRequest("POST", provider.config.GetUrl(), nil)
+	req, err := generateAlchemyRequest(provider.config.GetUrl())
 	if err != nil {
-		return "", core.ErrFailedToCreateRequest
+		return "", err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
 
 	request := types.AlchemyRequest[types.TransactionRequest]{
 		Body:    body,
@@ -138,4 +134,15 @@ func (provider *AlchemyProvider) sendTransaction(method string, params ...types.
 	provider.id++
 
 	return response.Result, nil
+}
+
+func generateAlchemyRequest(url string) (*http.Request, error) {
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return &http.Request{}, core.ErrFailedToCreateRequest
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
+
+	return req, nil
 }

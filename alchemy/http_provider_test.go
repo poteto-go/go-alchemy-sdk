@@ -98,8 +98,8 @@ func TestAlchemyProvider_Send(t *testing.T) {
 
 			// Mock
 			patches.ApplyFunc(
-				utils.AlchemyFetch,
-				func(req types.AlchemyRequest, _ types.RequestConfig) (types.AlchemyResponse, error) {
+				utils.AlchemyFetch[string],
+				func(req types.AlchemyRequest[string], _ types.RequestConfig) (types.AlchemyResponse, error) {
 					return types.AlchemyResponse{}, errExpected
 				},
 			)

@@ -752,7 +752,7 @@ func TestEther_EstimateGas(t *testing.T) {
 	transaction := types.TransactionRequest{
 		From:  "0x1234",
 		To:    "0x2345",
-		Value: big.NewInt(1000),
+		Value: "0x1",
 	}
 
 	t.Run("normal case", func(t *testing.T) {
@@ -767,8 +767,8 @@ func TestEther_EstimateGas(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				"SendTransaction",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
 					assert.Equal(t, core.Eth_EstimateGas, method)
 					return expectedRes, nil
 				},
@@ -812,8 +812,8 @@ func TestEther_EstimateGas(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				"SendTransaction",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -836,8 +836,8 @@ func TestEther_EstimateGas(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				"SendTransaction",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
 					assert.Equal(t, core.Eth_EstimateGas, method)
 					return expectedRes, nil
 				},
