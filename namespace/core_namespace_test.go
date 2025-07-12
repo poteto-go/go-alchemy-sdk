@@ -614,6 +614,92 @@ func TestCore_GetTokenMetadata(t *testing.T) {
 	})
 }
 
+func TestCore_GetLogs(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	coreNamespace := namespace.NewCore(api).(*namespace.Core)
+	filter := types.Filter{
+		FromBlock: "0x1",
+		ToBlock:   "0x2",
+		Address:   "0x3",
+		Topics:    []string{"0x4"},
+	}
+
+	t.Run("call ether.GetLogs & return result", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expected := []types.LogResponse{
+			{
+				LogIndex:         "0x0",
+				Removed:          false,
+				BlockNumber:      "0x233",
+				BlockHash:        "0xfc139f5e2edee9e9c888d8df9a2d2226133a9bd87c88ccbd9c930d3d4c9f9ef5",
+				TransactionHash:  "0x66e7a140c8fa27fe98fde923defea7562c3ca2d6bb89798aabec65782c08f63d",
+				TransactionIndex: "0x0",
+				Address:          "0x42699a7612a82f1d9c36148af9c77354759b210b",
+				Data:             "0x0000000000000000000000000000000000000000000000000000000000000004",
+				Topics: []string{
+					"0x04474795f5b996ff80cb47c148d4c5ccdbe09ef27551820caa9c2f8ed149cce3",
+				},
+			},
+			{
+				LogIndex:         "0x0",
+				Removed:          false,
+				BlockNumber:      "0x233",
+				BlockHash:        "0xfc139f5e2edee9e9c888d8df9a2d2226133a9bd87c88ccbd9c930d3d4c9f9ef5",
+				TransactionHash:  "0x66e7a140c8fa27fe98fde923defea7562c3ca2d6bb89798aabec65782c08f63d",
+				TransactionIndex: "0x0",
+				Address:          "0x42699a7612a82f1d9c36148af9c77354759b210b",
+				Data:             "0x0000000000000000000000000000000000000000000000000000000000000004",
+				Topics: []string{
+					"0x04474795f5b996ff80cb47c148d4c5ccdbe09ef27551820caa9c2f8ed149cce3",
+				},
+			},
+		}
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetLogs",
+			func(_ *ether.Ether, fil types.Filter) ([]types.LogResponse, error) {
+				assert.Equal(t, filter, fil)
+				return expected, nil
+			},
+		)
+
+		// Act
+		actual, _ := coreNamespace.GetLogs(filter)
+
+		// Assert
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("call ether.GetLogs & return internal error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expectedErr := errors.New("error")
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetLogs",
+			func(_ *ether.Ether, _ types.Filter) ([]types.LogResponse, error) {
+				return []types.LogResponse{}, expectedErr
+			},
+		)
+
+		// Act
+		_, err := coreNamespace.GetLogs(filter)
+
+		// Assert
+		assert.ErrorIs(t, expectedErr, err)
+	})
+}
+
 func TestCore_EstimateGas(t *testing.T) {
 	// Arrange
 	api := newEtherApi()

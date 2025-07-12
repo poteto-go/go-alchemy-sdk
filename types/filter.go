@@ -3,7 +3,7 @@ package types
 type Filter struct {
 	FromBlock string   `json:"fromBlock,omitempty"`
 	ToBlock   string   `json:"toBlock,omitempty"`
-	Address   []string `json:"address,omitempty"`
+	Address   string   `json:"address,omitempty"`
 	Topics    []string `json:"topics"`
 }
 
