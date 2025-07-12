@@ -53,6 +53,11 @@ type ICore interface {
 	GetTokenMetadata(address string) (types.TokenMetadataResponse, error)
 
 	/*
+		Returns an array of logs that match the provided filter.
+	*/
+	GetLogs(filter types.Filter) ([]types.LogResponse, error)
+
+	/*
 		Returns an estimate of the amount of gas that would be required to submit transaction to the network.
 
 		An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
@@ -153,6 +158,15 @@ func (c *Core) GetTokenMetadata(address string) (types.TokenMetadataResponse, er
 	}
 
 	return result, nil
+}
+
+func (c *Core) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
+	logs, err := c.ether.GetLogs(filter)
+	if err != nil {
+		return []types.LogResponse{}, err
+	}
+
+	return logs, nil
 }
 
 func (c *Core) EstimateGas(transaction types.TransactionRequest) (*big.Int, error) {

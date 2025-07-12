@@ -12,7 +12,7 @@ import (
 	"github.com/poteto-go/tslice"
 )
 
-func AlchemyFetch[T string | types.TransactionRequest](
+func AlchemyFetch[T string | types.TransactionRequest | types.Filter](
 	req types.AlchemyRequest[T],
 	requestConfig types.RequestConfig,
 ) (types.AlchemyResponse, error) {
@@ -40,7 +40,7 @@ func AlchemyFetch[T string | types.TransactionRequest](
 	return result, nil
 }
 
-func AlchemyBatchFetch[T string | types.TransactionRequest](
+func AlchemyBatchFetch[T string | types.TransactionRequest | types.Filter](
 	reqs []types.AlchemyRequest[T],
 	requestConfig types.RequestConfig,
 ) ([]types.AlchemyResponse, error) {

@@ -836,6 +836,150 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 	})
 }
 
+func TestEther_GetLogs(t *testing.T) {
+	// Arrange
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	expectedRes := []any{
+		map[string]any{
+			"logIndex":         "0x0",
+			"removed":          false,
+			"blockNumber":      "0x233",
+			"blockHash":        "0xfc139f5e2edee9e9c888d8df9a2d2226133a9bd87c88ccbd9c930d3d4c9f9ef5",
+			"transactionHash":  "0x66e7a140c8fa27fe98fde923defea7562c3ca2d6bb89798aabec65782c08f63d",
+			"transactionIndex": "0x0",
+			"address":          "0x42699a7612a82f1d9c36148af9c77354759b210b",
+			"data":             "0x0000000000000000000000000000000000000000000000000000000000000004",
+			"topics": []string{
+				"0x04474795f5b996ff80cb47c148d4c5ccdbe09ef27551820caa9c2f8ed149cce3",
+			},
+		},
+		map[string]any{
+			"logIndex":         "0x0",
+			"removed":          false,
+			"blockNumber":      "0x233",
+			"blockHash":        "0xfc139f5e2edee9e9c888d8df9a2d2226133a9bd87c88ccbd9c930d3d4c9f9ef5",
+			"transactionHash":  "0x66e7a140c8fa27fe98fde923defea7562c3ca2d6bb89798aabec65782c08f63d",
+			"transactionIndex": "0x0",
+			"address":          "0x42699a7612a82f1d9c36148af9c77354759b210b",
+			"data":             "0x0000000000000000000000000000000000000000000000000000000000000004",
+			"topics": []string{
+				"0x04474795f5b996ff80cb47c148d4c5ccdbe09ef27551820caa9c2f8ed149cce3",
+			},
+		},
+	}
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call eth_getLogs & return logs", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expected := []types.LogResponse{
+				{
+					LogIndex:         "0x0",
+					Removed:          false,
+					BlockNumber:      "0x233",
+					BlockHash:        "0xfc139f5e2edee9e9c888d8df9a2d2226133a9bd87c88ccbd9c930d3d4c9f9ef5",
+					TransactionHash:  "0x66e7a140c8fa27fe98fde923defea7562c3ca2d6bb89798aabec65782c08f63d",
+					TransactionIndex: "0x0",
+					Address:          "0x42699a7612a82f1d9c36148af9c77354759b210b",
+					Data:             "0x0000000000000000000000000000000000000000000000000000000000000004",
+					Topics: []string{
+						"0x04474795f5b996ff80cb47c148d4c5ccdbe09ef27551820caa9c2f8ed149cce3",
+					},
+				},
+				{
+					LogIndex:         "0x0",
+					Removed:          false,
+					BlockNumber:      "0x233",
+					BlockHash:        "0xfc139f5e2edee9e9c888d8df9a2d2226133a9bd87c88ccbd9c930d3d4c9f9ef5",
+					TransactionHash:  "0x66e7a140c8fa27fe98fde923defea7562c3ca2d6bb89798aabec65782c08f63d",
+					TransactionIndex: "0x0",
+					Address:          "0x42699a7612a82f1d9c36148af9c77354759b210b",
+					Data:             "0x0000000000000000000000000000000000000000000000000000000000000004",
+					Topics: []string{
+						"0x04474795f5b996ff80cb47c148d4c5ccdbe09ef27551820caa9c2f8ed149cce3",
+					},
+				},
+			}
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"SendFilter",
+				func(_ *alchemy.AlchemyProvider, method string, params ...types.Filter) (any, error) {
+					assert.Equal(t, core.Eth_GetLogs, method)
+					return expectedRes, nil
+				},
+			)
+
+			// Act
+			actual, _ := ether.GetLogs(types.Filter{})
+
+			// Assert
+			assert.Equal(t, expected, actual)
+		})
+	})
+
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if error occur in SendFilter, return internal server error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"SendFilter",
+				func(_ *alchemy.AlchemyProvider, method string, params ...types.Filter) (any, error) {
+					assert.Equal(t, core.Eth_GetLogs, method)
+					return expectedRes, expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetLogs(types.Filter{})
+
+			// Assert
+			assert.ErrorIs(t, expectedErr, err)
+		})
+
+		// TODO: why this is not mocked
+		/*
+			t.Run("if failed mapstructure, return core.ErrFailedToMapTokenResponse", func(t *testing.T) {
+				patches := gomonkey.NewPatches()
+				defer patches.Reset()
+
+				// Mock
+				patches.ApplyMethod(
+					reflect.TypeOf(provider),
+					"SendFilter",
+					func(_ *alchemy.AlchemyProvider, method string, params ...types.Filter) (any, error) {
+						assert.Equal(t, core.Eth_GetLogs, method)
+						return expectedRes, nil
+					},
+				)
+
+				patches.ApplyFunc(
+					mapstructure.Decode,
+					func(_ any, _ any) error {
+						return errors.New("error")
+					},
+				)
+
+				// Act
+				_, err := ether.GetTokenMetadata("0x123")
+
+				// Assert
+				assert.ErrorIs(t, core.ErrFailedToMapTokenResponse, err)
+			})
+		*/
+	})
+}
+
 func TestEther_EstimateGas(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()

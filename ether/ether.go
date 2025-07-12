@@ -55,6 +55,11 @@ type EtherApi interface {
 	GetTokenMetadata(address string) (types.TokenMetadataResponse, error)
 
 	/*
+		Returns an array of logs that match the provided filter.
+	*/
+	GetLogs(filter types.Filter) ([]types.LogResponse, error)
+
+	/*
 		Returns an estimate of the amount of gas that would be required to submit transaction to the network.
 
 		An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
@@ -219,6 +224,29 @@ func (ether *Ether) GetTokenMetadata(address string) (types.TokenMetadataRespons
 	}
 
 	return tokenMetadata, nil
+}
+
+func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
+	result, err := ether.provider.SendFilter(
+		core.Eth_GetLogs,
+		filter,
+	)
+	if err != nil {
+		return []types.LogResponse{}, err
+	}
+
+	resultArr := result.([]any)
+	logs := make([]types.LogResponse, len(resultArr))
+	for i, res := range resultArr {
+		resultMap := res.(map[string]any)
+		var log types.LogResponse
+		if err := mapstructure.Decode(resultMap, &log); err != nil {
+			return []types.LogResponse{}, core.ErrFailedToMapTokenResponse
+		}
+
+		logs[i] = log
+	}
+	return logs, nil
 }
 
 func (ether *Ether) EstimateGas(transaction types.TransactionRequest) (*big.Int, error) {
