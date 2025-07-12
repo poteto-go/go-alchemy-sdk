@@ -49,6 +49,9 @@ type ICore interface {
 	*/
 	GetTokenBalances(address string, option *types.TokenBalanceOption) (types.TokenBalanceResponse, error)
 
+	/* Returns metadata for a given token contract address. */
+	GetTokenMetadata(address string) (types.TokenMetadataResponse, error)
+
 	/*
 		Returns an estimate of the amount of gas that would be required to submit transaction to the network.
 
@@ -138,6 +141,15 @@ func (c *Core) GetTokenBalances(address string, option *types.TokenBalanceOption
 	result, err := c.ether.GetTokenBalances(address, params...)
 	if err != nil {
 		return types.TokenBalanceResponse{}, err
+	}
+
+	return result, nil
+}
+
+func (c *Core) GetTokenMetadata(address string) (types.TokenMetadataResponse, error) {
+	result, err := c.ether.GetTokenMetadata(address)
+	if err != nil {
+		return types.TokenMetadataResponse{}, err
 	}
 
 	return result, nil

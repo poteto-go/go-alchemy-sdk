@@ -554,6 +554,66 @@ func TestCore_GetTokenBalances_WithAddressNContracts(t *testing.T) {
 	})
 }
 
+func TestCore_GetTokenMetadata(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	coreNamespace := namespace.NewCore(api).(*namespace.Core)
+
+	expected := types.TokenMetadataResponse{
+		Name:     "name",
+		Symbol:   "symbol",
+		Decimals: 18,
+		Logo:     "https://test.example.com",
+	}
+	t.Run("call ether.GetTokenMetadata & return result", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		callAddress := "0x123"
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTokenMetadata",
+			func(_ *ether.Ether, address string) (types.TokenMetadataResponse, error) {
+				assert.Equal(t, address, callAddress)
+				return expected, nil
+			},
+		)
+
+		// Act
+		actual, _ := coreNamespace.GetTokenMetadata(callAddress)
+
+		// Assert
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("call ether.GetTokenMetadata & return internal error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		callAddress := "0x123"
+		expectedErr := errors.New("error")
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTokenMetadata",
+			func(_ *ether.Ether, _ string) (types.TokenMetadataResponse, error) {
+				return types.TokenMetadataResponse{}, expectedErr
+			},
+		)
+
+		// Act
+		_, err := coreNamespace.GetTokenMetadata(callAddress)
+
+		// Assert
+		assert.ErrorIs(t, expectedErr, err)
+	})
+}
+
 func TestCore_EstimateGas(t *testing.T) {
 	// Arrange
 	api := newEtherApi()

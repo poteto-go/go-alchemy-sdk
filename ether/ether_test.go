@@ -744,6 +744,98 @@ func TestEther_GetTokenBalances(t *testing.T) {
 	})
 }
 
+func TestEther_GetTokenMetadata(t *testing.T) {
+	// Arrange
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	expectedResponse := map[string]any{
+		"name":     "USD Coin",
+		"symbol":   "USDC",
+		"decimals": 6,
+		"logo":     "https://static.alchemyapi.io/images/assets/3408.png",
+	}
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call with alchemy_getTokenMetadata & return token balance", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+					assert.Equal(t, core.Alchemy_GetTokenMetadata, method)
+					return expectedResponse, nil
+				},
+			)
+
+			// Act
+			actual, _ := ether.GetTokenMetadata("0x123")
+
+			// Assert
+			assert.Equal(t, types.TokenMetadataResponse{
+				Name:     "USD Coin",
+				Symbol:   "USDC",
+				Decimals: 6,
+				Logo:     "https://static.alchemyapi.io/images/assets/3408.png",
+			}, actual)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if error occur on send, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+					return expectedResponse, expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenMetadata("0x123")
+
+			// Assert
+			assert.ErrorIs(t, expectedErr, err)
+		})
+
+		t.Run("if failed mapstructure, return core.ErrFailedToMapTokenResponse", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+					assert.Equal(t, core.Alchemy_GetTokenMetadata, method)
+					return expectedResponse, nil
+				},
+			)
+			patches.ApplyFunc(
+				mapstructure.Decode,
+				func(_ any, _ any) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenMetadata("0x123")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrFailedToMapTokenResponse, err)
+		})
+	})
+}
+
 func TestEther_EstimateGas(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()

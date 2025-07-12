@@ -51,6 +51,9 @@ type EtherApi interface {
 	*/
 	GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error)
 
+	/* Returns metadata for a given token contract address. */
+	GetTokenMetadata(address string) (types.TokenMetadataResponse, error)
+
 	/*
 		Returns an estimate of the amount of gas that would be required to submit transaction to the network.
 
@@ -198,6 +201,24 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 	}
 
 	return tokenBalanceResponse, nil
+}
+
+func (ether *Ether) GetTokenMetadata(address string) (types.TokenMetadataResponse, error) {
+	result, err := ether.provider.Send(
+		core.Alchemy_GetTokenMetadata,
+		strings.ToLower(address),
+	)
+	if err != nil {
+		return types.TokenMetadataResponse{}, err
+	}
+
+	resultMap := result.(map[string]any)
+	var tokenMetadata types.TokenMetadataResponse
+	if err := mapstructure.Decode(resultMap, &tokenMetadata); err != nil {
+		return types.TokenMetadataResponse{}, core.ErrFailedToMapTokenResponse
+	}
+
+	return tokenMetadata, nil
 }
 
 func (ether *Ether) EstimateGas(transaction types.TransactionRequest) (*big.Int, error) {
