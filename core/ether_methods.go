@@ -12,4 +12,5 @@ var (
 
 var (
 	Alchemy_GetTokenBalances = "alchemy_getTokenBalances"
+	Alchemy_GetTokenMetadata = "alchemy_getTokenMetadata"
 )
