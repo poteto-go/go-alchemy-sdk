@@ -4,7 +4,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
-func RequestHttpWithBackoff[T string | types.TransactionRequest](
+func RequestHttpWithBackoff[T string | types.TransactionRequest | types.Filter](
 	backoffConfig BackoffConfig,
 	requestConfig types.RequestConfig,
 	handler types.AlchemyFetchHandler[T],

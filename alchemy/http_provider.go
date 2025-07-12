@@ -44,7 +44,7 @@ func (provider *AlchemyProvider) Send(method string, params ...string) (any, err
 	return send(provider, method, params...)
 }
 
-func send[T string | types.TransactionRequest](provider *AlchemyProvider, method string, params ...T) (any, error) {
+func send[T string | types.TransactionRequest | types.Filter](provider *AlchemyProvider, method string, params ...T) (any, error) {
 	if len(params) == 0 {
 		params = []T{}
 	}
@@ -96,6 +96,10 @@ func send[T string | types.TransactionRequest](provider *AlchemyProvider, method
 }
 
 func (provider *AlchemyProvider) SendTransaction(method string, params ...types.TransactionRequest) (any, error) {
+	return send(provider, method, params...)
+}
+
+func (provider *AlchemyProvider) SendFilter(method string, params ...types.Filter) (any, error) {
 	return send(provider, method, params...)
 }
 
