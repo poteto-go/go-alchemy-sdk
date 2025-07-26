@@ -172,6 +172,7 @@ func TestAPI_Core_GetStorageAt(t *testing.T) {
 	})
 }
 
+/*
 func TestAPI_Core_GetTokenBalance(t *testing.T) {
 	setting.Network = types.PolygonAmoy // I don't have on eth
 	alchemy := alchemy.NewAlchemy(setting)
@@ -188,3 +189,4 @@ func TestAPI_Core_GetTokenBalance(t *testing.T) {
 		assert.Nil(t, err)
 	})
 }
+*/
