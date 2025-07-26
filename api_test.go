@@ -2,7 +2,6 @@ package test
 
 import (
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"testing"
@@ -24,14 +23,12 @@ func TestMain(m *testing.M) {
 	setup()
 
 	m.Run()
-
-	teardown()
 }
 
 func setup() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		fmt.Println("this doesn't run on local")
 	}
 
 	setting = alchemy.AlchemySetting{
@@ -40,10 +37,6 @@ func setup() {
 	}
 
 	address = os.Getenv("ADDRESS")
-}
-
-func teardown() {
-	fmt.Println("Start teardown()")
 }
 
 func TestAPI_Core_GetTokenMetadata(t *testing.T) {
