@@ -107,6 +107,28 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToMarshalParameter, err)
 		})
+
+		t.Run("if not error, but result is nil, return core.ErrResultIsNil", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			httpmock.Activate(t)
+			defer httpmock.DeactivateAndReset()
+
+			// Mock
+			httpmock.RegisterResponder(
+				"POST",
+				provider.config.GetUrl(),
+				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":null}`),
+			)
+
+			// Act
+			_, err := provider.Send("hoge")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrResultIsNil, err)
+		})
 	})
 }
 
