@@ -5,11 +5,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 type QueuedRequest struct {
-	Request  types.AlchemyRequest[string]
+	Request  types.AlchemyRequest
+	Body     []byte
 	Response chan types.AlchemyResponse
 }
 
@@ -23,7 +25,7 @@ type RequestBatcher struct {
 type BatcherConfig struct {
 	MaxBatchSize int
 	MaxBatchTime time.Duration
-	Fetch        types.BatchAlchemyFetchHandler[string]
+	Fetch        types.BatchAlchemyFetchHandler
 }
 
 func NewRequestBatcher(
@@ -40,13 +42,14 @@ func NewRequestBatcher(
 	return batcher
 }
 
-func (b *RequestBatcher) QueueRequest(ctx context.Context, request types.AlchemyRequest[string]) (types.AlchemyResponse, error) {
+func (b *RequestBatcher) QueueRequest(ctx context.Context, request types.AlchemyRequest, body []byte) (types.AlchemyResponse, error) {
 	responseChan := make(chan types.AlchemyResponse, 1)
 	select {
 	case <-ctx.Done():
 		return types.AlchemyResponse{}, ctx.Err()
 	case b.requestQueue <- QueuedRequest{
 		Request:  request,
+		Body:     body,
 		Response: responseChan,
 	}:
 	}
@@ -92,12 +95,14 @@ func (b *RequestBatcher) flush(batch []QueuedRequest) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	requests := make([]types.AlchemyRequest[string], len(batch))
+	requests := make([]types.AlchemyRequest, len(batch))
+	bodies := make([][]byte, len(batch))
 	for i, req := range batch {
 		requests[i] = req.Request
+		bodies[i] = req.Body
 	}
 
-	responses, err := b.config.Fetch(requests, b.requestConfig)
+	responses, err := b.config.Fetch(requests, b.requestConfig, bodies)
 	if err != nil {
 		for _, req := range batch {
 			req.Response <- types.AlchemyResponse{Error: err}
@@ -111,7 +116,9 @@ func (b *RequestBatcher) flush(batch []QueuedRequest) {
 	}
 
 	for _, req := range batch {
-		if res, ok := responseMap[req.Request.Body.Id]; ok {
+		var requestBody types.AlchemyRequestBody[string]
+		json.Unmarshal(req.Body, &requestBody)
+		if res, ok := responseMap[requestBody.Id]; ok {
 			req.Response <- res
 		} else {
 			req.Response <- types.AlchemyResponse{Error: types.ErrNoResultFound}

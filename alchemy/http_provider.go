@@ -29,7 +29,7 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 			internal.BatcherConfig{
 				MaxBatchSize: 100,
 				MaxBatchTime: time.Millisecond * 10,
-				Fetch:        utils.AlchemyBatchFetch[string],
+				Fetch:        utils.AlchemyBatchFetch,
 			},
 			types.RequestConfig{
 				Timeout: config.requestTimeout,
@@ -41,28 +41,20 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 }
 
 func (provider *AlchemyProvider) Send(method string, params ...string) (any, error) {
-	return send(provider, method, params...)
+	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
+	if err != nil {
+		return nil, err
+	}
+	return send(provider, body)
 }
 
-func send[T string | types.TransactionRequest | types.Filter](provider *AlchemyProvider, method string, params ...T) (any, error) {
-	if len(params) == 0 {
-		params = []T{}
-	}
-
-	body := types.AlchemyRequestBody[T]{
-		Jsonrpc: "2.0",
-		Method:  method,
-		Params:  params,
-		Id:      provider.id,
-	}
-
+func send(provider *AlchemyProvider, body []byte) (any, error) {
 	req, err := generateAlchemyRequest(provider.config.GetUrl())
 	if err != nil {
 		return nil, err
 	}
 
-	request := types.AlchemyRequest[T]{
-		Body:    body,
+	request := types.AlchemyRequest{
 		Request: req,
 	}
 
@@ -83,8 +75,9 @@ func send[T string | types.TransactionRequest | types.Filter](provider *AlchemyP
 		types.RequestConfig{
 			Timeout: provider.config.requestTimeout,
 		},
-		utils.AlchemyFetch[T],
+		utils.AlchemyFetch,
 		request,
+		body,
 	)
 	if err != nil {
 		return nil, err
@@ -101,11 +94,19 @@ func send[T string | types.TransactionRequest | types.Filter](provider *AlchemyP
 }
 
 func (provider *AlchemyProvider) SendTransaction(method string, params ...types.TransactionRequest) (any, error) {
-	return send(provider, method, params...)
+	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
+	if err != nil {
+		return nil, err
+	}
+	return send(provider, body)
 }
 
 func (provider *AlchemyProvider) SendFilter(method string, params ...types.Filter) (any, error) {
-	return send(provider, method, params...)
+	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
+	if err != nil {
+		return nil, err
+	}
+	return send(provider, body)
 }
 
 func generateAlchemyRequest(url string) (*http.Request, error) {

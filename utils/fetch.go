@@ -9,54 +9,45 @@ import (
 
 	"github.com/poteto-go/go-alchemy-sdk/core"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/tslice"
 )
 
-func AlchemyFetch[T string | types.TransactionRequest | types.Filter](
-	req types.AlchemyRequest[T],
+func AlchemyFetch(
+	req types.AlchemyRequest,
 	requestConfig types.RequestConfig,
+	body []byte,
 ) (types.AlchemyResponse, error) {
-	paramJson, err := json.Marshal(req.Body)
-	if err != nil {
-		return types.AlchemyResponse{}, core.ErrFailedToMarshalParameter
-	}
-
 	client := &http.Client{
 		Timeout: requestConfig.Timeout,
 	}
 
-	req.Request.Body = io.NopCloser(bytes.NewBuffer(paramJson))
+	req.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 	res, err := client.Do(req.Request)
 	if err != nil {
 		return types.AlchemyResponse{}, core.ErrFailedToConnect
 	}
 	defer res.Body.Close()
 
-	body, _ := io.ReadAll(res.Body)
+	resBody, _ := io.ReadAll(res.Body)
 	result := types.AlchemyResponse{}
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := json.Unmarshal(resBody, &result); err != nil {
 		return types.AlchemyResponse{}, core.ErrFailedToUnmarshalResponse
 	}
 	return result, nil
 }
 
-func AlchemyBatchFetch[T string | types.TransactionRequest | types.Filter](
-	reqs []types.AlchemyRequest[T],
+func AlchemyBatchFetch(
+	reqs []types.AlchemyRequest,
 	requestConfig types.RequestConfig,
+	bodies [][]byte,
 ) ([]types.AlchemyResponse, error) {
 	request := reqs[0].Request
-	bodies := tslice.Map(reqs, func(req types.AlchemyRequest[T]) types.AlchemyRequestBody[T] {
-		return req.Body
-	})
 
 	client := &http.Client{
 		Timeout: requestConfig.Timeout,
 	}
 
 	if len(bodies) == 1 {
-		paramJson, _ := json.Marshal(bodies[0])
-
-		request.Body = io.NopCloser(bytes.NewBuffer(paramJson))
+		request.Body = io.NopCloser(bytes.NewBuffer(bodies[0]))
 		res, err := client.Do(request)
 		if err != nil {
 			return []types.AlchemyResponse{}, core.ErrFailedToConnect

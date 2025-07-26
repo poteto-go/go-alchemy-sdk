@@ -25,4 +25,5 @@ var (
 	ErrFailedToTransformChainId     = errors.New("failed to transform chain id")
 	ErrFailedToTransformV           = errors.New("failed to transform v")
 	ErrResultIsNil                  = errors.New("result is nil")
+	ErrFailedToCreateRequestBody    = errors.New("failed to create request body")
 )
