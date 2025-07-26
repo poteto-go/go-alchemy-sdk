@@ -22,13 +22,14 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 		requestConfig := types.RequestConfig{
 			Timeout: 10 * time.Second,
 		}
-		mockHandler := func(request types.AlchemyRequest[string], _ types.RequestConfig) (types.AlchemyResponse, error) {
+		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig, _ []byte) (types.AlchemyResponse, error) {
 			return types.AlchemyResponse{}, nil
 		}
-		request := types.AlchemyRequest[string]{}
+		request := types.AlchemyRequest{}
+		body := []byte{}
 
 		// Act
-		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)
+		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request, body)
 
 		// Assert
 		assert.NoError(t, err)
@@ -47,17 +48,18 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 			Timeout: 10 * time.Second,
 		}
 		callCount := 0
-		mockHandler := func(request types.AlchemyRequest[string], _ types.RequestConfig) (types.AlchemyResponse, error) {
+		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig, _ []byte) (types.AlchemyResponse, error) {
 			callCount++
 			if callCount < 3 {
 				return types.AlchemyResponse{}, errors.New("test error")
 			}
 			return types.AlchemyResponse{}, nil
 		}
-		request := types.AlchemyRequest[string]{}
+		request := types.AlchemyRequest{}
+		body := []byte{}
 
 		// Act
-		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)
+		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request, body)
 
 		// Assert
 		assert.NoError(t, err)
@@ -76,13 +78,14 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 		requestConfig := types.RequestConfig{
 			Timeout: 10 * time.Second,
 		}
-		mockHandler := func(request types.AlchemyRequest[string], _ types.RequestConfig) (types.AlchemyResponse, error) {
+		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig, _ []byte) (types.AlchemyResponse, error) {
 			return types.AlchemyResponse{}, errors.New("test error")
 		}
-		request := types.AlchemyRequest[string]{}
+		request := types.AlchemyRequest{}
+		body := []byte{}
 
 		// Act
-		_, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request)
+		_, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request, body)
 
 		// Assert
 		assert.Error(t, err)

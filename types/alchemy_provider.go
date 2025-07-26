@@ -8,15 +8,14 @@ import (
 
 var ErrNoResultFound = errors.New("no result found")
 
-type AlchemyRequest[T string | TransactionRequest | Filter] struct {
+type AlchemyRequest struct {
 	Request *http.Request
-	Body    AlchemyRequestBody[T]
 }
 
 type AlchemyRequestBody[T string | TransactionRequest | Filter] struct {
 	Jsonrpc string `json:"jsonrpc"`
 	Method  string `json:"method"`
-	Params  []T    `json:"params"`
+	Params  []T    `json:"params,omitempty"`
 	Id      int    `json:"id"`
 }
 
@@ -38,9 +37,9 @@ type IAlchemyProvider interface {
 	SendFilter(method string, params ...Filter) (any, error)
 }
 
-type AlchemyFetchHandler[T string | TransactionRequest | Filter] func(AlchemyRequest[T], RequestConfig) (AlchemyResponse, error)
+type AlchemyFetchHandler func(AlchemyRequest, RequestConfig, []byte) (AlchemyResponse, error)
 
-type BatchAlchemyFetchHandler[T string | TransactionRequest | Filter] func([]AlchemyRequest[T], RequestConfig) ([]AlchemyResponse, error)
+type BatchAlchemyFetchHandler func([]AlchemyRequest, RequestConfig, [][]byte) ([]AlchemyResponse, error)
 
 type RequestConfig struct {
 	Timeout time.Duration

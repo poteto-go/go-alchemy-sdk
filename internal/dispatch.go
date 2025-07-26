@@ -4,17 +4,18 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
-func RequestHttpWithBackoff[T string | types.TransactionRequest | types.Filter](
+func RequestHttpWithBackoff(
 	backoffConfig BackoffConfig,
 	requestConfig types.RequestConfig,
-	handler types.AlchemyFetchHandler[T],
-	request types.AlchemyRequest[T],
+	handler types.AlchemyFetchHandler,
+	request types.AlchemyRequest,
+	body []byte,
 ) (types.AlchemyResponse, error) {
 	var lastHttpError error
 
 	backoffManager := NewBackoffManager(backoffConfig)
 	for {
-		response, err := handler(request, requestConfig)
+		response, err := handler(request, requestConfig, body)
 		if err == nil {
 			return response, nil
 		}

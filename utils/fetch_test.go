@@ -21,12 +21,7 @@ func TestAlchemyFetch(t *testing.T) {
 	// Arrange
 	targetUrl := "example.com"
 
-	body := types.AlchemyRequestBody[string]{
-		Jsonrpc: "2.0",
-		Method:  "method",
-		Params:  []string{"param1", "param2"},
-		Id:      1,
-	}
+	body, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
 
 	t.Run("normal case:", func(t *testing.T) {
 		httpmock.Activate(t)
@@ -34,9 +29,8 @@ func TestAlchemyFetch(t *testing.T) {
 
 		// Arrange
 		req, _ := http.NewRequest("POST", targetUrl, nil)
-		request := types.AlchemyRequest[string]{
+		request := types.AlchemyRequest{
 			Request: req,
-			Body:    body,
 		}
 		mockResult := types.AlchemyResponse{
 			Jsonrpc: "2.0",
@@ -55,7 +49,7 @@ func TestAlchemyFetch(t *testing.T) {
 		// Act
 		result, err := utils.AlchemyFetch(request, types.RequestConfig{
 			Timeout: 10 * time.Second,
-		})
+		}, body)
 
 		// Assert
 		assert.Nil(t, err)
@@ -63,33 +57,6 @@ func TestAlchemyFetch(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("if failed to marshal parameter -> core.ErrFailedToMarshalParameter", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request := types.AlchemyRequest[string]{
-				Request: req,
-				Body:    body,
-			}
-
-			// Mock
-			patches.ApplyFunc(
-				json.Marshal,
-				func(v any) ([]byte, error) {
-					return nil, errors.New("error")
-				},
-			)
-
-			// Act
-			_, err := utils.AlchemyFetch(request, types.RequestConfig{
-				Timeout: 10 * time.Second,
-			})
-
-			// Assert
-			assert.ErrorIs(t, core.ErrFailedToMarshalParameter, err)
-		})
 
 		t.Run("if failed to request -> core.ErrFailedToConnect", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -97,9 +64,8 @@ func TestAlchemyFetch(t *testing.T) {
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request := types.AlchemyRequest[string]{
+			request := types.AlchemyRequest{
 				Request: req,
-				Body:    body,
 			}
 
 			// Mock
@@ -114,38 +80,41 @@ func TestAlchemyFetch(t *testing.T) {
 			// Act
 			_, err := utils.AlchemyFetch(request, types.RequestConfig{
 				Timeout: 10 * time.Second,
-			})
+			}, body)
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
 		})
 
 		t.Run("if failed to unmarshal response -> core.ErrFailedToUnmarshalResponse", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
 			httpmock.Activate(t)
+			patches := gomonkey.NewPatches()
 			defer func() {
-				httpmock.DeactivateAndReset()
 				patches.Reset()
+				httpmock.DeactivateAndReset()
 			}()
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request := types.AlchemyRequest[string]{
+			request := types.AlchemyRequest{
 				Request: req,
-				Body:    body,
 			}
+			mockResult := types.AlchemyResponse{
+				Jsonrpc: "2.0",
+				Id:      1,
+				Result:  "0x1234",
+			}
+			resultJson, _ := json.Marshal(mockResult)
 
 			// Mock
 			httpmock.RegisterResponder(
 				"POST",
 				targetUrl,
-				httpmock.NewStringResponder(200, `ok`),
+				httpmock.NewStringResponder(200, string(resultJson)),
 			)
-
-			// Mock
 			patches.ApplyFunc(
 				json.Unmarshal,
-				func(_ []byte, _ any) error {
+				func(data []byte, v interface{}) error {
 					return errors.New("error")
 				},
 			)
@@ -153,7 +122,7 @@ func TestAlchemyFetch(t *testing.T) {
 			// Act
 			_, err := utils.AlchemyFetch(request, types.RequestConfig{
 				Timeout: 10 * time.Second,
-			})
+			}, body)
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
@@ -164,18 +133,6 @@ func TestAlchemyFetch(t *testing.T) {
 func TestAlchemyBatchFetch(t *testing.T) {
 	// Arrange
 	targetUrl := "example.com"
-	body1 := types.AlchemyRequestBody[string]{
-		Jsonrpc: "2.0",
-		Method:  "method1",
-		Params:  []string{"param1", "param2"},
-		Id:      1,
-	}
-	body2 := types.AlchemyRequestBody[string]{
-		Jsonrpc: "2.0",
-		Method:  "method2",
-		Params:  []string{"param3", "param4"},
-		Id:      2,
-	}
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("batched", func(t *testing.T) {
@@ -193,15 +150,16 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			resultJson, _ := json.Marshal(mockResult)
 
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest[string]{
+			request1 := types.AlchemyRequest{
 				Request: req,
-				Body:    body1,
 			}
-			request2 := types.AlchemyRequest[string]{
+			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			request2 := types.AlchemyRequest{
 				Request: req,
-				Body:    body2,
 			}
-			requests := []types.AlchemyRequest[string]{request1, request2}
+			body2, _ := utils.CreateRequestBodyToBytes(2, "method", []string{"param3", "param4"})
+			requests := []types.AlchemyRequest{request1, request2}
+			bodies := [][]byte{body1, body2}
 
 			// Mock
 			httpmock.RegisterResponder(
@@ -213,7 +171,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			// Act
 			result, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
-			})
+			}, bodies)
 
 			// Assert
 			assert.Nil(t, err)
@@ -232,11 +190,11 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}
 			resultJson, _ := json.Marshal(mockResult)
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest[string]{
+			request1 := types.AlchemyRequest{
 				Request: req,
-				Body:    body1,
 			}
-			requests := []types.AlchemyRequest[string]{request1}
+			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			requests := []types.AlchemyRequest{request1}
 
 			// Mock
 			httpmock.RegisterResponder(
@@ -248,7 +206,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			// Act
 			result, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
-			})
+			}, [][]byte{body1})
 
 			// Assert
 			assert.Nil(t, err)
@@ -263,15 +221,16 @@ func TestAlchemyBatchFetch(t *testing.T) {
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest[string]{
+			request1 := types.AlchemyRequest{
 				Request: req,
-				Body:    body1,
 			}
-			request2 := types.AlchemyRequest[string]{
+			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			request2 := types.AlchemyRequest{
 				Request: req,
-				Body:    body2,
 			}
-			requests := []types.AlchemyRequest[string]{request1, request2}
+			body2, _ := utils.CreateRequestBodyToBytes(2, "method", []string{"param3", "param4"})
+			requests := []types.AlchemyRequest{request1, request2}
+			bodies := [][]byte{body1, body2}
 
 			// Mock
 			patches.ApplyMethod(
@@ -285,7 +244,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			// Act
 			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
-			})
+			}, bodies)
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -297,11 +256,11 @@ func TestAlchemyBatchFetch(t *testing.T) {
 
 			// Arrange
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest[string]{
+			request1 := types.AlchemyRequest{
 				Request: req,
-				Body:    body1,
 			}
-			requests := []types.AlchemyRequest[string]{request1}
+			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			requests := []types.AlchemyRequest{request1}
 
 			// Mock
 			patches.ApplyMethod(
@@ -315,7 +274,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			// Act
 			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
-			})
+			}, [][]byte{body1})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToConnect, err)
@@ -337,15 +296,16 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}
 			resultJson, _ := json.Marshal(mockResult)
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest[string]{
+			request1 := types.AlchemyRequest{
 				Request: req,
-				Body:    body1,
 			}
-			request2 := types.AlchemyRequest[string]{
+			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			request2 := types.AlchemyRequest{
 				Request: req,
-				Body:    body2,
 			}
-			requests := []types.AlchemyRequest[string]{request1, request2}
+			body2, _ := utils.CreateRequestBodyToBytes(2, "method", []string{"param3", "param4"})
+			requests := []types.AlchemyRequest{request1, request2}
+			bodies := [][]byte{body1, body2}
 
 			// Mock
 			patches.ApplyFunc(
@@ -363,7 +323,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			// Act
 			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
-			})
+			}, bodies)
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
@@ -385,11 +345,11 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}
 			resultJson, _ := json.Marshal(mockResult)
 			req, _ := http.NewRequest("POST", targetUrl, nil)
-			request1 := types.AlchemyRequest[string]{
+			request1 := types.AlchemyRequest{
 				Request: req,
-				Body:    body1,
 			}
-			requests := []types.AlchemyRequest[string]{request1}
+			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			requests := []types.AlchemyRequest{request1}
 
 			// Mock
 			patches.ApplyFunc(
@@ -407,7 +367,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			// Act
 			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
-			})
+			}, [][]byte{body1})
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)

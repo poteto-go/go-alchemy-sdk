@@ -21,7 +21,7 @@ func BenchmarkRequestBatcher_QueueRequest(b *testing.B) {
 	config := BatcherConfig{
 		MaxBatchSize: 100,
 		MaxBatchTime: time.Millisecond * 10,
-		Fetch:        utils.AlchemyBatchFetch[string],
+		Fetch:        utils.AlchemyBatchFetch,
 	}
 
 	requestConfig := types.RequestConfig{
@@ -31,16 +31,16 @@ func BenchmarkRequestBatcher_QueueRequest(b *testing.B) {
 	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
 
 	req, _ := http.NewRequest("POST", server.URL, nil)
-	request := types.AlchemyRequest[string]{
+	request := types.AlchemyRequest{
 		Request: req,
-		Body:    types.AlchemyRequestBody[string]{Id: 1},
 	}
+	body, _ := utils.CreateRequestBodyToBytes(1, "eth_blockNumber", []string{})
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		go func() {
-			batcher.QueueRequest(context.Background(), request)
+			batcher.QueueRequest(context.Background(), request, body)
 		}()
 	}
 }
