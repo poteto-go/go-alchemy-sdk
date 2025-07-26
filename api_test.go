@@ -1,0 +1,197 @@
+package test
+
+import (
+	"fmt"
+	"log"
+	"math/big"
+	"os"
+	"testing"
+
+	"github.com/joho/godotenv"
+	"github.com/poteto-go/go-alchemy-sdk/alchemy"
+	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/stretchr/testify/assert"
+)
+
+/*
+Check API Request
+Core Namespace
+*/
+var setting alchemy.AlchemySetting
+var address string
+
+func TestMain(m *testing.M) {
+	setup()
+
+	m.Run()
+
+	teardown()
+}
+
+func setup() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	setting = alchemy.AlchemySetting{
+		ApiKey:  os.Getenv("API_KEY"),
+		Network: types.EthMainnet,
+	}
+
+	address = os.Getenv("ADDRESS")
+}
+
+func teardown() {
+	fmt.Println("Start teardown()")
+}
+
+func TestAPI_Core_GetTokenMetadata(t *testing.T) {
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("usdc response", func(t *testing.T) {
+		res, err := alchemy.Core.GetTokenMetadata(
+			"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(
+			t,
+			types.TokenMetadataResponse{
+				Name:     "USDC",
+				Symbol:   "USDC",
+				Decimals: 6,
+				Logo:     "https://static.alchemyapi.io/images/assets/3408.png",
+			},
+			res,
+		)
+	})
+}
+
+func TestAPI_Core_EstimateGas(t *testing.T) {
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("over 0 response", func(t *testing.T) {
+		res, err := alchemy.Core.EstimateGas(
+			types.TransactionRequest{
+				From:  "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",
+				To:    "0x44aa93095d6749a706051658b970b941c72c1d53",
+				Value: "0x1",
+			},
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(
+			t,
+			res.Cmp(big.NewInt(0)),
+			1,
+		)
+	})
+}
+
+func TestAPI_Core_GetLogs(t *testing.T) {
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get logs", func(t *testing.T) {
+		res, err := alchemy.Core.GetLogs(
+			types.Filter{
+				FromBlock: "0x137d3c2",
+				ToBlock:   "0x137d3c3",
+				Address:   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+				Topics:    []string{},
+			},
+		)
+
+		assert.Nil(t, err)
+		assert.Greater(t, len(res), 0)
+	})
+}
+
+func TestAPI_Core_GetBlockNumber(t *testing.T) {
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get block number", func(t *testing.T) {
+		res, err := alchemy.Core.GetBlockNumber()
+
+		assert.Nil(t, err)
+		assert.Greater(t, res, 0)
+	})
+}
+
+func TestAPI_Core_GetGasPrice(t *testing.T) {
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get gas price", func(t *testing.T) {
+		res, err := alchemy.Core.GetGasPrice()
+
+		assert.Nil(t, err)
+		assert.Greater(t, res, 0)
+	})
+}
+
+func TestAPI_Core_GetBalance(t *testing.T) {
+	setting.Network = types.PolygonAmoy // I don't have on eth
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get balance", func(t *testing.T) {
+		res, err := alchemy.Core.GetBalance(
+			address, "latest",
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(
+			t,
+			res.Cmp(big.NewInt(0)),
+			1,
+		)
+	})
+}
+
+func TestAPI_Core_GetTransaction(t *testing.T) {
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get transaction", func(t *testing.T) {
+		res, err := alchemy.Core.GetTransaction(
+			"0x591b59017dc8b5b154dbca6b27811206e2794f636c7a9cb26a6b26afe0526eb1",
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(
+			t,
+			"0x591b59017dc8b5b154dbca6b27811206e2794f636c7a9cb26a6b26afe0526eb1",
+			res.Hash,
+		)
+	})
+}
+
+func TestAPI_Core_GetStorageAt(t *testing.T) {
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get storage at", func(t *testing.T) {
+		res, err := alchemy.Core.GetStorageAt(
+			"0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",
+			"0x0",
+			"latest",
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", res)
+	})
+}
+
+func TestAPI_Core_GetTokenBalance(t *testing.T) {
+	setting.Network = types.PolygonAmoy // I don't have on eth
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get token balance", func(t *testing.T) {
+		option := &types.TokenBalanceOption{
+			ContractAddresses: []string{"0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582"},
+		}
+
+		_, err := alchemy.Core.GetTokenBalances(
+			address, option,
+		)
+
+		assert.Nil(t, err)
+	})
+}
