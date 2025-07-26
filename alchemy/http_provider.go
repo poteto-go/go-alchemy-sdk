@@ -58,7 +58,7 @@ func send[T string | types.TransactionRequest | types.Filter](provider *AlchemyP
 
 	req, err := generateAlchemyRequest(provider.config.GetUrl())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	request := types.AlchemyRequest[T]{
@@ -87,12 +87,17 @@ func send[T string | types.TransactionRequest | types.Filter](provider *AlchemyP
 		request,
 	)
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+
+	result := response.Result
+	if result == nil {
+		return nil, core.ErrResultIsNil
 	}
 
 	provider.id++
 
-	return response.Result, nil
+	return result, nil
 }
 
 func (provider *AlchemyProvider) SendTransaction(method string, params ...types.TransactionRequest) (any, error) {

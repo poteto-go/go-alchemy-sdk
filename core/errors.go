@@ -24,4 +24,5 @@ var (
 	ErrFailedToTransformValue       = errors.New("failed to transform value")
 	ErrFailedToTransformChainId     = errors.New("failed to transform chain id")
 	ErrFailedToTransformV           = errors.New("failed to transform v")
+	ErrResultIsNil                  = errors.New("result is nil")
 )
