@@ -1093,3 +1093,65 @@ func TestEther_EstimateGas(t *testing.T) {
 		})
 	})
 }
+
+func Test_Call(t *testing.T) {
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+
+	transaction := types.TransactionRequest{
+		To:    "0x2345",
+		Value: "0x1",
+	}
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call eth_call, & return result", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedRes := "0x1234"
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"SendTransaction",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+					assert.Equal(t, core.Eth_Call, method)
+					return expectedRes, nil
+				},
+			)
+
+			// Act
+			res, err := ether.Call(transaction)
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expectedRes, res)
+		})
+	})
+
+	t.Run("error case: ", func(t *testing.T) {
+		t.Run("if error occur in Send, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"SendTransaction",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.Call(transaction)
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+	})
+}

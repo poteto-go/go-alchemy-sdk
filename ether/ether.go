@@ -67,6 +67,13 @@ type EtherApi interface {
 		This is an alias for {@link TransactNamespace.estimateGas}.
 	*/
 	EstimateGas(transaction types.TransactionRequest) (*big.Int, error)
+
+	/*
+		Returns the result of executing the transaction, using call.
+		A call does not require any ether, but cannot change any state.
+		This is useful for calling getters on Contracts.
+	*/
+	Call(tx types.TransactionRequest) (string, error)
 }
 
 type Ether struct {
@@ -261,4 +268,13 @@ func (ether *Ether) EstimateGas(transaction types.TransactionRequest) (*big.Int,
 	}
 
 	return estimatedGas, nil
+}
+
+func (ether *Ether) Call(tx types.TransactionRequest) (string, error) {
+	result, err := ether.provider.SendTransaction(core.Eth_Call, tx)
+	if err != nil {
+		return "", err
+	}
+
+	return result.(string), nil
 }
