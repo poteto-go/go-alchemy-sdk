@@ -1,6 +1,8 @@
 package types
 
-import "math/big"
+import (
+	"math/big"
+)
 
 type Signature struct {
 	R string   `json:"r"`
@@ -52,13 +54,13 @@ type TransactionResponse struct {
 type TransactionRequest struct {
 	Type                 *int      `json:"type,omitempty"`
 	To                   string    `json:"to"`
-	From                 string    `json:"from"`
-	Nonce                *string   `json:"nonce,omitempty"`
+	From                 string    `json:"from,omitempty"`
+	Nonce                string    `json:"nonce,omitempty"`
 	GasLimit             *big.Int  `json:"gasLimit,omitempty"`
 	GasPrice             *big.Int  `json:"gasPrice,omitempty"`
 	MaxPriorityFeePerGas *big.Int  `json:"maxPriorityFeePerGas,omitempty"`
 	MaxFeePerGas         *big.Int  `json:"maxFeePerGas,omitempty"`
-	Data                 *string   `json:"data,omitempty"`
+	Data                 string    `json:"data,omitempty"`
 	Value                string    `json:"value,omitempty"`
 	ChainID              *int      `json:"chainId,omitempty"`
 	AccessList           *[]string `json:"accessList,omitempty"`

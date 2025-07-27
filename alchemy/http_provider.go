@@ -40,7 +40,7 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	return provider
 }
 
-func (provider *AlchemyProvider) Send(method string, params ...string) (any, error) {
+func (provider *AlchemyProvider) Send(method string, params types.RequestArgs) (any, error) {
 	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
 	if err != nil {
 		return nil, err
@@ -91,22 +91,6 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 	provider.id++
 
 	return result, nil
-}
-
-func (provider *AlchemyProvider) SendTransaction(method string, params ...types.TransactionRequest) (any, error) {
-	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
-	if err != nil {
-		return nil, err
-	}
-	return send(provider, body)
-}
-
-func (provider *AlchemyProvider) SendFilter(method string, params ...types.Filter) (any, error) {
-	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
-	if err != nil {
-		return nil, err
-	}
-	return send(provider, body)
 }
 
 func generateAlchemyRequest(url string) (*http.Request, error) {

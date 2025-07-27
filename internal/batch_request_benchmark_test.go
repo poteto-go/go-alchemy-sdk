@@ -34,7 +34,7 @@ func BenchmarkRequestBatcher_QueueRequest(b *testing.B) {
 	request := types.AlchemyRequest{
 		Request: req,
 	}
-	body, _ := utils.CreateRequestBodyToBytes(1, "eth_blockNumber", []string{})
+	body, _ := utils.CreateRequestBodyToBytes(1, "eth_blockNumber", types.RequestArgs{})
 
 	b.ResetTimer()
 

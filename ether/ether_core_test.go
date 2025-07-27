@@ -296,7 +296,7 @@ func TestEther_GetCode(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_GetCode, method)
 					return expected, nil
 				},
@@ -321,7 +321,7 @@ func TestEther_GetCode(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_GetCode, method)
 					return "0x", nil
 				},
@@ -396,7 +396,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_GetTransactionByHash, method)
 					return `{"hello": "world"}`, nil
 				},
@@ -435,7 +435,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_GetTransactionByHash, method)
 					return "", expectedErr
 				},
@@ -456,7 +456,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return `invalid json`, nil
 				},
 			)
@@ -485,7 +485,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return `{"hello": "world"}`, nil
 				},
 			)
@@ -528,7 +528,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_GetStorageAt, method)
 					return expected, nil
 				},
@@ -554,7 +554,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -613,7 +613,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
 					return expectedResponse, nil
 				},
@@ -634,7 +634,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
 					return expectedResponse, nil
 				},
@@ -677,7 +677,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
 					return expectedErrResponse, nil
 				},
@@ -703,7 +703,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -723,7 +723,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Alchemy_GetTokenBalances, method)
 					return expectedResponse, nil
 				},
@@ -764,7 +764,7 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Alchemy_GetTokenMetadata, method)
 					return expectedResponse, nil
 				},
@@ -795,7 +795,7 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return expectedResponse, expectedErr
 				},
 			)
@@ -815,7 +815,7 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...string) (any, error) {
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Alchemy_GetTokenMetadata, method)
 					return expectedResponse, nil
 				},
@@ -907,8 +907,8 @@ func TestEther_GetLogs(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"SendFilter",
-				func(_ *alchemy.AlchemyProvider, method string, params ...types.Filter) (any, error) {
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_GetLogs, method)
 					return expectedRes, nil
 				},
@@ -933,8 +933,8 @@ func TestEther_GetLogs(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"SendFilter",
-				func(_ *alchemy.AlchemyProvider, method string, params ...types.Filter) (any, error) {
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_GetLogs, method)
 					return expectedRes, expectedErr
 				},
@@ -1003,8 +1003,8 @@ func TestEther_EstimateGas(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"SendTransaction",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_EstimateGas, method)
 					return expectedRes, nil
 				},
@@ -1048,8 +1048,8 @@ func TestEther_EstimateGas(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"SendTransaction",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -1072,8 +1072,8 @@ func TestEther_EstimateGas(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"SendTransaction",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, core.Eth_EstimateGas, method)
 					return expectedRes, nil
 				},
@@ -1087,6 +1087,79 @@ func TestEther_EstimateGas(t *testing.T) {
 
 			// Act
 			_, err := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+	})
+}
+
+func Test_Call(t *testing.T) {
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+
+	transaction := types.TransactionRequest{
+		To:    "0x2345",
+		Value: "0x1",
+	}
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("call eth_call, & return result", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedRes := "0x1234"
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_Call, method)
+					return expectedRes, nil
+				},
+			)
+
+			// Act
+			res, err := ether.Call(transaction, "latest")
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expectedRes, res)
+		})
+	})
+
+	t.Run("error case: ", func(t *testing.T) {
+		t.Run("if failed to validate block tag -> core.ErrInvalidBlockTag", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Act
+			_, err := ether.Call(transaction, "unxpected")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrInvalidBlockTag, err)
+		})
+
+		t.Run("if error occur in Send, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.Call(transaction, "latest")
 
 			// Assert
 			assert.ErrorIs(t, err, expectedErr)

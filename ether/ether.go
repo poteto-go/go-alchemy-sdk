@@ -66,7 +66,14 @@ type EtherApi interface {
 		but after being mined affects the relevant state.
 		This is an alias for {@link TransactNamespace.estimateGas}.
 	*/
-	EstimateGas(transaction types.TransactionRequest) (*big.Int, error)
+	EstimateGas(tx types.TransactionRequest) (*big.Int, error)
+
+	/*
+		Returns the result of executing the transaction, using call.
+		A call does not require any ether, but cannot change any state.
+		This is useful for calling getters on Contracts.
+	*/
+	Call(tx types.TransactionRequest, blockTag string) (string, error)
 }
 
 type Ether struct {
@@ -80,7 +87,7 @@ func NewEtherApi(provider types.IAlchemyProvider) EtherApi {
 }
 
 func (ether *Ether) GetBlockNumber() (int, error) {
-	blockNumberHex, err := ether.provider.Send(core.Eth_BlockNumber)
+	blockNumberHex, err := ether.provider.Send(core.Eth_BlockNumber, types.RequestArgs{})
 	if err != nil {
 		return 0, err
 	}
@@ -93,7 +100,7 @@ func (ether *Ether) GetBlockNumber() (int, error) {
 }
 
 func (ether *Ether) GetGasPrice() (int, error) {
-	priceHex, err := ether.provider.Send(core.Eth_GasPrice)
+	priceHex, err := ether.provider.Send(core.Eth_GasPrice, types.RequestArgs{})
 	if err != nil {
 		return 0, err
 	}
@@ -112,8 +119,10 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 
 	balanceHex, err := ether.provider.Send(
 		core.Eth_GetBalance,
-		strings.ToLower(address),
-		blockTag,
+		types.RequestArgs{
+			strings.ToLower(address),
+			blockTag,
+		},
 	)
 	if err != nil {
 		return big.NewInt(0), err
@@ -133,8 +142,10 @@ func (ether *Ether) GetCode(address, blockTag string) (string, error) {
 
 	code, err := ether.provider.Send(
 		core.Eth_GetCode,
-		strings.ToLower(address),
-		blockTag,
+		types.RequestArgs{
+			strings.ToLower(address),
+			blockTag,
+		},
 	)
 	if err != nil {
 		return "", err
@@ -144,7 +155,9 @@ func (ether *Ether) GetCode(address, blockTag string) (string, error) {
 }
 
 func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, error) {
-	result, err := ether.provider.Send(core.Eth_GetTransactionByHash, hash)
+	result, err := ether.provider.Send(core.Eth_GetTransactionByHash, types.RequestArgs{
+		hash,
+	})
 	if err != nil {
 		return types.TransactionResponse{}, err
 	}
@@ -169,9 +182,11 @@ func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, er
 
 	result, err := ether.provider.Send(
 		core.Eth_GetStorageAt,
-		strings.ToLower(address),
-		position,
-		blockTag,
+		types.RequestArgs{
+			strings.ToLower(address),
+			position,
+			blockTag,
+		},
 	)
 	if err != nil {
 		return "", err
@@ -181,11 +196,14 @@ func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, er
 }
 
 func (ether *Ether) GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error) {
-	params = append([]string{address}, params...)
+	paramsAny := []any{address}
+	for _, param := range params {
+		paramsAny = append(paramsAny, param)
+	}
 
 	result, err := ether.provider.Send(
 		core.Alchemy_GetTokenBalances,
-		params...,
+		paramsAny,
 	)
 	if err != nil {
 		return types.TokenBalanceResponse{}, err
@@ -211,7 +229,9 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 func (ether *Ether) GetTokenMetadata(address string) (types.TokenMetadataResponse, error) {
 	result, err := ether.provider.Send(
 		core.Alchemy_GetTokenMetadata,
-		strings.ToLower(address),
+		types.RequestArgs{
+			strings.ToLower(address),
+		},
 	)
 	if err != nil {
 		return types.TokenMetadataResponse{}, err
@@ -227,9 +247,11 @@ func (ether *Ether) GetTokenMetadata(address string) (types.TokenMetadataRespons
 }
 
 func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
-	result, err := ether.provider.SendFilter(
+	result, err := ether.provider.Send(
 		core.Eth_GetLogs,
-		filter,
+		types.RequestArgs{
+			filter,
+		},
 	)
 	if err != nil {
 		return []types.LogResponse{}, err
@@ -249,8 +271,10 @@ func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 	return logs, nil
 }
 
-func (ether *Ether) EstimateGas(transaction types.TransactionRequest) (*big.Int, error) {
-	result, err := ether.provider.SendTransaction(core.Eth_EstimateGas, transaction)
+func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
+	result, err := ether.provider.Send(core.Eth_EstimateGas, types.RequestArgs{
+		tx,
+	})
 	if err != nil {
 		return big.NewInt(0), err
 	}
@@ -261,4 +285,20 @@ func (ether *Ether) EstimateGas(transaction types.TransactionRequest) (*big.Int,
 	}
 
 	return estimatedGas, nil
+}
+
+func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, error) {
+	if err := utils.ValidateBlockTag(blockTag); err != nil {
+		return "", err
+	}
+
+	result, err := ether.provider.Send(core.Eth_Call, types.RequestArgs{
+		tx,
+		blockTag,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return result.(string), nil
 }

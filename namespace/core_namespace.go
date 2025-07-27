@@ -64,7 +64,14 @@ type ICore interface {
 		but after being mined affects the relevant state.
 		This is an alias for {@link TransactNamespace.estimateGas}.
 	*/
-	EstimateGas(transaction types.TransactionRequest) (*big.Int, error)
+	EstimateGas(tx types.TransactionRequest) (*big.Int, error)
+
+	/*
+		Returns the result of executing the transaction, using call.
+		A call does not require any ether, but cannot change any state.
+		This is useful for calling getters on Contracts.
+	*/
+	Call(tx types.TransactionRequest, blockTag string) (string, error)
 }
 
 type Core struct {
@@ -169,11 +176,20 @@ func (c *Core) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 	return logs, nil
 }
 
-func (c *Core) EstimateGas(transaction types.TransactionRequest) (*big.Int, error) {
-	estimatedGas, err := c.ether.EstimateGas(transaction)
+func (c *Core) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
+	estimatedGas, err := c.ether.EstimateGas(tx)
 	if err != nil {
 		return big.NewInt(0), err
 	}
 
 	return estimatedGas, nil
+}
+
+func (c *Core) Call(tx types.TransactionRequest, blockTag string) (string, error) {
+	result, err := c.ether.Call(tx, blockTag)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 }

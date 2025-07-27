@@ -172,6 +172,23 @@ func TestAPI_Core_GetStorageAt(t *testing.T) {
 	})
 }
 
+func TestAPI_Core_Call(t *testing.T) {
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("call", func(t *testing.T) {
+		res, err := alchemy.Core.Call(
+			types.TransactionRequest{
+				To:    address,
+				Value: "0x1",
+			},
+			"latest",
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, "0x", res)
+	})
+}
+
 /*
 func TestAPI_Core_GetTokenBalance(t *testing.T) {
 	setting.Network = types.PolygonAmoy // I don't have on eth

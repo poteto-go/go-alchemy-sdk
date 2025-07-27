@@ -9,6 +9,7 @@ var (
 	Eth_GetStorageAt         = "eth_getStorageAt"
 	Eth_GetLogs              = "eth_getLogs"
 	Eth_EstimateGas          = "eth_estimateGas"
+	Eth_Call                 = "eth_call"
 )
 
 var (
