@@ -1131,6 +1131,17 @@ func Test_Call(t *testing.T) {
 	})
 
 	t.Run("error case: ", func(t *testing.T) {
+		t.Run("if failed to validate block tag -> core.ErrInvalidBlockTag", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Act
+			_, err := ether.Call(transaction, "unxpected")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrInvalidBlockTag, err)
+		})
+
 		t.Run("if error occur in Send, return internal error", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()

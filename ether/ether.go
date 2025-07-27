@@ -288,6 +288,10 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 }
 
 func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, error) {
+	if err := utils.ValidateBlockTag(blockTag); err != nil {
+		return "", err
+	}
+
 	result, err := ether.provider.Send(core.Eth_Call, types.RequestArgs{
 		tx,
 		blockTag,
