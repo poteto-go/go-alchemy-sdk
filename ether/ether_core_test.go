@@ -1098,9 +1098,12 @@ func Test_Call(t *testing.T) {
 	provider := newProviderForTest()
 	ether := ether.NewEtherApi(provider).(*ether.Ether)
 
-	transaction := types.TransactionRequest{
-		To:    "0x2345",
-		Value: "0x1",
+	transaction := []types.TransactionRequestWithBlockTag{
+		types.TransactionRequest{
+			To:    "0x2345",
+			Value: "0x1",
+		},
+		"latest",
 	}
 
 	t.Run("normal case:", func(t *testing.T) {
@@ -1114,8 +1117,8 @@ func Test_Call(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"SendTransaction",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+				"SendTransactionWithBlockTag",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequestWithBlockTag) (any, error) {
 					assert.Equal(t, core.Eth_Call, method)
 					return expectedRes, nil
 				},
@@ -1141,8 +1144,8 @@ func Test_Call(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
-				"SendTransaction",
-				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequest) (any, error) {
+				"SendTransactionWithBlockTag",
+				func(_ *alchemy.AlchemyProvider, method string, _ ...types.TransactionRequestWithBlockTag) (any, error) {
 					return "", expectedErr
 				},
 			)

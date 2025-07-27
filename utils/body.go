@@ -7,12 +7,8 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
-/*
-1. parse params to byte array
-2. parse request body to byte array
-*/
 func CreateRequestBodyToBytes[
-	T string | types.TransactionRequest | types.Filter,
+	T string | types.TransactionRequest | types.Filter | types.TransactionRequestWithBlockTag,
 ](id int, method string, params []T) ([]byte, error) {
 	body := types.AlchemyRequestBody[T]{
 		Id:      id,

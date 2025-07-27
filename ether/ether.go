@@ -73,7 +73,7 @@ type EtherApi interface {
 		A call does not require any ether, but cannot change any state.
 		This is useful for calling getters on Contracts.
 	*/
-	Call(tx types.TransactionRequest) (string, error)
+	Call(tx types.TransactionRequestWithBlockTag) (string, error)
 }
 
 type Ether struct {
@@ -270,8 +270,8 @@ func (ether *Ether) EstimateGas(transaction types.TransactionRequest) (*big.Int,
 	return estimatedGas, nil
 }
 
-func (ether *Ether) Call(tx types.TransactionRequest) (string, error) {
-	result, err := ether.provider.SendTransaction(core.Eth_Call, tx)
+func (ether *Ether) Call(tx types.TransactionRequestWithBlockTag) (string, error) {
+	result, err := ether.provider.SendTransactionWithBlockTag(core.Eth_Call, tx)
 	if err != nil {
 		return "", err
 	}

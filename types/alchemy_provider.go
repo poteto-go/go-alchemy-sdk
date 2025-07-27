@@ -12,7 +12,9 @@ type AlchemyRequest struct {
 	Request *http.Request
 }
 
-type AlchemyRequestBody[T string | TransactionRequest | Filter] struct {
+type AlchemyRequestBody[
+	T string | TransactionRequest | Filter | TransactionRequestWithBlockTag,
+] struct {
 	Jsonrpc string `json:"jsonrpc"`
 	Method  string `json:"method"`
 	Params  []T    `json:"params,omitempty"`
@@ -32,6 +34,9 @@ type IAlchemyProvider interface {
 
 	/* Send transaction */
 	SendTransaction(method string, params ...TransactionRequest) (any, error)
+
+	/* Send transaction w blockTag */
+	SendTransactionWithBlockTag(method string, params ...TransactionRequestWithBlockTag) (any, error)
 
 	/* Send filter */
 	SendFilter(method string, params ...Filter) (any, error)

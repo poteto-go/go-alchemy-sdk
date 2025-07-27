@@ -101,6 +101,14 @@ func (provider *AlchemyProvider) SendTransaction(method string, params ...types.
 	return send(provider, body)
 }
 
+func (provider *AlchemyProvider) SendTransactionWithBlockTag(method string, params ...types.TransactionRequestWithBlockTag) (any, error) {
+	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
+	if err != nil {
+		return nil, err
+	}
+	return send(provider, body)
+}
+
 func (provider *AlchemyProvider) SendFilter(method string, params ...types.Filter) (any, error) {
 	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
 	if err != nil {
