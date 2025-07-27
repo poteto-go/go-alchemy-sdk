@@ -12,13 +12,18 @@ type AlchemyRequest struct {
 	Request *http.Request
 }
 
-type AlchemyRequestBody[
-	T string | TransactionRequest | Filter | TransactionRequestWithBlockTag,
-] struct {
-	Jsonrpc string `json:"jsonrpc"`
-	Method  string `json:"method"`
-	Params  []T    `json:"params,omitempty"`
-	Id      int    `json:"id"`
+type RequestConfig struct {
+	Timeout time.Duration
+}
+
+// for json marshal
+type RequestArgs = []any
+
+type AlchemyRequestBody struct {
+	Jsonrpc string      `json:"jsonrpc"`
+	Method  string      `json:"method"`
+	Params  RequestArgs `json:"params,omitzero"`
+	Id      int         `json:"id"`
 }
 
 type AlchemyResponse struct {
@@ -30,22 +35,9 @@ type AlchemyResponse struct {
 
 type IAlchemyProvider interface {
 	/* Send raw transaction */
-	Send(method string, params ...string) (any, error)
-
-	/* Send transaction */
-	SendTransaction(method string, params ...TransactionRequest) (any, error)
-
-	/* Send transaction w blockTag */
-	SendTransactionWithBlockTag(method string, params ...TransactionRequestWithBlockTag) (any, error)
-
-	/* Send filter */
-	SendFilter(method string, params ...Filter) (any, error)
+	Send(method string, params RequestArgs) (any, error)
 }
 
 type AlchemyFetchHandler func(AlchemyRequest, RequestConfig, []byte) (AlchemyResponse, error)
 
 type BatchAlchemyFetchHandler func([]AlchemyRequest, RequestConfig, [][]byte) ([]AlchemyResponse, error)
-
-type RequestConfig struct {
-	Timeout time.Duration
-}

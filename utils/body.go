@@ -7,17 +7,12 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
-func CreateRequestBodyToBytes[
-	T string | types.TransactionRequest | types.Filter | types.TransactionRequestWithBlockTag,
-](id int, method string, params []T) ([]byte, error) {
-	body := types.AlchemyRequestBody[T]{
+func CreateRequestBodyToBytes(id int, method string, params types.RequestArgs) ([]byte, error) {
+	body := types.AlchemyRequestBody{
 		Id:      id,
 		Jsonrpc: "2.0",
 		Method:  method,
-	}
-
-	if len(params) > 0 {
-		body.Params = params
+		Params:  params,
 	}
 
 	jsonBody, err := json.Marshal(body)

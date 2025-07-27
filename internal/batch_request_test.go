@@ -50,7 +50,7 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 		request := types.AlchemyRequest{
 			Request: req,
 		}
-		body, _ := utils.CreateRequestBodyToBytes(1, "method", []string{})
+		body, _ := utils.CreateRequestBodyToBytes(1, "method", types.RequestArgs{})
 		res, err := batcher.QueueRequest(context.Background(), request, body)
 		assert.NoError(t, err)
 		assert.Equal(t, "0x1", res.Result)
@@ -62,7 +62,7 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 		request := types.AlchemyRequest{
 			Request: req,
 		}
-		body, _ := utils.CreateRequestBodyToBytes(2, "method", []string{})
+		body, _ := utils.CreateRequestBodyToBytes(2, "method", types.RequestArgs{})
 		res, err := batcher.QueueRequest(context.Background(), request, body)
 		assert.NoError(t, err)
 		assert.Equal(t, "0x2", res.Result)
@@ -97,7 +97,7 @@ func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
 	request := types.AlchemyRequest{
 		Request: req,
 	}
-	body, _ := utils.CreateRequestBodyToBytes(1, "method", []string{})
+	body, _ := utils.CreateRequestBodyToBytes(1, "method", types.RequestArgs{})
 
 	_, err := batcher.QueueRequest(context.Background(), request, body)
 	assert.Error(t, err)
@@ -123,7 +123,7 @@ func TestRequestBatcher_Context_Cancel(t *testing.T) {
 	request := types.AlchemyRequest{
 		Request: req,
 	}
-	body, _ := utils.CreateRequestBodyToBytes(1, "method", []string{})
+	body, _ := utils.CreateRequestBodyToBytes(1, "method", types.RequestArgs{})
 
 	_, err := batcher.QueueRequest(ctx, request, body)
 	assert.Error(t, err)
@@ -148,7 +148,7 @@ func TestRequestBatcher_Flush_Fetch_Error(t *testing.T) {
 	request := types.AlchemyRequest{
 		Request: req,
 	}
-	body, _ := utils.CreateRequestBodyToBytes(1, "method", []string{})
+	body, _ := utils.CreateRequestBodyToBytes(1, "method", types.RequestArgs{})
 
 	_, err := batcher.QueueRequest(context.Background(), request, body)
 	assert.Error(t, err)
@@ -173,7 +173,7 @@ func TestRequestBatcher_Flush_No_Response(t *testing.T) {
 	request := types.AlchemyRequest{
 		Request: req,
 	}
-	body, _ := utils.CreateRequestBodyToBytes(1, "method", []string{})
+	body, _ := utils.CreateRequestBodyToBytes(1, "method", types.RequestArgs{})
 
 	_, err := batcher.QueueRequest(context.Background(), request, body)
 	assert.Error(t, err)

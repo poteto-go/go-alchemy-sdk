@@ -21,7 +21,17 @@ func TestAlchemyFetch(t *testing.T) {
 	// Arrange
 	targetUrl := "example.com"
 
-	body, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+	body, _ := utils.CreateRequestBodyToBytes(
+		1,
+		"method",
+		func() types.RequestArgs {
+			var params []any
+			for _, p := range []string{"param1", "param2"} {
+				params = append(params, p)
+			}
+			return params
+		}(),
+	)
 
 	t.Run("normal case:", func(t *testing.T) {
 		httpmock.Activate(t)
@@ -153,11 +163,23 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			request1 := types.AlchemyRequest{
 				Request: req,
 			}
-			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			body1, _ := utils.CreateRequestBodyToBytes(
+				1,
+				"method",
+				types.RequestArgs{
+					[]string{"param1", "param2"},
+				},
+			)
 			request2 := types.AlchemyRequest{
 				Request: req,
 			}
-			body2, _ := utils.CreateRequestBodyToBytes(2, "method", []string{"param3", "param4"})
+			body2, _ := utils.CreateRequestBodyToBytes(
+				2,
+				"method",
+				types.RequestArgs{
+					[]string{"param3", "param4"},
+				},
+			)
 			requests := []types.AlchemyRequest{request1, request2}
 			bodies := [][]byte{body1, body2}
 
@@ -193,7 +215,13 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			request1 := types.AlchemyRequest{
 				Request: req,
 			}
-			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			body1, _ := utils.CreateRequestBodyToBytes(
+				1,
+				"method",
+				types.RequestArgs{
+					[]string{"param1", "param2"},
+				},
+			)
 			requests := []types.AlchemyRequest{request1}
 
 			// Mock
@@ -224,11 +252,23 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			request1 := types.AlchemyRequest{
 				Request: req,
 			}
-			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			body1, _ := utils.CreateRequestBodyToBytes(
+				1,
+				"method",
+				types.RequestArgs{
+					[]string{"param1", "param2"},
+				},
+			)
 			request2 := types.AlchemyRequest{
 				Request: req,
 			}
-			body2, _ := utils.CreateRequestBodyToBytes(2, "method", []string{"param3", "param4"})
+			body2, _ := utils.CreateRequestBodyToBytes(
+				2,
+				"method",
+				types.RequestArgs{
+					[]string{"param3", "param4"},
+				},
+			)
 			requests := []types.AlchemyRequest{request1, request2}
 			bodies := [][]byte{body1, body2}
 
@@ -259,7 +299,13 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			request1 := types.AlchemyRequest{
 				Request: req,
 			}
-			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			body1, _ := utils.CreateRequestBodyToBytes(
+				1,
+				"method",
+				types.RequestArgs{
+					[]string{"param1", "param2"},
+				},
+			)
 			requests := []types.AlchemyRequest{request1}
 
 			// Mock
@@ -299,11 +345,23 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			request1 := types.AlchemyRequest{
 				Request: req,
 			}
-			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			body1, _ := utils.CreateRequestBodyToBytes(
+				1,
+				"method",
+				types.RequestArgs{
+					[]string{"param1", "param2"},
+				},
+			)
 			request2 := types.AlchemyRequest{
 				Request: req,
 			}
-			body2, _ := utils.CreateRequestBodyToBytes(2, "method", []string{"param3", "param4"})
+			body2, _ := utils.CreateRequestBodyToBytes(
+				2,
+				"method",
+				types.RequestArgs{
+					[]string{"param3", "param4"},
+				},
+			)
 			requests := []types.AlchemyRequest{request1, request2}
 			bodies := [][]byte{body1, body2}
 
@@ -348,7 +406,13 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			request1 := types.AlchemyRequest{
 				Request: req,
 			}
-			body1, _ := utils.CreateRequestBodyToBytes(1, "method", []string{"param1", "param2"})
+			body1, _ := utils.CreateRequestBodyToBytes(
+				1,
+				"method",
+				types.RequestArgs{
+					[]string{"param1", "param2"},
+				},
+			)
 			requests := []types.AlchemyRequest{request1}
 
 			// Mock

@@ -65,22 +65,3 @@ type TransactionRequest struct {
 	ChainID              *int      `json:"chainId,omitempty"`
 	AccessList           *[]string `json:"accessList,omitempty"`
 }
-
-type TransactionRequestWithBlockTag struct {
-	TransactionRequest
-	string `json:",inline"`
-}
-
-type RequestArgs = []any
-
-/*
-func (txrwb *TransactionRequestWithBlockTag) MarshalJSON() ([]byte, error) {
-	txPayload, _ := json.Marshal(txrwb.TxRequest)
-	blockTagPayload := fmt.Sprintf(`"%s"`, txrwb.BlockTag)
-	return []byte(fmt.Sprintf(
-		"%s,%s",
-		txPayload,
-		blockTagPayload,
-	)), nil
-}
-*/
