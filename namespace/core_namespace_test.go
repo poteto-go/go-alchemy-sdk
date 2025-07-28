@@ -760,6 +760,64 @@ func TestCore_EstimateGas(t *testing.T) {
 	})
 }
 
+func TestCore_GetTransaction(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("call ether.GetTransaction & return result", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		txHash := "hash"
+		expected := types.TransactionResponse{
+			Hash: txHash,
+		}
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTransaction",
+			func(_ *ether.Ether, hash string) (types.TransactionResponse, error) {
+				assert.Equal(t, hash, txHash)
+				return expected, nil
+			},
+		)
+
+		// Act
+		actual, _ := core.GetTransaction(txHash)
+
+		// Assert
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("if error occur in ether.GetTransaction & return internal error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		txHash := "hash"
+		expectedErr := errors.New("error")
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTransaction",
+			func(_ *ether.Ether, hash string) (types.TransactionResponse, error) {
+				assert.Equal(t, hash, txHash)
+				return types.TransactionResponse{}, expectedErr
+			},
+		)
+
+		// Act
+		_, err := core.GetTransaction(txHash)
+
+		// Assert
+		assert.Equal(t, expectedErr, err)
+	})
+}
+
 func TestCore_Call(t *testing.T) {
 	// Arrange
 	api := newEtherApi()
@@ -815,6 +873,130 @@ func TestCore_Call(t *testing.T) {
 
 		// Act
 		_, err := core.Call(transaction, "latest")
+
+		// Assert
+		assert.Equal(t, expectedErr, err)
+	})
+}
+
+func TestCore_GetTransactionReceipt(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("call ether.GetTransactionReceipt & return result", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		txHash := "hash"
+		expected := types.TransactionReceipt{
+			TransactionHash: txHash,
+		}
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTransactionReceipt",
+			func(_ *ether.Ether, hash string) (types.TransactionReceipt, error) {
+				assert.Equal(t, hash, txHash)
+				return expected, nil
+			},
+		)
+
+		// Act
+		actual, _ := core.GetTransactionReceipt(txHash)
+
+		// Assert
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("if error occur in ether.TransactionReceipts & return internal error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expectedErr := errors.New("error")
+		txHash := "hash"
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTransactionReceipt",
+			func(_ *ether.Ether, hash string) (types.TransactionReceipt, error) {
+				assert.Equal(t, hash, txHash)
+				return types.TransactionReceipt{}, expectedErr
+			},
+		)
+
+		// Act
+		_, err := core.GetTransactionReceipt(txHash)
+
+		// Assert
+		assert.Equal(t, expectedErr, err)
+	})
+}
+
+func TestCore_GetTransactionReceipts(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("call ether.GetTransactionReceipts & return result", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		txHash := "hash"
+		txArg := types.TransactionReceiptsArg{
+			BlockHash: txHash,
+		}
+		expected := []types.TransactionReceipt{
+			{
+				TransactionHash: txHash,
+			},
+		}
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTransactionReceipts",
+			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+				assert.Equal(t, arg, txArg)
+				return expected, nil
+			},
+		)
+
+		// Act
+		actual, _ := core.GetTransactionReceipts(txArg)
+
+		// Assert
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("if error occur in ether.GetTransactionReceipts & return internal error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		expectedErr := errors.New("error")
+		txHash := "hash"
+		txArg := types.TransactionReceiptsArg{
+			BlockHash: txHash,
+		}
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetTransactionReceipts",
+			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+				assert.Equal(t, arg, txArg)
+				return []types.TransactionReceipt{}, expectedErr
+			},
+		)
+
+		// Act
+		_, err := core.GetTransactionReceipts(txArg)
 
 		// Assert
 		assert.Equal(t, expectedErr, err)

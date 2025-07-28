@@ -189,6 +189,21 @@ func TestAPI_Core_Call(t *testing.T) {
 	})
 }
 
+func TestAPI_Core_GetTransactionReceipt(t *testing.T) {
+	setting.Network = types.EthMainnet
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get transaction receipt", func(t *testing.T) {
+		txHash := "0xc11dacdf03d9fd9297e3a005560e8855608dde8534d9b1053f6608b8541623b8"
+		res, err := alchemy.Core.GetTransactionReceipt(
+			txHash,
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, res.TransactionHash, txHash)
+	})
+}
+
 /*
 func TestAPI_Core_GetTokenBalance(t *testing.T) {
 	setting.Network = types.PolygonAmoy // I don't have on eth
