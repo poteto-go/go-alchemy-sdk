@@ -72,6 +72,13 @@ type ICore interface {
 		This is useful for calling getters on Contracts.
 	*/
 	Call(tx types.TransactionRequest, blockTag string) (string, error)
+
+	/*
+		TODO: null if the tx has not been mined.
+		Returns the transaction receipt for hash.
+		To stall until the transaction has been mined, consider the waitForTransaction method below.
+	*/
+	GetTransactionReceipt(hash string) (types.TransactionReceipt, error)
 }
 
 type Core struct {
@@ -192,4 +199,13 @@ func (c *Core) Call(tx types.TransactionRequest, blockTag string) (string, error
 	}
 
 	return result, nil
+}
+
+func (c *Core) GetTransactionReceipt(hash string) (types.TransactionReceipt, error) {
+	receipt, err := c.ether.GetTransactionReceipt(hash)
+	if err != nil {
+		return types.TransactionReceipt{}, err
+	}
+
+	return receipt, nil
 }
