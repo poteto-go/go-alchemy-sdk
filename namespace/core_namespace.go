@@ -79,6 +79,11 @@ type ICore interface {
 		To stall until the transaction has been mined, consider the waitForTransaction method below.
 	*/
 	GetTransactionReceipt(hash string) (types.TransactionReceipt, error)
+
+	/*
+		An enhanced API that gets all transaction receipts for a given block by number or block hash.
+	*/
+	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
 }
 
 type Core struct {
@@ -136,7 +141,7 @@ func (c *Core) IsContractAddress(address string) bool {
 func (c *Core) GetTransaction(hash string) (types.TransactionResponse, error) {
 	transaction, err := c.ether.GetTransaction(hash)
 	if err != nil {
-		return types.TransactionResponse{}, nil
+		return types.TransactionResponse{}, err
 	}
 
 	return transaction, nil
@@ -208,4 +213,13 @@ func (c *Core) GetTransactionReceipt(hash string) (types.TransactionReceipt, err
 	}
 
 	return receipt, nil
+}
+
+func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+	receipts, err := c.ether.GetTransactionReceipts(arg)
+	if err != nil {
+		return []types.TransactionReceipt{}, err
+	}
+
+	return receipts, nil
 }
