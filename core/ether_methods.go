@@ -14,6 +14,7 @@ var (
 )
 
 var (
-	Alchemy_GetTokenBalances = "alchemy_getTokenBalances"
-	Alchemy_GetTokenMetadata = "alchemy_getTokenMetadata"
+	Alchemy_GetTokenBalances    = "alchemy_getTokenBalances"
+	Alchemy_GetTokenMetadata    = "alchemy_getTokenMetadata"
+	Alchemy_TransactionReceipts = "alchemy_getTransactionReceipts"
 )

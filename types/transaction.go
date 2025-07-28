@@ -67,20 +67,29 @@ type TransactionRequest struct {
 }
 
 type TransactionReceipt struct {
-	TransactionHash   string      `json:"transactionHash"`
-	TransactionIndex  string      `json:"transactionIndex"`
-	BlockHash         string      `json:"blockHash"`
-	BlockNumber       string      `json:"blockNumber"`
-	From              string      `json:"from"`
-	To                string      `json:"to,omitempty"`
-	CumulativeGasUsed string      `json:"cumulativeGasUsed"`
-	GasUsed           string      `json:"gasUsed"`
+	TransactionHash   string        `json:"transactionHash"`
+	TransactionIndex  string        `json:"transactionIndex"`
+	BlockHash         string        `json:"blockHash"`
+	BlockNumber       string        `json:"blockNumber"`
+	From              string        `json:"from"`
+	To                string        `json:"to,omitempty"`
+	CumulativeGasUsed string        `json:"cumulativeGasUsed"`
+	GasUsed           string        `json:"gasUsed"`
 	BlobGasUsed       string        `json:"blobGasUsed,omitempty"`
 	Logs              []LogResponse `json:"logs"`
 	LogsBloom         string        `json:"logsBloom"`
-	EffectiveGasPrice string      `json:"effectiveGasPrice"`
-	Type              string      `json:"type,omitempty"`
-	ContractAddress   string      `json:"contractAddress,omitempty"`
-	Root              string      `json:"root,omitempty"`
-	Status            string      `json:"status,omitempty"`
+	EffectiveGasPrice string        `json:"effectiveGasPrice"`
+	Type              string        `json:"type,omitempty"`
+	ContractAddress   string        `json:"contractAddress,omitempty"`
+	Root              string        `json:"root,omitempty"`
+	Status            string        `json:"status,omitempty"`
+}
+
+type TransactionReceiptsArg struct {
+	BlockNumber string
+	BlockHash   string
+}
+
+type TransactionReceiptsResponse struct {
+	Receipts []TransactionReceipt `json:"receipts"`
 }

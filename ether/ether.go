@@ -81,6 +81,11 @@ type EtherApi interface {
 		To stall until the transaction has been mined, consider the waitForTransaction method below.
 	*/
 	GetTransactionReceipt(hash string) (types.TransactionReceipt, error)
+
+	/*
+		An enhanced API that gets all transaction receipts for a given block by number or block hash.
+	*/
+	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
 }
 
 type Ether struct {
@@ -325,4 +330,41 @@ func (ether *Ether) GetTransactionReceipt(hash string) (types.TransactionReceipt
 	}
 
 	return txReceipt, nil
+}
+
+func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+	param := getParamOnGetTransactionReceipts(arg)
+	if param == "" {
+		return []types.TransactionReceipt{}, core.ErrInvalidGetTransactionReceiptsArg
+	}
+
+	result, err := ether.provider.Send(core.Alchemy_TransactionReceipts, types.RequestArgs{
+		param,
+	})
+	if err != nil {
+		return []types.TransactionReceipt{}, err
+	}
+
+	resultMap := result.(map[string]any)
+	var txReceiptsRes types.TransactionReceiptsResponse
+	if err := mapstructure.Decode(resultMap, &txReceiptsRes); err != nil {
+		return []types.TransactionReceipt{}, core.ErrFailedToMapTransactionReceipt
+	}
+
+	txReceipts := make([]types.TransactionReceipt, len(txReceiptsRes.Receipts))
+	copy(txReceipts, txReceiptsRes.Receipts)
+	return txReceipts, nil
+}
+
+/*
+if has blockHash return blockHash.
+else if has blockNumber return blockNumber.
+*/
+func getParamOnGetTransactionReceipts(arg types.TransactionReceiptsArg) string {
+	if arg.BlockHash != "" {
+		return arg.BlockHash
+	} else if arg.BlockNumber != "" {
+		return arg.BlockNumber
+	}
+	return ""
 }
