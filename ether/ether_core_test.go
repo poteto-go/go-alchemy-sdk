@@ -1166,3 +1166,125 @@ func Test_Call(t *testing.T) {
 		})
 	})
 }
+
+var expectedTransactionReceipt = `
+{
+  "blockHash": "0xe7212a92cfb9b06addc80dec2a0dfae9ea94fd344efeb157c41e12994fcad60a",
+  "blockNumber": "0x50",
+  "contractAddress": null,
+  "cumulativeGasUsed": "0x5208",
+  "from": "0x627306090abab3a6e1400e9345bc60c78a8bef57",
+  "gasUsed": "0x5208",
+  "effectiveGasPrice": "0x1",
+  "logs": [],
+  "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "status": "0x1",
+  "to": "0xf17f52151ebef6c7334fad080c5704d77216b732",
+  "transactionHash": "0x504ce587a65bdbdb6414a0c6c16d86a04dd79bfcc4f2950eec9634b30ce5370f",
+  "transactionIndex": "0x0",
+  "type": "0x0"
+}
+`
+
+func Test_GetTransactionReceipt(t *testing.T) {
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+
+	t.Run("normal case: ", func(t *testing.T) {
+		t.Run("call eth_getTransactionReceipt & return result", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			transactionHash := "hash"
+			expected := types.TransactionReceipt{
+				TransactionHash:   "0x504ce587a65bdbdb6414a0c6c16d86a04dd79bfcc4f2950eec9634b30ce5370f",
+				TransactionIndex:  "0x0",
+				BlockHash:         "0xe7212a92cfb9b06addc80dec2a0dfae9ea94fd344efeb157c41e12994fcad60a",
+				BlockNumber:       "0x50",
+				From:              "0x627306090abab3a6e1400e9345bc60c78a8bef57",
+				To:                "0xf17f52151ebef6c7334fad080c5704d77216b732",
+				CumulativeGasUsed: "0x5208",
+				GasUsed:           "0x5208",
+				Logs:              []types.LogResponse{},
+				LogsBloom:         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+				EffectiveGasPrice: "0x1",
+				Type:              "0x0",
+				Status:            "0x1",
+			}
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_GetTransactionReceipt, method)
+					var result map[string]any
+					json.Unmarshal([]byte(expectedTransactionReceipt), &result)
+					return result, nil
+				},
+			)
+
+			// Act
+			res, err := ether.GetTransactionReceipt(transactionHash)
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expected, res)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if error on send, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetTransactionReceipt("hash")
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+
+		t.Run("if map structure failed, return core.ErrFailedToMapTransactionReceipt", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_GetTransactionReceipt, method)
+					var result map[string]any
+					json.Unmarshal([]byte(expectedTransactionReceipt), &result)
+					return result, nil
+				},
+			)
+			patches.ApplyFunc(
+				mapstructure.Decode,
+				func(_ any, _ any) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.GetTransactionReceipt("0x123")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrFailedToMapTransactionReceipt, err)
+		})
+	})
+}

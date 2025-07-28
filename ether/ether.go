@@ -74,6 +74,13 @@ type EtherApi interface {
 		This is useful for calling getters on Contracts.
 	*/
 	Call(tx types.TransactionRequest, blockTag string) (string, error)
+
+	/*
+		TODO: null if the tx has not been mined.
+		Returns the transaction receipt for hash.
+		To stall until the transaction has been mined, consider the waitForTransaction method below.
+	*/
+	GetTransactionReceipt(hash string) (types.TransactionReceipt, error)
 }
 
 type Ether struct {
@@ -301,4 +308,21 @@ func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, 
 	}
 
 	return result.(string), nil
+}
+
+func (ether *Ether) GetTransactionReceipt(hash string) (types.TransactionReceipt, error) {
+	result, err := ether.provider.Send(core.Eth_GetTransactionReceipt, types.RequestArgs{
+		hash,
+	})
+	if err != nil {
+		return types.TransactionReceipt{}, err
+	}
+
+	resultMap := result.(map[string]any)
+	var txReceipt types.TransactionReceipt
+	if err := mapstructure.Decode(resultMap, &txReceipt); err != nil {
+		return types.TransactionReceipt{}, core.ErrFailedToMapTransactionReceipt
+	}
+
+	return txReceipt, nil
 }
