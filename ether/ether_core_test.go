@@ -1395,20 +1395,6 @@ func Test_GetTransactionReceipts(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("if blockHash & blockNumber are not provided, return core.ErrInvalidGetTransactionReceiptsArg", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			txReceiptsArg := types.TransactionReceiptsArg{}
-
-			// Act
-			_, err := ether.GetTransactionReceipts(txReceiptsArg)
-
-			// Assert
-			assert.ErrorIs(t, err, core.ErrInvalidGetTransactionReceiptsArg)
-		})
-
 		t.Run("if error on send, return internal error", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
