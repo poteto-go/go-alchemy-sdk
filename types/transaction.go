@@ -86,8 +86,8 @@ type TransactionReceipt struct {
 }
 
 type TransactionReceiptsArg struct {
-	BlockNumber string
-	BlockHash   string
+	BlockNumber string `json:"blockNumber,omitempty"`
+	BlockHash   string `json:"blockHash,omitempty"`
 }
 
 type TransactionReceiptsResponse struct {

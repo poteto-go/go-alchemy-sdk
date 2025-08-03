@@ -204,6 +204,23 @@ func TestAPI_Core_GetTransactionReceipt(t *testing.T) {
 	})
 }
 
+func TestAPI_Core_GetTransactionReceipts(t *testing.T) {
+	setting.Network = types.EthMainnet
+	alchemy := alchemy.NewAlchemy(setting)
+
+	t.Run("get transaction receipts", func(t *testing.T) {
+		blockNumber := "0xF1D1C6"
+		res, err := alchemy.Core.GetTransactionReceipts(
+			types.TransactionReceiptsArg{
+				BlockNumber: blockNumber,
+			},
+		)
+
+		assert.Nil(t, err)
+		assert.Greater(t, len(res), 0)
+	})
+}
+
 /*
 func TestAPI_Core_GetTokenBalance(t *testing.T) {
 	setting.Network = types.PolygonAmoy // I don't have on eth
