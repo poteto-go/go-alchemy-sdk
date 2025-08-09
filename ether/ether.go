@@ -86,6 +86,12 @@ type EtherApi interface {
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
 	*/
 	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
+
+	/*
+		Simple wrapper around eth_getBlockByNumber.
+		This returns the complete block information for the provided block number.
+	*/
+	GetBlockByBlockNumber(blockNumber string) (types.Block, error)
 }
 
 type Ether struct {
@@ -349,4 +355,27 @@ func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]
 	txReceipts := make([]types.TransactionReceipt, len(txReceiptsRes.Receipts))
 	copy(txReceipts, txReceiptsRes.Receipts)
 	return txReceipts, nil
+}
+
+func (ether *Ether) GetBlockByBlockNumber(blockNumber string) (types.Block, error) {
+	result, err := ether.provider.Send(core.Eth_GetBlockByNumber, types.RequestArgs{
+		blockNumber,
+		false,
+	})
+	if err != nil {
+		return types.Block{}, err
+	}
+
+	resultMap := result.(map[string]any)
+	var BlockResponse types.BlockResponse
+	if err := mapstructure.Decode(resultMap, &BlockResponse); err != nil {
+		return types.Block{}, core.ErrFailedToMapBlockResponse
+	}
+
+	block, err := utils.TransformBlock(BlockResponse)
+	if err != nil {
+		return types.Block{}, err
+	}
+
+	return block, nil
 }

@@ -1456,3 +1456,164 @@ func Test_GetTransactionReceipts(t *testing.T) {
 		})
 	})
 }
+
+var expectedBlockResponse = `
+{
+	"hash": "0x123",
+	"parentHash": "0x123",
+	"sha3Uncles": "0x123",
+	"stateRoot": "0x123",
+	"transactionsRoot": "0x123",
+	"receiptsRoot": "0x123",
+	"logsBloom": "0x123",
+	"number": "0x123",
+	"timestamp": "0x123",
+	"nonce": "0x123",
+	"difficulty": "0x123",
+	"gasLimit": "0x123",
+	"gasUsed": "0x123",
+	"miner": "miner",
+	"transactions": [
+		"0x123"
+	],
+	"size": "0x123",
+	"mixHash": "0x123",
+	"uncles": [
+		"0x123"
+	],
+	"extraData": "0x123"
+}`
+
+func Test_GetBlockByNumber(t *testing.T) {
+	// Arrange
+	expected := types.Block{
+		Hash:         "0x123",
+		ParentHash:   "0x123",
+		Number:       291,
+		Timestamp:    291,
+		Nonce:        "0x123",
+		Difficulty:   291,
+		GasLimit:     big.NewInt(291),
+		GasUsed:      big.NewInt(291),
+		Miner:        "miner",
+		Transactions: []string{"0x123"},
+	}
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+
+	t.Run("normal case: ", func(t *testing.T) {
+		t.Run("call w/ eth_getBlockByNumber and return response", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			blockNumber := "0x123"
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_GetBlockByNumber, method)
+					var result map[string]any
+					json.Unmarshal([]byte(expectedBlockResponse), &result)
+					return result, nil
+				},
+			)
+
+			// Act
+			res, err := ether.GetBlockByBlockNumber(blockNumber)
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expected, res)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if error on send, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetBlockByBlockNumber("0x123")
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+
+		t.Run("if map structure failed, return core.ErrFailedToMapBlockResponse", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_GetBlockByNumber, method)
+					var result map[string]any
+					json.Unmarshal([]byte(expectedBlockResponse), &result)
+					return result, nil
+				},
+			)
+			patches.ApplyFunc(
+				mapstructure.Decode,
+				func(_ any, _ any) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.GetBlockByBlockNumber("0x123")
+
+			// Assert
+			assert.ErrorIs(t, core.ErrFailedToMapBlockResponse, err)
+		})
+
+		t.Run("if failed to transform, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+			blockNumber := "0x123"
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_GetBlockByNumber, method)
+					var result map[string]any
+					json.Unmarshal([]byte(expectedBlockResponse), &result)
+					return result, nil
+				},
+			)
+			patches.ApplyFunc(
+				utils.TransformBlock,
+				func(_ types.BlockResponse) (types.Block, error) {
+					return types.Block{}, expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetBlockByBlockNumber(blockNumber)
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+	})
+}
