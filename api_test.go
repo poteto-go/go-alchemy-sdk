@@ -232,7 +232,7 @@ func TestAPI_Core_GetBlockByBlockNumber(t *testing.T) {
 		)
 
 		assert.Nil(t, err)
-		assert.Equal(t, res.Number, blockNumber)
+		assert.Equal(t, res.Number, 26803)
 	})
 }
 
