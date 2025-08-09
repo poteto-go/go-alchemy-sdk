@@ -1507,7 +1507,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			defer patches.Reset()
 
 			// Arrange
-			blockNumber := 291
+			blockNumber := "0x123"
 
 			// Mock & Assert
 			patches.ApplyMethod(
@@ -1548,7 +1548,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			)
 
 			// Act
-			_, err := ether.GetBlockByBlockNumber(291)
+			_, err := ether.GetBlockByBlockNumber("0x123")
 
 			// Assert
 			assert.ErrorIs(t, err, expectedErr)
@@ -1577,7 +1577,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			)
 
 			// Act
-			_, err := ether.GetBlockByBlockNumber(291)
+			_, err := ether.GetBlockByBlockNumber("0x123")
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToMapBlockResponse, err)
@@ -1589,7 +1589,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 
 			// Arrange
 			expectedErr := errors.New("error")
-			blockNumber := 291
+			blockNumber := "0x123"
 
 			// Mock & Assert
 			patches.ApplyMethod(

@@ -89,7 +89,7 @@ type ICore interface {
 		Simple wrapper around eth_getBlockByNumber.
 		This returns the complete block information for the provided block number.
 	*/
-	GetBlockByBlockNumber(blockNumber int) (types.Block, error)
+	GetBlockByBlockNumber(blockNumber string) (types.Block, error)
 }
 
 type Core struct {
@@ -230,7 +230,7 @@ func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types
 	return receipts, nil
 }
 
-func (c *Core) GetBlockByBlockNumber(blockNumber int) (types.Block, error) {
+func (c *Core) GetBlockByBlockNumber(blockNumber string) (types.Block, error) {
 	block, err := c.ether.GetBlockByBlockNumber(blockNumber)
 	if err != nil {
 		return types.Block{}, err

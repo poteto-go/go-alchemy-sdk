@@ -1022,13 +1022,13 @@ func TestCore_GetBlockByBlockNumber(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(api),
 				"GetBlockByBlockNumber",
-				func(_ *ether.Ether, _ int) (types.Block, error) {
+				func(_ *ether.Ether, _ string) (types.Block, error) {
 					return expectedBlock, nil
 				},
 			)
 
 			// Act
-			block, err := core.GetBlockByBlockNumber(123)
+			block, err := core.GetBlockByBlockNumber("0x123")
 
 			// Assert
 			assert.NoError(t, err)
@@ -1048,13 +1048,13 @@ func TestCore_GetBlockByBlockNumber(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(api),
 				"GetBlockByBlockNumber",
-				func(_ *ether.Ether, _ int) (types.Block, error) {
+				func(_ *ether.Ether, _ string) (types.Block, error) {
 					return types.Block{}, errExpected
 				},
 			)
 
 			// Act
-			block, err := core.GetBlockByBlockNumber(123)
+			block, err := core.GetBlockByBlockNumber("0x123")
 
 			// Assert
 			assert.ErrorIs(t, errExpected, err)
