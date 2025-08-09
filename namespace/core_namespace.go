@@ -84,6 +84,12 @@ type ICore interface {
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
 	*/
 	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
+
+	/*
+		Simple wrapper around eth_getBlockByNumber.
+		This returns the complete block information for the provided block number.
+	*/
+	GetBlockByBlockNumber(blockNumber int) (types.Block, error)
 }
 
 type Core struct {
@@ -222,4 +228,13 @@ func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types
 	}
 
 	return receipts, nil
+}
+
+func (c *Core) GetBlockByBlockNumber(blockNumber int) (types.Block, error) {
+	block, err := c.ether.GetBlockByBlockNumber(blockNumber)
+	if err != nil {
+		return types.Block{}, err
+	}
+
+	return block, nil
 }

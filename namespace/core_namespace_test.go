@@ -1002,3 +1002,63 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		assert.Equal(t, expectedErr, err)
 	})
 }
+
+func TestCore_GetBlockByBlockNumber(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("return block", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedBlock := types.Block{
+				Number: 123,
+			}
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetBlockByBlockNumber",
+				func(_ *ether.Ether, _ int) (types.Block, error) {
+					return expectedBlock, nil
+				},
+			)
+
+			// Act
+			block, err := core.GetBlockByBlockNumber(123)
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, expectedBlock, block)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("return empty block & provider error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			errExpected := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetBlockByBlockNumber",
+				func(_ *ether.Ether, _ int) (types.Block, error) {
+					return types.Block{}, errExpected
+				},
+			)
+
+			// Act
+			block, err := core.GetBlockByBlockNumber(123)
+
+			// Assert
+			assert.ErrorIs(t, errExpected, err)
+			assert.Equal(t, types.Block{}, block)
+		})
+	})
+}
