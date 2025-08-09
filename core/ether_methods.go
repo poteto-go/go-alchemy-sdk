@@ -11,8 +11,6 @@ var (
 	Eth_EstimateGas           = "eth_estimateGas"
 	Eth_Call                  = "eth_call"
 	Eth_GetTransactionReceipt = "eth_getTransactionReceipt"
-	Eth_GetBlockByNumber      = "eth_getBlockByNumber"
-	Eth_getBlockByHash        = "eth_getBlockByHash"
 )
 
 var (
