@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
 
@@ -56,7 +56,7 @@ func (b *BackoffManager) Backoff() error {
 	defer b.lock.Unlock()
 
 	if b.retries >= b.config.MaxRetries {
-		return core.ErrOverMaxRetries
+		return constant.ErrOverMaxRetries
 	}
 
 	var currentDelay float64 = 0

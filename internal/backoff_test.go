@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,7 +72,7 @@ func TestBackoffManager_Backoff(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("max over retries -> core.ErrOverMaxRetries", func(t *testing.T) {
+		t.Run("max over retries -> constant.ErrOverMaxRetries", func(t *testing.T) {
 			// Arrange
 			manager := NewBackoffManager(backoffConfigTest).(*BackoffManager)
 			manager.config.MaxRetries = 0
@@ -81,7 +81,7 @@ func TestBackoffManager_Backoff(t *testing.T) {
 			err := manager.Backoff()
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrOverMaxRetries)
+			assert.ErrorIs(t, err, constant.ErrOverMaxRetries)
 		})
 
 	})

@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,28 +23,28 @@ func TestFromHex(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("empty string => core.ErrInvalidHexString", func(t *testing.T) {
+		t.Run("empty string => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
 			_, err := utils.FromHex("")
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrInvalidHexString)
+			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
 		})
 
-		t.Run("invalid hex string => core.ErrInvalidHexString", func(t *testing.T) {
+		t.Run("invalid hex string => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
 			_, err := utils.FromHex("unexpected")
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrInvalidHexString)
+			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
 		})
 
-		t.Run("not number => core.ErrInvalidHexString", func(t *testing.T) {
+		t.Run("not number => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
 			_, err := utils.FromHex("0xhello")
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrInvalidHexString)
+			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
 		})
 	})
 }
@@ -94,36 +94,36 @@ func TestFromBigHex(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("empty string => core.ErrInvalidHexString", func(t *testing.T) {
+		t.Run("empty string => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
 			_, err := utils.FromBigHex("")
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrInvalidHexString)
+			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
 		})
 
-		t.Run("invalid hex string => core.ErrInvalidHexString", func(t *testing.T) {
+		t.Run("invalid hex string => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
 			_, err := utils.FromBigHex("unexpected")
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrInvalidHexString)
+			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
 		})
 
-		t.Run("not a hex number => core.ErrInvalidHexString", func(t *testing.T) {
+		t.Run("not a hex number => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
 			_, err := utils.FromBigHex("0xGHIJ")
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrInvalidHexString)
+			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
 		})
 
-		t.Run("missing 0x prefix => core.ErrInvalidHexString", func(t *testing.T) {
+		t.Run("missing 0x prefix => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
 			_, err := utils.FromBigHex("12345")
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrInvalidHexString)
+			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
 		})
 	})
 }

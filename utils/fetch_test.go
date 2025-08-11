@@ -11,7 +11,7 @@ import (
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/jarcoal/httpmock"
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -68,7 +68,7 @@ func TestAlchemyFetch(t *testing.T) {
 
 	t.Run("error case:", func(t *testing.T) {
 
-		t.Run("if failed to request -> core.ErrFailedToConnect", func(t *testing.T) {
+		t.Run("if failed to request -> constant.ErrFailedToConnect", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -93,10 +93,10 @@ func TestAlchemyFetch(t *testing.T) {
 			}, body)
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToConnect, err)
+			assert.ErrorIs(t, constant.ErrFailedToConnect, err)
 		})
 
-		t.Run("if failed to unmarshal response -> core.ErrFailedToUnmarshalResponse", func(t *testing.T) {
+		t.Run("if failed to unmarshal response -> constant.ErrFailedToUnmarshalResponse", func(t *testing.T) {
 			httpmock.Activate(t)
 			patches := gomonkey.NewPatches()
 			defer func() {
@@ -135,7 +135,7 @@ func TestAlchemyFetch(t *testing.T) {
 			}, body)
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
+			assert.ErrorIs(t, constant.ErrFailedToUnmarshalResponse, err)
 		})
 	})
 }
@@ -243,7 +243,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("failed batched request -> core.ErrFailedToConnect", func(t *testing.T) {
+		t.Run("failed batched request -> constant.ErrFailedToConnect", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -287,10 +287,10 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}, bodies)
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToConnect, err)
+			assert.ErrorIs(t, constant.ErrFailedToConnect, err)
 		})
 
-		t.Run("failed not batched request -> core.ErrFailedToConnect", func(t *testing.T) {
+		t.Run("failed not batched request -> constant.ErrFailedToConnect", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -323,10 +323,10 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}, [][]byte{body1})
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToConnect, err)
+			assert.ErrorIs(t, constant.ErrFailedToConnect, err)
 		})
 
-		t.Run("failed batched unmarshal -> core.ErrFailedToUnmarshalResponse", func(t *testing.T) {
+		t.Run("failed batched unmarshal -> constant.ErrFailedToUnmarshalResponse", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			httpmock.Activate(t)
 			defer func() {
@@ -384,10 +384,10 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}, bodies)
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
+			assert.ErrorIs(t, constant.ErrFailedToUnmarshalResponse, err)
 		})
 
-		t.Run("failed unmarshal -> core.ErrFailedToUnmarshalResponse", func(t *testing.T) {
+		t.Run("failed unmarshal -> constant.ErrFailedToUnmarshalResponse", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			httpmock.Activate(t)
 			defer func() {
@@ -434,7 +434,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			}, [][]byte{body1})
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToUnmarshalResponse, err)
+			assert.ErrorIs(t, constant.ErrFailedToUnmarshalResponse, err)
 		})
 	})
 }

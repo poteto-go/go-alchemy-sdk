@@ -10,7 +10,7 @@ import (
 	"github.com/agiledragon/gomonkey"
 	"github.com/goccy/go-json"
 	"github.com/jarcoal/httpmock"
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -70,7 +70,7 @@ func TestAlchemyProvider_Send(t *testing.T) {
 	})
 
 	t.Run("error case", func(t *testing.T) {
-		t.Run("if failed to create request -> core.ErrFailedToCreateRequest", func(t *testing.T) {
+		t.Run("if failed to create request -> constant.ErrFailedToCreateRequest", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -86,7 +86,7 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			_, err := provider.Send("hoge", types.RequestArgs{})
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToCreateRequest, err)
+			assert.ErrorIs(t, constant.ErrFailedToCreateRequest, err)
 		})
 
 		t.Run("error on AlchemyFetch", func(t *testing.T) {
@@ -106,10 +106,10 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			_, err := provider.Send("hoge", types.RequestArgs{})
 
 			// Assert
-			assert.ErrorIs(t, core.ErrFailedToMarshalParameter, err)
+			assert.ErrorIs(t, constant.ErrFailedToMarshalParameter, err)
 		})
 
-		t.Run("if not error, but result is nil, return core.ErrResultIsNil", func(t *testing.T) {
+		t.Run("if not error, but result is nil, return constant.ErrResultIsNil", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -128,7 +128,7 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			_, err := provider.Send("hoge", types.RequestArgs{})
 
 			// Assert
-			assert.ErrorIs(t, core.ErrResultIsNil, err)
+			assert.ErrorIs(t, constant.ErrResultIsNil, err)
 		})
 	})
 }

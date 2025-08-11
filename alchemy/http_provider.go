@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -85,7 +85,7 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 
 	result := response.Result
 	if result == nil {
-		return nil, core.ErrResultIsNil
+		return nil, constant.ErrResultIsNil
 	}
 
 	provider.id++
@@ -96,7 +96,7 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 func generateAlchemyRequest(url string) (*http.Request, error) {
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
-		return &http.Request{}, core.ErrFailedToCreateRequest
+		return &http.Request{}, constant.ErrFailedToCreateRequest
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")

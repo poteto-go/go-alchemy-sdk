@@ -1,34 +1,34 @@
 package utils
 
 import (
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 func TransformBlock(rawTx types.BlockResponse) (types.Block, error) {
 	blockNumber, err := FromHex(rawTx.Number)
 	if err != nil {
-		return types.Block{}, core.ErrFailedToTransformBlockNumber
+		return types.Block{}, constant.ErrFailedToTransformBlockNumber
 	}
 
 	timestamp, err := FromHex(rawTx.Timestamp)
 	if err != nil {
-		return types.Block{}, core.ErrFailedToTransformBlockNumber
+		return types.Block{}, constant.ErrFailedToTransformBlockNumber
 	}
 
 	difficulty, err := FromHex(rawTx.Difficulty)
 	if err != nil {
-		return types.Block{}, core.ErrFailedToTransformDifficulty
+		return types.Block{}, constant.ErrFailedToTransformDifficulty
 	}
 
 	gasLimit, err := FromBigHex(rawTx.GasLimit)
 	if err != nil {
-		return types.Block{}, core.ErrFailedToTransformGasLimit
+		return types.Block{}, constant.ErrFailedToTransformGasLimit
 	}
 
 	gasUsed, err := FromBigHex(rawTx.GasUsed)
 	if err != nil {
-		return types.Block{}, core.ErrFailedToTransformGasLimit
+		return types.Block{}, constant.ErrFailedToTransformGasLimit
 	}
 
 	return types.Block{

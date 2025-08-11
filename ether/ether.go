@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-viper/mapstructure/v2"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
@@ -111,7 +111,7 @@ func NewEtherApi(provider types.IAlchemyProvider) EtherApi {
 }
 
 func (ether *Ether) GetBlockNumber() (int, error) {
-	blockNumberHex, err := ether.provider.Send(core.Eth_BlockNumber, types.RequestArgs{})
+	blockNumberHex, err := ether.provider.Send(constant.Eth_BlockNumber, types.RequestArgs{})
 	if err != nil {
 		return 0, err
 	}
@@ -124,7 +124,7 @@ func (ether *Ether) GetBlockNumber() (int, error) {
 }
 
 func (ether *Ether) GetGasPrice() (int, error) {
-	priceHex, err := ether.provider.Send(core.Eth_GasPrice, types.RequestArgs{})
+	priceHex, err := ether.provider.Send(constant.Eth_GasPrice, types.RequestArgs{})
 	if err != nil {
 		return 0, err
 	}
@@ -142,7 +142,7 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 	}
 
 	balanceHex, err := ether.provider.Send(
-		core.Eth_GetBalance,
+		constant.Eth_GetBalance,
 		types.RequestArgs{
 			strings.ToLower(address),
 			blockTag,
@@ -165,7 +165,7 @@ func (ether *Ether) GetCode(address, blockTag string) (string, error) {
 	}
 
 	code, err := ether.provider.Send(
-		core.Eth_GetCode,
+		constant.Eth_GetCode,
 		types.RequestArgs{
 			strings.ToLower(address),
 			blockTag,
@@ -179,7 +179,7 @@ func (ether *Ether) GetCode(address, blockTag string) (string, error) {
 }
 
 func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, error) {
-	result, err := ether.provider.Send(core.Eth_GetTransactionByHash, types.RequestArgs{
+	result, err := ether.provider.Send(constant.Eth_GetTransactionByHash, types.RequestArgs{
 		hash,
 	})
 	if err != nil {
@@ -188,7 +188,7 @@ func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, erro
 
 	var txRaw types.TransactionRawResponse
 	if err := mapstructure.Decode(result, &txRaw); err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToMapTransaction
+		return types.TransactionResponse{}, constant.ErrFailedToMapTransaction
 	}
 
 	tx, err := utils.TransformTransaction(txRaw)
@@ -205,7 +205,7 @@ func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, er
 	}
 
 	result, err := ether.provider.Send(
-		core.Eth_GetStorageAt,
+		constant.Eth_GetStorageAt,
 		types.RequestArgs{
 			strings.ToLower(address),
 			position,
@@ -226,7 +226,7 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 	}
 
 	result, err := ether.provider.Send(
-		core.Alchemy_GetTokenBalances,
+		constant.Alchemy_GetTokenBalances,
 		paramsAny,
 	)
 	if err != nil {
@@ -244,7 +244,7 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 
 	var tokenBalanceResponse types.TokenBalanceResponse
 	if err := mapstructure.Decode(resultMap, &tokenBalanceResponse); err != nil {
-		return types.TokenBalanceResponse{}, core.ErrFailedToMapTokenResponse
+		return types.TokenBalanceResponse{}, constant.ErrFailedToMapTokenResponse
 	}
 
 	return tokenBalanceResponse, nil
@@ -252,7 +252,7 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 
 func (ether *Ether) GetTokenMetadata(address string) (types.TokenMetadataResponse, error) {
 	result, err := ether.provider.Send(
-		core.Alchemy_GetTokenMetadata,
+		constant.Alchemy_GetTokenMetadata,
 		types.RequestArgs{
 			strings.ToLower(address),
 		},
@@ -264,7 +264,7 @@ func (ether *Ether) GetTokenMetadata(address string) (types.TokenMetadataRespons
 	resultMap := result.(map[string]any)
 	var tokenMetadata types.TokenMetadataResponse
 	if err := mapstructure.Decode(resultMap, &tokenMetadata); err != nil {
-		return types.TokenMetadataResponse{}, core.ErrFailedToMapTokenResponse
+		return types.TokenMetadataResponse{}, constant.ErrFailedToMapTokenResponse
 	}
 
 	return tokenMetadata, nil
@@ -272,7 +272,7 @@ func (ether *Ether) GetTokenMetadata(address string) (types.TokenMetadataRespons
 
 func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 	result, err := ether.provider.Send(
-		core.Eth_GetLogs,
+		constant.Eth_GetLogs,
 		types.RequestArgs{
 			filter,
 		},
@@ -287,7 +287,7 @@ func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 		resultMap := res.(map[string]any)
 		var log types.LogResponse
 		if err := mapstructure.Decode(resultMap, &log); err != nil {
-			return []types.LogResponse{}, core.ErrFailedToMapTokenResponse
+			return []types.LogResponse{}, constant.ErrFailedToMapTokenResponse
 		}
 
 		logs[i] = log
@@ -296,7 +296,7 @@ func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 }
 
 func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
-	result, err := ether.provider.Send(core.Eth_EstimateGas, types.RequestArgs{
+	result, err := ether.provider.Send(constant.Eth_EstimateGas, types.RequestArgs{
 		tx,
 	})
 	if err != nil {
@@ -316,7 +316,7 @@ func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, 
 		return "", err
 	}
 
-	result, err := ether.provider.Send(core.Eth_Call, types.RequestArgs{
+	result, err := ether.provider.Send(constant.Eth_Call, types.RequestArgs{
 		tx,
 		blockTag,
 	})
@@ -328,7 +328,7 @@ func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, 
 }
 
 func (ether *Ether) GetTransactionReceipt(hash string) (types.TransactionReceipt, error) {
-	result, err := ether.provider.Send(core.Eth_GetTransactionReceipt, types.RequestArgs{
+	result, err := ether.provider.Send(constant.Eth_GetTransactionReceipt, types.RequestArgs{
 		hash,
 	})
 	if err != nil {
@@ -338,14 +338,14 @@ func (ether *Ether) GetTransactionReceipt(hash string) (types.TransactionReceipt
 	resultMap := result.(map[string]any)
 	var txReceipt types.TransactionReceipt
 	if err := mapstructure.Decode(resultMap, &txReceipt); err != nil {
-		return types.TransactionReceipt{}, core.ErrFailedToMapTransactionReceipt
+		return types.TransactionReceipt{}, constant.ErrFailedToMapTransactionReceipt
 	}
 
 	return txReceipt, nil
 }
 
 func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
-	result, err := ether.provider.Send(core.Alchemy_TransactionReceipts, types.RequestArgs{
+	result, err := ether.provider.Send(constant.Alchemy_TransactionReceipts, types.RequestArgs{
 		arg,
 	})
 	if err != nil {
@@ -355,7 +355,7 @@ func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]
 	resultMap := result.(map[string]any)
 	var txReceiptsRes types.TransactionReceiptsResponse
 	if err := mapstructure.Decode(resultMap, &txReceiptsRes); err != nil {
-		return []types.TransactionReceipt{}, core.ErrFailedToMapTransactionReceipt
+		return []types.TransactionReceipt{}, constant.ErrFailedToMapTransactionReceipt
 	}
 
 	txReceipts := make([]types.TransactionReceipt, len(txReceiptsRes.Receipts))
@@ -364,7 +364,7 @@ func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]
 }
 
 func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
-	result, err := ether.provider.Send(core.Eth_GetBlockByNumber, types.RequestArgs{
+	result, err := ether.provider.Send(constant.Eth_GetBlockByNumber, types.RequestArgs{
 		blockNumber,
 		false,
 	})
@@ -375,7 +375,7 @@ func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
 	resultMap := result.(map[string]any)
 	var BlockResponse types.BlockResponse
 	if err := mapstructure.Decode(resultMap, &BlockResponse); err != nil {
-		return types.Block{}, core.ErrFailedToMapBlockResponse
+		return types.Block{}, constant.ErrFailedToMapBlockResponse
 	}
 
 	block, err := utils.TransformBlock(BlockResponse)
@@ -387,7 +387,7 @@ func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
 }
 
 func (ether *Ether) GetBlockByHash(blockHash string) (types.Block, error) {
-	result, err := ether.provider.Send(core.Eth_GetBlockByHash, types.RequestArgs{
+	result, err := ether.provider.Send(constant.Eth_GetBlockByHash, types.RequestArgs{
 		blockHash,
 		false,
 	})
@@ -398,7 +398,7 @@ func (ether *Ether) GetBlockByHash(blockHash string) (types.Block, error) {
 	resultMap := result.(map[string]any)
 	var BlockResponse types.BlockResponse
 	if err := mapstructure.Decode(resultMap, &BlockResponse); err != nil {
-		return types.Block{}, core.ErrFailedToMapBlockResponse
+		return types.Block{}, constant.ErrFailedToMapBlockResponse
 	}
 
 	block, err := utils.TransformBlock(BlockResponse)

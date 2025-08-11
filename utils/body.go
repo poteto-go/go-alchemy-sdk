@@ -3,7 +3,7 @@ package utils
 import (
 	"github.com/goccy/go-json"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
@@ -17,7 +17,7 @@ func CreateRequestBodyToBytes(id int, method string, params types.RequestArgs) (
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
-		return nil, core.ErrFailedToMarshalParameter
+		return nil, constant.ErrFailedToMarshalParameter
 	}
 	return jsonBody, nil
 }

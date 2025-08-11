@@ -1,4 +1,4 @@
-package core
+package constant
 
 var (
 	Eth_BlockNumber           = "eth_blockNumber"

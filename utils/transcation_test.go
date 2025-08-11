@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -71,7 +71,7 @@ func TestTransformTransaction(t *testing.T) {
 	})
 
 	t.Run("error case", func(t *testing.T) {
-		t.Run("if error on blockNumber transform, return core.ErrFailedToTransformBlockNumber", func(t *testing.T) {
+		t.Run("if error on blockNumber transform, return constant.ErrFailedToTransformBlockNumber", func(t *testing.T) {
 			// Arrange
 			rawTransaction := newRawTransaction()
 			rawTransaction.BlockNumber = "hoge"
@@ -80,10 +80,10 @@ func TestTransformTransaction(t *testing.T) {
 			_, err := utils.TransformTransaction(rawTransaction)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformBlockNumber)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformBlockNumber)
 		})
 
-		t.Run("if error on type transform, return core.ErrFailedToTransformType", func(t *testing.T) {
+		t.Run("if error on type transform, return constant.ErrFailedToTransformType", func(t *testing.T) {
 			// Arrange
 			rawTransaction := newRawTransaction()
 			rawTransaction.Type = "hoge"
@@ -92,10 +92,10 @@ func TestTransformTransaction(t *testing.T) {
 			_, err := utils.TransformTransaction(rawTransaction)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformType)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformType)
 		})
 
-		t.Run("if error on nonce transform, return core.ErrFailedToTransformNonce", func(t *testing.T) {
+		t.Run("if error on nonce transform, return constant.ErrFailedToTransformNonce", func(t *testing.T) {
 			// Arrange
 			rawTransaction := newRawTransaction()
 			rawTransaction.Nonce = "hoge"
@@ -104,10 +104,10 @@ func TestTransformTransaction(t *testing.T) {
 			_, err := utils.TransformTransaction(rawTransaction)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformNonce)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformNonce)
 		})
 
-		t.Run("if error on gasPrice transform, return core.ErrFailedToTransformGasPrice", func(t *testing.T) {
+		t.Run("if error on gasPrice transform, return constant.ErrFailedToTransformGasPrice", func(t *testing.T) {
 			// Arrange
 			rawTransaction := newRawTransaction()
 			rawTransaction.GasPrice = "hoge"
@@ -116,10 +116,10 @@ func TestTransformTransaction(t *testing.T) {
 			_, err := utils.TransformTransaction(rawTransaction)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformGasPrice)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformGasPrice)
 		})
 
-		t.Run("if error on gasLimit transform, return core.ErrFailedToTransformGasLimit", func(t *testing.T) {
+		t.Run("if error on gasLimit transform, return constant.ErrFailedToTransformGasLimit", func(t *testing.T) {
 			// Arrange
 			rawTransaction := newRawTransaction()
 			rawTransaction.Gas = "hoge"
@@ -128,10 +128,10 @@ func TestTransformTransaction(t *testing.T) {
 			_, err := utils.TransformTransaction(rawTransaction)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformGasLimit)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformGasLimit)
 		})
 
-		t.Run("if error on value transform, return core.ErrFailedToTransformValue", func(t *testing.T) {
+		t.Run("if error on value transform, return constant.ErrFailedToTransformValue", func(t *testing.T) {
 			// Arrange
 			rawTransaction := newRawTransaction()
 			rawTransaction.Value = "hoge"
@@ -140,10 +140,10 @@ func TestTransformTransaction(t *testing.T) {
 			_, err := utils.TransformTransaction(rawTransaction)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformValue)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformValue)
 		})
 
-		t.Run("if error on chainId transform, return core.ErrFailedToTransformChainId", func(t *testing.T) {
+		t.Run("if error on chainId transform, return constant.ErrFailedToTransformChainId", func(t *testing.T) {
 			// Arrange
 			rawTransaction := newRawTransaction()
 			rawTransaction.ChainId = "hoge"
@@ -152,10 +152,10 @@ func TestTransformTransaction(t *testing.T) {
 			_, err := utils.TransformTransaction(rawTransaction)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformChainId)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformChainId)
 		})
 
-		t.Run("if error on v transform, return core.ErrFailedToTransformV", func(t *testing.T) {
+		t.Run("if error on v transform, return constant.ErrFailedToTransformV", func(t *testing.T) {
 			// Arrange
 			rawTransaction := newRawTransaction()
 			rawTransaction.V = "hoge"
@@ -164,7 +164,7 @@ func TestTransformTransaction(t *testing.T) {
 			_, err := utils.TransformTransaction(rawTransaction)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformV)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformV)
 		})
 	})
 }
