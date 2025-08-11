@@ -87,12 +87,6 @@ type ICore interface {
 	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
 
 	/*
-		Simple wrapper around eth_getBlockByNumber.
-		This returns the complete block information for the provided block number.
-	*/
-	GetBlockByBlockNumber(blockNumber string) (types.Block, error)
-
-	/*
 		Returns the block from the network based on the provided block number or hash.
 		Transactions on the block are represented as an array of transaction hashes.
 		To get the full transaction details on the block, use {@link getBlockWithTransactions} instead.
@@ -238,15 +232,6 @@ func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types
 	}
 
 	return receipts, nil
-}
-
-func (c *Core) GetBlockByBlockNumber(blockNumber string) (types.Block, error) {
-	block, err := c.ether.GetBlockByNumber(blockNumber)
-	if err != nil {
-		return types.Block{}, err
-	}
-
-	return block, nil
 }
 
 func (c *Core) GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (types.Block, error) {
