@@ -92,6 +92,12 @@ type EtherApi interface {
 		This returns the complete block information for the provided block number.
 	*/
 	GetBlockByNumber(blockNumber string) (types.Block, error)
+
+	/*
+		Simple wrapper around eth_getBlockByHash.
+		This returns the complete block information for the provided block hash.
+	*/
+	GetBlockByHash(blockHash string) (types.Block, error)
 }
 
 type Ether struct {
@@ -360,6 +366,29 @@ func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]
 func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
 	result, err := ether.provider.Send(core.Eth_GetBlockByNumber, types.RequestArgs{
 		blockNumber,
+		false,
+	})
+	if err != nil {
+		return types.Block{}, err
+	}
+
+	resultMap := result.(map[string]any)
+	var BlockResponse types.BlockResponse
+	if err := mapstructure.Decode(resultMap, &BlockResponse); err != nil {
+		return types.Block{}, core.ErrFailedToMapBlockResponse
+	}
+
+	block, err := utils.TransformBlock(BlockResponse)
+	if err != nil {
+		return types.Block{}, err
+	}
+
+	return block, nil
+}
+
+func (ether *Ether) GetBlockByHash(blockHash string) (types.Block, error) {
+	result, err := ether.provider.Send(core.Eth_GetBlockByHash, types.RequestArgs{
+		blockHash,
 		false,
 	})
 	if err != nil {

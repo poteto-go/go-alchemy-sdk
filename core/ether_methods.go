@@ -12,7 +12,7 @@ var (
 	Eth_Call                  = "eth_call"
 	Eth_GetTransactionReceipt = "eth_getTransactionReceipt"
 	Eth_GetBlockByNumber      = "eth_getBlockByNumber"
-	Eth_getBlockByHash        = "eth_getBlockByHash"
+	Eth_GetBlockByHash        = "eth_getBlockByHash"
 )
 
 var (

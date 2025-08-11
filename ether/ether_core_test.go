@@ -1617,3 +1617,141 @@ func Test_GetBlockByNumber(t *testing.T) {
 		})
 	})
 }
+
+func Test_GetBlockByHash(t *testing.T) {
+	// Arrange
+	expected := types.Block{
+		Hash:         "0x123",
+		ParentHash:   "0x123",
+		Number:       291,
+		Timestamp:    291,
+		Nonce:        "0x123",
+		Difficulty:   291,
+		GasLimit:     big.NewInt(291),
+		GasUsed:      big.NewInt(291),
+		Miner:        "miner",
+		Transactions: []string{"0x123"},
+	}
+	provider := newProviderForTest()
+	ether := ether.NewEtherApi(provider).(*ether.Ether)
+
+	t.Run("normal case: ", func(t *testing.T) {
+		t.Run("call w/ eth_getBlockByHash and return response", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			blockHash := "hash"
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_GetBlockByHash, method)
+					var result map[string]any
+					json.Unmarshal([]byte(expectedBlockResponse), &result)
+					return result, nil
+				},
+			)
+
+			// Act
+			res, err := ether.GetBlockByHash(blockHash)
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expected, res)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if error on send, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			blockHash := "hash"
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetBlockByHash(blockHash)
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+
+		t.Run("if map structure failed, return core.ErrFailedToMapBlockResponse", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			blockHash := "hash"
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_GetBlockByHash, method)
+					var result map[string]any
+					json.Unmarshal([]byte(expectedBlockResponse), &result)
+					return result, nil
+				},
+			)
+			patches.ApplyFunc(
+				mapstructure.Decode,
+				func(_ any, _ any) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.GetBlockByHash(blockHash)
+
+			// Assert
+			assert.ErrorIs(t, core.ErrFailedToMapBlockResponse, err)
+		})
+
+		t.Run("if failed to transform, return internal error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+			blockHash := "hash"
+
+			// Mock & Assert
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, core.Eth_GetBlockByHash, method)
+					var result map[string]any
+					json.Unmarshal([]byte(expectedBlockResponse), &result)
+					return result, nil
+				},
+			)
+			patches.ApplyFunc(
+				utils.TransformBlock,
+				func(_ types.BlockResponse) (types.Block, error) {
+					return types.Block{}, expectedErr
+				},
+			)
+
+			// Act
+			_, err := ether.GetBlockByHash(blockHash)
+
+			// Assert
+			assert.ErrorIs(t, err, expectedErr)
+		})
+	})
+}
