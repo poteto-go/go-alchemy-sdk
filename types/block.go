@@ -58,3 +58,8 @@ type Block struct {
 	// hash of transactions
 	Transactions []string `json:"transactions"`
 }
+
+type BlockHashOrBlockTag struct {
+	BlockTag  string
+	BlockHash string
+}

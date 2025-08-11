@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -53,7 +53,7 @@ func TestTransformBlock(t *testing.T) {
 	})
 
 	t.Run("error case", func(t *testing.T) {
-		t.Run("if error on blockNumber transform, return core.ErrFailedToTransformBlockNumber", func(t *testing.T) {
+		t.Run("if error on blockNumber transform, return constant.ErrFailedToTransformBlockNumber", func(t *testing.T) {
 			// Arrange
 			rawBlock := newRawBlock()
 			rawBlock.Number = "hoge"
@@ -62,10 +62,10 @@ func TestTransformBlock(t *testing.T) {
 			_, err := utils.TransformBlock(rawBlock)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformBlockNumber)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformBlockNumber)
 		})
 
-		t.Run("if error on timestamp transform, return core.ErrFailedToTransformBlockNumber", func(t *testing.T) {
+		t.Run("if error on timestamp transform, return constant.ErrFailedToTransformBlockNumber", func(t *testing.T) {
 			// Arrange
 			rawBlock := newRawBlock()
 			rawBlock.Timestamp = "hoge"
@@ -74,10 +74,10 @@ func TestTransformBlock(t *testing.T) {
 			_, err := utils.TransformBlock(rawBlock)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformBlockNumber)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformBlockNumber)
 		})
 
-		t.Run("if error on difficulty transform, return core.ErrFailedToTransformDifficulty", func(t *testing.T) {
+		t.Run("if error on difficulty transform, return constant.ErrFailedToTransformDifficulty", func(t *testing.T) {
 			// Arrange
 			rawBlock := newRawBlock()
 			rawBlock.Difficulty = "hoge"
@@ -86,10 +86,10 @@ func TestTransformBlock(t *testing.T) {
 			_, err := utils.TransformBlock(rawBlock)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformDifficulty)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformDifficulty)
 		})
 
-		t.Run("if error on gasLimit transform, return core.ErrFailedToTransformGasLimit", func(t *testing.T) {
+		t.Run("if error on gasLimit transform, return constant.ErrFailedToTransformGasLimit", func(t *testing.T) {
 			// Arrange
 			rawBlock := newRawBlock()
 			rawBlock.GasLimit = "hoge"
@@ -98,10 +98,10 @@ func TestTransformBlock(t *testing.T) {
 			_, err := utils.TransformBlock(rawBlock)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformGasLimit)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformGasLimit)
 		})
 
-		t.Run("if error on gasUsed transform, return core.ErrFailedToTransformGasLimit", func(t *testing.T) {
+		t.Run("if error on gasUsed transform, return constant.ErrFailedToTransformGasLimit", func(t *testing.T) {
 			// Arrange
 			rawBlock := newRawBlock()
 			rawBlock.GasUsed = "hoge"
@@ -110,7 +110,7 @@ func TestTransformBlock(t *testing.T) {
 			_, err := utils.TransformBlock(rawBlock)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToTransformGasLimit)
+			assert.ErrorIs(t, err, constant.ErrFailedToTransformGasLimit)
 		})
 	})
 }

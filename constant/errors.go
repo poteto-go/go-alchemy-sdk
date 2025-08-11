@@ -1,4 +1,4 @@
-package core
+package constant
 
 import "errors"
 
@@ -32,4 +32,5 @@ var (
 	ErrFailedToTransformDifficulty      = errors.New("failed to transform difficulty")
 	ErrResultIsNil                      = errors.New("result is nil")
 	ErrFailedToCreateRequestBody        = errors.New("failed to create request body")
+	ErrInvalidArgs                      = errors.New("invalid args")
 )

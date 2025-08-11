@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,6 +51,6 @@ func TestValidateBlockTag(t *testing.T) {
 		err := ValidateBlockTag(blockTag)
 
 		// Assert
-		assert.ErrorIs(t, err, core.ErrInvalidBlockTag)
+		assert.ErrorIs(t, err, constant.ErrInvalidBlockTag)
 	})
 }

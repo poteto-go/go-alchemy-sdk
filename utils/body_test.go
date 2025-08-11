@@ -6,7 +6,7 @@ import (
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/goccy/go-json"
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,14 +23,14 @@ func TestCreateRequestBodyToBytes(t *testing.T) {
 			{
 				name:     "no params",
 				id:       1,
-				method:   core.Eth_BlockNumber,
+				method:   constant.Eth_BlockNumber,
 				params:   []string{},
 				wantBody: `{"jsonrpc":"2.0","method":"eth_blockNumber","params":null,"id":1}`,
 			},
 			{
 				name:     "with params",
 				id:       1,
-				method:   core.Eth_GetTransactionByHash,
+				method:   constant.Eth_GetTransactionByHash,
 				params:   []string{"0x1b4"},
 				wantBody: `{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["0x1b4"],"id":1}`,
 			},
@@ -54,7 +54,7 @@ func TestCreateRequestBodyToBytes(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("if failed to marshal parameter -> core.ErrFailedToMarshalParameter", func(t *testing.T) {
+		t.Run("if failed to marshal parameter -> constant.ErrFailedToMarshalParameter", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -76,7 +76,7 @@ func TestCreateRequestBodyToBytes(t *testing.T) {
 			_, err := CreateRequestBodyToBytes(1, "method", anyParams)
 
 			// Assert
-			assert.ErrorIs(t, err, core.ErrFailedToMarshalParameter)
+			assert.ErrorIs(t, err, constant.ErrFailedToMarshalParameter)
 		})
 	})
 }

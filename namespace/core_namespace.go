@@ -3,6 +3,7 @@ package namespace
 import (
 	"math/big"
 
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
@@ -86,10 +87,13 @@ type ICore interface {
 	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
 
 	/*
-		Simple wrapper around eth_getBlockByNumber.
-		This returns the complete block information for the provided block number.
+		Returns the block from the network based on the provided block number or hash.
+		Transactions on the block are represented as an array of transaction hashes.
+		To get the full transaction details on the block, use {@link getBlockWithTransactions} instead.
+
+		@param BlockHashOrBlockTag The block number or hash to get the block for.
 	*/
-	GetBlockByBlockNumber(blockNumber string) (types.Block, error)
+	GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (types.Block, error)
 }
 
 type Core struct {
@@ -230,11 +234,25 @@ func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types
 	return receipts, nil
 }
 
-func (c *Core) GetBlockByBlockNumber(blockNumber string) (types.Block, error) {
-	block, err := c.ether.GetBlockByBlockNumber(blockNumber)
-	if err != nil {
-		return types.Block{}, err
+func (c *Core) GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (types.Block, error) {
+	var block types.Block
+	if blockHashOrBlockTag.BlockHash != "" {
+		block, err := c.ether.GetBlockByHash(blockHashOrBlockTag.BlockHash)
+		if err != nil {
+			return types.Block{}, err
+		}
+
+		return block, nil
 	}
 
-	return block, nil
+	if blockHashOrBlockTag.BlockTag != "" {
+		block, err := c.ether.GetBlockByNumber(blockHashOrBlockTag.BlockTag)
+		if err != nil {
+			return types.Block{}, err
+		}
+
+		return block, nil
+	}
+
+	return block, constant.ErrInvalidArgs
 }

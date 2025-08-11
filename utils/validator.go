@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/poteto-go/go-alchemy-sdk/core"
+import "github.com/poteto-go/go-alchemy-sdk/constant"
 
 // https://docs.ethers.org/v5/api/providers/types/
 // just support latest | earliest | pending for now
@@ -17,5 +17,5 @@ func ValidateBlockTag(blockTag string) error {
 		return nil
 	}
 
-	return core.ErrInvalidBlockTag
+	return constant.ErrInvalidBlockTag
 }

@@ -3,43 +3,43 @@ package utils
 import (
 	"math/big"
 
-	"github.com/poteto-go/go-alchemy-sdk/core"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 func TransformTransaction(rawTx types.TransactionRawResponse) (types.TransactionResponse, error) {
 	blockNumber, err := FromHex(rawTx.BlockNumber)
 	if err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToTransformBlockNumber
+		return types.TransactionResponse{}, constant.ErrFailedToTransformBlockNumber
 	}
 
 	typeInt, err := FromHex(rawTx.Type)
 	if err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToTransformType
+		return types.TransactionResponse{}, constant.ErrFailedToTransformType
 	}
 	nonce, err := FromHex(rawTx.Nonce)
 	if err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToTransformNonce
+		return types.TransactionResponse{}, constant.ErrFailedToTransformNonce
 	}
 	gasPrice, err := FromBigHex(rawTx.GasPrice)
 	if err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToTransformGasPrice
+		return types.TransactionResponse{}, constant.ErrFailedToTransformGasPrice
 	}
 	gasLimit, err := FromBigHex(rawTx.Gas)
 	if err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToTransformGasLimit
+		return types.TransactionResponse{}, constant.ErrFailedToTransformGasLimit
 	}
 	valueInt, err := FromBigHex(rawTx.Value)
 	if err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToTransformValue
+		return types.TransactionResponse{}, constant.ErrFailedToTransformValue
 	}
 	chainId, err := FromHex(rawTx.ChainId)
 	if err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToTransformChainId
+		return types.TransactionResponse{}, constant.ErrFailedToTransformChainId
 	}
 	intV, err := FromBigHex(rawTx.V)
 	if err != nil {
-		return types.TransactionResponse{}, core.ErrFailedToTransformV
+		return types.TransactionResponse{}, constant.ErrFailedToTransformV
 	}
 
 	return types.TransactionResponse{
