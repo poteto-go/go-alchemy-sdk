@@ -221,14 +221,28 @@ func TestAPI_Core_GetTransactionReceipts(t *testing.T) {
 	})
 }
 
-func TestAPI_Core_GetBlockByBlockNumber(t *testing.T) {
+func TestAPI_Core_GetBlock(t *testing.T) {
 	setting.Network = types.EthMainnet
 	alchemy := alchemy.NewAlchemy(setting)
 
+	t.Run("get block by block hash", func(t *testing.T) {
+		blockHash := "0xf7756d836b6716aaeffc2139c032752ba5acf02fe94acb65743f0d177554b2e2"
+		res, err := alchemy.Core.GetBlock(
+			types.BlockHashOrBlockTag{
+				BlockHash: blockHash,
+			},
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, res.Hash, blockHash)
+	})
+
 	t.Run("get block by block number", func(t *testing.T) {
 		blockNumber := "0x68b3"
-		res, err := alchemy.Core.GetBlockByBlockNumber(
-			blockNumber,
+		res, err := alchemy.Core.GetBlock(
+			types.BlockHashOrBlockTag{
+				BlockTag: blockNumber,
+			},
 		)
 
 		assert.Nil(t, err)
