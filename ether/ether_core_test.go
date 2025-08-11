@@ -1522,7 +1522,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			)
 
 			// Act
-			res, err := ether.GetBlockByBlockNumber(blockNumber)
+			res, err := ether.GetBlockByNumber(blockNumber)
 
 			// Assert
 			assert.Nil(t, err)
@@ -1548,7 +1548,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			)
 
 			// Act
-			_, err := ether.GetBlockByBlockNumber("0x123")
+			_, err := ether.GetBlockByNumber("0x123")
 
 			// Assert
 			assert.ErrorIs(t, err, expectedErr)
@@ -1577,7 +1577,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			)
 
 			// Act
-			_, err := ether.GetBlockByBlockNumber("0x123")
+			_, err := ether.GetBlockByNumber("0x123")
 
 			// Assert
 			assert.ErrorIs(t, core.ErrFailedToMapBlockResponse, err)
@@ -1610,7 +1610,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			)
 
 			// Act
-			_, err := ether.GetBlockByBlockNumber(blockNumber)
+			_, err := ether.GetBlockByNumber(blockNumber)
 
 			// Assert
 			assert.ErrorIs(t, err, expectedErr)

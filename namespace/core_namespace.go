@@ -231,7 +231,7 @@ func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types
 }
 
 func (c *Core) GetBlockByBlockNumber(blockNumber string) (types.Block, error) {
-	block, err := c.ether.GetBlockByBlockNumber(blockNumber)
+	block, err := c.ether.GetBlockByNumber(blockNumber)
 	if err != nil {
 		return types.Block{}, err
 	}

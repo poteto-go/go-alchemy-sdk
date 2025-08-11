@@ -91,7 +91,7 @@ type EtherApi interface {
 		Simple wrapper around eth_getBlockByNumber.
 		This returns the complete block information for the provided block number.
 	*/
-	GetBlockByBlockNumber(blockNumber string) (types.Block, error)
+	GetBlockByNumber(blockNumber string) (types.Block, error)
 }
 
 type Ether struct {
@@ -357,7 +357,7 @@ func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]
 	return txReceipts, nil
 }
 
-func (ether *Ether) GetBlockByBlockNumber(blockNumber string) (types.Block, error) {
+func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
 	result, err := ether.provider.Send(core.Eth_GetBlockByNumber, types.RequestArgs{
 		blockNumber,
 		false,
