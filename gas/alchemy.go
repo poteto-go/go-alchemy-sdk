@@ -1,4 +1,4 @@
-package alchemy
+package gas
 
 import (
 	"github.com/poteto-go/go-alchemy-sdk/ether"
