@@ -41,5 +41,10 @@ func FromBigHex(hexString string) (*big.Int, error) {
 	if !ok {
 		return big.NewInt(0), constant.ErrInvalidHexString
 	}
+
+	if num.Cmp(big.NewInt(0)) == 0 {
+		return big.NewInt(0), nil
+	}
+
 	return num, nil
 }

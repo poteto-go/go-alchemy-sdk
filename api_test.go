@@ -67,8 +67,8 @@ func TestAPI_Core_EstimateGas(t *testing.T) {
 	t.Run("over 0 response", func(t *testing.T) {
 		res, err := alchemy.Core.EstimateGas(
 			types.TransactionRequest{
-				From:  "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",
-				To:    "0x44aa93095d6749a706051658b970b941c72c1d53",
+				From:  "0x44aa93095d6749a706051658b970b941c72c1d53",
+				To:    "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",
 				Value: "0x1",
 			},
 		)
