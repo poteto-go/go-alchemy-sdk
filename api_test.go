@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/joho/godotenv"
-	"github.com/poteto-go/go-alchemy-sdk/alchemy"
+	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +16,7 @@ import (
 Check API Request
 Core Namespace
 */
-var setting alchemy.AlchemySetting
+var setting gas.AlchemySetting
 var address string
 
 func TestMain(m *testing.M) {
@@ -31,7 +31,7 @@ func setup() {
 		fmt.Println("this doesn't run on local")
 	}
 
-	setting = alchemy.AlchemySetting{
+	setting = gas.AlchemySetting{
 		ApiKey:  os.Getenv("API_KEY"),
 		Network: types.EthMainnet,
 	}
@@ -40,7 +40,7 @@ func setup() {
 }
 
 func TestAPI_Core_GetTokenMetadata(t *testing.T) {
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("usdc response", func(t *testing.T) {
 		res, err := alchemy.Core.GetTokenMetadata(
@@ -62,7 +62,7 @@ func TestAPI_Core_GetTokenMetadata(t *testing.T) {
 }
 
 func TestAPI_Core_EstimateGas(t *testing.T) {
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("over 0 response", func(t *testing.T) {
 		res, err := alchemy.Core.EstimateGas(
@@ -83,7 +83,7 @@ func TestAPI_Core_EstimateGas(t *testing.T) {
 }
 
 func TestAPI_Core_GetLogs(t *testing.T) {
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get logs", func(t *testing.T) {
 		res, err := alchemy.Core.GetLogs(
@@ -101,7 +101,7 @@ func TestAPI_Core_GetLogs(t *testing.T) {
 }
 
 func TestAPI_Core_GetBlockNumber(t *testing.T) {
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get block number", func(t *testing.T) {
 		res, err := alchemy.Core.GetBlockNumber()
@@ -112,7 +112,7 @@ func TestAPI_Core_GetBlockNumber(t *testing.T) {
 }
 
 func TestAPI_Core_GetGasPrice(t *testing.T) {
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get gas price", func(t *testing.T) {
 		res, err := alchemy.Core.GetGasPrice()
@@ -124,7 +124,7 @@ func TestAPI_Core_GetGasPrice(t *testing.T) {
 
 func TestAPI_Core_GetBalance(t *testing.T) {
 	setting.Network = types.PolygonAmoy // I don't have on eth
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get balance", func(t *testing.T) {
 		res, err := alchemy.Core.GetBalance(
@@ -141,7 +141,7 @@ func TestAPI_Core_GetBalance(t *testing.T) {
 }
 
 func TestAPI_Core_GetTransaction(t *testing.T) {
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get transaction", func(t *testing.T) {
 		res, err := alchemy.Core.GetTransaction(
@@ -158,7 +158,7 @@ func TestAPI_Core_GetTransaction(t *testing.T) {
 }
 
 func TestAPI_Core_GetStorageAt(t *testing.T) {
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get storage at", func(t *testing.T) {
 		res, err := alchemy.Core.GetStorageAt(
@@ -173,7 +173,7 @@ func TestAPI_Core_GetStorageAt(t *testing.T) {
 }
 
 func TestAPI_Core_Call(t *testing.T) {
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("call", func(t *testing.T) {
 		res, err := alchemy.Core.Call(
@@ -191,7 +191,7 @@ func TestAPI_Core_Call(t *testing.T) {
 
 func TestAPI_Core_GetTransactionReceipt(t *testing.T) {
 	setting.Network = types.EthMainnet
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get transaction receipt", func(t *testing.T) {
 		txHash := "0xc11dacdf03d9fd9297e3a005560e8855608dde8534d9b1053f6608b8541623b8"
@@ -206,7 +206,7 @@ func TestAPI_Core_GetTransactionReceipt(t *testing.T) {
 
 func TestAPI_Core_GetTransactionReceipts(t *testing.T) {
 	setting.Network = types.EthMainnet
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get transaction receipts", func(t *testing.T) {
 		blockNumber := "0xF1D1C6"
@@ -223,7 +223,7 @@ func TestAPI_Core_GetTransactionReceipts(t *testing.T) {
 
 func TestAPI_Core_GetBlock(t *testing.T) {
 	setting.Network = types.EthMainnet
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get block by block hash", func(t *testing.T) {
 		blockHash := "0xf7756d836b6716aaeffc2139c032752ba5acf02fe94acb65743f0d177554b2e2"
@@ -253,7 +253,7 @@ func TestAPI_Core_GetBlock(t *testing.T) {
 /*
 func TestAPI_Core_GetTokenBalance(t *testing.T) {
 	setting.Network = types.PolygonAmoy // I don't have on eth
-	alchemy := alchemy.NewAlchemy(setting)
+	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get token balance", func(t *testing.T) {
 		option := &types.TokenBalanceOption{

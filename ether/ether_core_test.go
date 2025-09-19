@@ -10,9 +10,9 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/goccy/go-json"
 	"github.com/jarcoal/httpmock"
-	"github.com/poteto-go/go-alchemy-sdk/alchemy"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
+	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -24,9 +24,9 @@ func newEtherApiForTest() *ether.Ether {
 	return ether.NewEtherApi(provider).(*ether.Ether)
 }
 
-func newProviderForTest() *alchemy.AlchemyProvider {
-	config := alchemy.NewAlchemyConfig(
-		alchemy.AlchemySetting{
+func newProviderForTest() *gas.AlchemyProvider {
+	config := gas.NewAlchemyConfig(
+		gas.AlchemySetting{
 			ApiKey:  "hoge",
 			Network: "fuga",
 			BackoffConfig: &internal.BackoffConfig{
@@ -34,7 +34,7 @@ func newProviderForTest() *alchemy.AlchemyProvider {
 			},
 		},
 	)
-	return alchemy.NewAlchemyProvider(config).(*alchemy.AlchemyProvider)
+	return gas.NewAlchemyProvider(config).(*gas.AlchemyProvider)
 }
 
 func TestEther_GetBlockNumber(t *testing.T) {
@@ -296,7 +296,7 @@ func TestEther_GetCode(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetCode, method)
 					return expected, nil
 				},
@@ -321,7 +321,7 @@ func TestEther_GetCode(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetCode, method)
 					return "0x", nil
 				},
@@ -396,7 +396,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetTransactionByHash, method)
 					return `{"hello": "world"}`, nil
 				},
@@ -435,7 +435,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetTransactionByHash, method)
 					return "", expectedErr
 				},
@@ -456,7 +456,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return `invalid json`, nil
 				},
 			)
@@ -485,7 +485,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return `{"hello": "world"}`, nil
 				},
 			)
@@ -528,7 +528,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetStorageAt, method)
 					return expected, nil
 				},
@@ -554,7 +554,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -613,7 +613,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_GetTokenBalances, method)
 					return expectedResponse, nil
 				},
@@ -634,7 +634,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_GetTokenBalances, method)
 					return expectedResponse, nil
 				},
@@ -677,7 +677,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_GetTokenBalances, method)
 					return expectedErrResponse, nil
 				},
@@ -703,7 +703,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -723,7 +723,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_GetTokenBalances, method)
 					return expectedResponse, nil
 				},
@@ -764,7 +764,7 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_GetTokenMetadata, method)
 					return expectedResponse, nil
 				},
@@ -795,7 +795,7 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return expectedResponse, expectedErr
 				},
 			)
@@ -815,7 +815,7 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_GetTokenMetadata, method)
 					return expectedResponse, nil
 				},
@@ -908,7 +908,7 @@ func TestEther_GetLogs(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetLogs, method)
 					return expectedRes, nil
 				},
@@ -934,7 +934,7 @@ func TestEther_GetLogs(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetLogs, method)
 					return expectedRes, expectedErr
 				},
@@ -957,7 +957,7 @@ func TestEther_GetLogs(t *testing.T) {
 				patches.ApplyMethod(
 					reflect.TypeOf(provider),
 					"SendFilter",
-					func(_ *alchemy.AlchemyProvider, method string, params ...types.Filter) (any, error) {
+					func(_ *gas.AlchemyProvider, method string, params ...types.Filter) (any, error) {
 						assert.Equal(t, constant.Eth_GetLogs, method)
 						return expectedRes, nil
 					},
@@ -1004,7 +1004,7 @@ func TestEther_EstimateGas(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_EstimateGas, method)
 					return expectedRes, nil
 				},
@@ -1049,7 +1049,7 @@ func TestEther_EstimateGas(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -1073,7 +1073,7 @@ func TestEther_EstimateGas(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_EstimateGas, method)
 					return expectedRes, nil
 				},
@@ -1115,7 +1115,7 @@ func Test_Call(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_Call, method)
 					return expectedRes, nil
 				},
@@ -1153,7 +1153,7 @@ func Test_Call(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -1217,7 +1217,7 @@ func Test_GetTransactionReceipt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetTransactionReceipt, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedTransactionReceipt), &result)
@@ -1246,7 +1246,7 @@ func Test_GetTransactionReceipt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -1266,7 +1266,7 @@ func Test_GetTransactionReceipt(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetTransactionReceipt, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedTransactionReceipt), &result)
@@ -1348,7 +1348,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_TransactionReceipts, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedTransactionReceipts), &result)
@@ -1377,7 +1377,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_TransactionReceipts, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedTransactionReceipts), &result)
@@ -1409,7 +1409,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -1434,7 +1434,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Alchemy_TransactionReceipts, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedTransactionReceipts), &result)
@@ -1513,7 +1513,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetBlockByNumber, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedBlockResponse), &result)
@@ -1542,7 +1542,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -1562,7 +1562,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetBlockByNumber, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedBlockResponse), &result)
@@ -1595,7 +1595,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetBlockByNumber, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedBlockResponse), &result)
@@ -1647,7 +1647,7 @@ func Test_GetBlockByHash(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetBlockByHash, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedBlockResponse), &result)
@@ -1677,7 +1677,7 @@ func Test_GetBlockByHash(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					return "", expectedErr
 				},
 			)
@@ -1700,7 +1700,7 @@ func Test_GetBlockByHash(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetBlockByHash, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedBlockResponse), &result)
@@ -1733,7 +1733,7 @@ func Test_GetBlockByHash(t *testing.T) {
 			patches.ApplyMethod(
 				reflect.TypeOf(provider),
 				"Send",
-				func(_ *alchemy.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
 					assert.Equal(t, constant.Eth_GetBlockByHash, method)
 					var result map[string]any
 					json.Unmarshal([]byte(expectedBlockResponse), &result)

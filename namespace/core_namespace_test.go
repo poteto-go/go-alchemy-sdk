@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
-	"github.com/poteto-go/go-alchemy-sdk/alchemy"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
+	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -17,15 +17,15 @@ import (
 )
 
 func newEtherApi() *ether.Ether {
-	setting := alchemy.AlchemySetting{
+	setting := gas.AlchemySetting{
 		ApiKey:  "hoge",
 		Network: "fuga",
 		BackoffConfig: &internal.BackoffConfig{
 			MaxRetries: 0,
 		},
 	}
-	config := alchemy.NewAlchemyConfig(setting)
-	provider := alchemy.NewAlchemyProvider(config)
+	config := gas.NewAlchemyConfig(setting)
+	provider := gas.NewAlchemyProvider(config)
 	return ether.NewEtherApi(provider).(*ether.Ether)
 }
 

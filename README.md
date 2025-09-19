@@ -15,12 +15,12 @@ import (
 )
 
 func main() {
-  setting := alchemy.AlchemySetting{
+  setting := gas.AlchemySetting{
     ApiKey:  "<api-key>",
     Network: types.EthMainnet,
   }
 
-  alchemy := alchemy.NewAlchemy(setting)
+  alchemy := gas.NewAlchemy(setting)
   res, _ := alchemy.Core.GetBlockNumber()
   fmt.Println(res)
 }
