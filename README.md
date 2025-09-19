@@ -2,6 +2,9 @@
 
 golang sdk for alchemy, inspired by https://github.com/alchemyplatform/alchemy-sdk-js
 
+> [!Important]
+> The methods in `geth` are scheduled to undergo major changes with the goal of using `gethclient`.
+
 ## QuickStart
 
 ```go
