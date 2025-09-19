@@ -2,6 +2,14 @@
 
 Thank you for contributing
 
+## Building Environment
+
+If you want to try all uts in local, you need to create AlchemyAccount and `.env`
+
+```bash
+cp .example.env .env
+```
+
 ## Development Flow
 
 - Please submit an issue
