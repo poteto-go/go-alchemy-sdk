@@ -26,7 +26,7 @@ func newEtherApi() *ether.Ether {
 	}
 	config := gas.NewAlchemyConfig(setting)
 	provider := gas.NewAlchemyProvider(config)
-	return ether.NewEtherApi(provider).(*ether.Ether)
+	return ether.NewEtherApi(provider, config.GetUrl()).(*ether.Ether)
 }
 
 func TestNewCore(t *testing.T) {

@@ -7,11 +7,13 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/goccy/go-json"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
+	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -19,9 +21,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newEtherApiForTest() *ether.Ether {
+func newEtherApiForTest() *eth.Ether {
 	provider := newProviderForTest()
-	return ether.NewEtherApi(provider).(*ether.Ether)
+	return ether.NewEtherApi(provider, "https://mainnet.infura.io/v3/").(*eth.Ether)
 }
 
 func newProviderForTest() *gas.AlchemyProvider {
@@ -35,6 +37,33 @@ func newProviderForTest() *gas.AlchemyProvider {
 		},
 	)
 	return gas.NewAlchemyProvider(config).(*gas.AlchemyProvider)
+}
+
+func TestEther_GetEthClient(t *testing.T) {
+	t.Run("can create eth client", func(t *testing.T) {
+		// Arrange
+		ether := newEtherApiForTest()
+
+		// Act
+		client, err := ether.GetEthClient()
+		defer client.Close()
+
+		// Assert
+		assert.NotNil(t, client)
+		assert.Nil(t, err)
+	})
+
+	t.Run("cannot create eth client", func(t *testing.T) {
+		// Arrange
+		provider := newProviderForTest()
+		ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+
+		// Act
+		_, err := ether.GetEthClient()
+
+		// Assert
+		assert.Error(t, err)
+	})
 }
 
 func TestEther_GetBlockNumber(t *testing.T) {
@@ -358,7 +387,7 @@ func TestEther_GetCode(t *testing.T) {
 func TestEther_GetTransaction(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("call eth_getTransactionByHash & return transaction", func(t *testing.T) {
@@ -514,7 +543,7 @@ func TestEther_GetTransaction(t *testing.T) {
 func TestEther_GetStorageAt(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("call eth_getStorageAt & return provided block", func(t *testing.T) {
@@ -579,7 +608,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 func TestEther_GetTokenBalances(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 	expectedResponse := map[string]any{
 		"address": "0x123",
 		"tokenBalances": []map[string]any{
@@ -747,7 +776,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 func TestEther_GetTokenMetadata(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 	expectedResponse := map[string]any{
 		"name":     "USD Coin",
 		"symbol":   "USDC",
@@ -839,7 +868,7 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 func TestEther_GetLogs(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 	expectedRes := []any{
 		map[string]any{
 			"logIndex":         "0x0",
@@ -980,123 +1009,9 @@ func TestEther_GetLogs(t *testing.T) {
 	})
 }
 
-func TestEther_EstimateGas(t *testing.T) {
-	// Arrange
-	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
-
-	transaction := types.TransactionRequest{
-		From:  "0x1234",
-		To:    "0x2345",
-		Value: "0x1",
-	}
-
-	t.Run("normal case", func(t *testing.T) {
-		t.Run("call eth_estimateGas & estimate gas", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			expectedRes := "0x1234"
-			expected, _ := utils.FromBigHex(expectedRes)
-
-			// Mock
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_EstimateGas, method)
-					return expectedRes, nil
-				},
-			)
-
-			// Act
-			actual, _ := ether.EstimateGas(transaction)
-
-			// Assert
-			assert.Equal(t, expected, actual)
-		})
-	})
-
-	t.Run("error case", func(t *testing.T) {
-		t.Run("if error occur in marshaling parameter, return constant.ErrFailedToMarshalParameter", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Mock
-			patches.ApplyFunc(
-				json.Marshal,
-				func(v any) ([]byte, error) {
-					return nil, errors.New("error")
-				},
-			)
-
-			// Act
-			_, err := ether.EstimateGas(transaction)
-
-			// Assert
-			assert.ErrorIs(t, err, constant.ErrFailedToMarshalParameter)
-		})
-
-		t.Run("if error occur in Send, return internal error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			expectedErr := errors.New("error")
-
-			// Mock
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					return "", expectedErr
-				},
-			)
-
-			// Act
-			_, err := ether.EstimateGas(transaction)
-
-			// Assert
-			assert.ErrorIs(t, err, expectedErr)
-		})
-
-		t.Run("if error occur in FromBigHex, return internal error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			expectedErr := errors.New("error")
-			expectedRes := "0x1234"
-
-			// Mock
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_EstimateGas, method)
-					return expectedRes, nil
-				},
-			)
-			patches.ApplyFunc(
-				utils.FromBigHex,
-				func(_ string) (*big.Int, error) {
-					return big.NewInt(0), expectedErr
-				},
-			)
-
-			// Act
-			_, err := ether.EstimateGas(transaction)
-
-			// Assert
-			assert.ErrorIs(t, err, expectedErr)
-		})
-	})
-}
-
 func Test_Call(t *testing.T) {
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 
 	transaction := types.TransactionRequest{
 		To:    "0x2345",
@@ -1188,7 +1103,7 @@ var expectedTransactionReceipt = `
 
 func Test_GetTransactionReceipt(t *testing.T) {
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 
 	t.Run("normal case: ", func(t *testing.T) {
 		t.Run("call eth_getTransactionReceipt & return result", func(t *testing.T) {
@@ -1314,7 +1229,7 @@ var expectedTransactionReceipts = `
 
 func Test_GetTransactionReceipts(t *testing.T) {
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 
 	t.Run("normal case: ", func(t *testing.T) {
 		expected := []types.TransactionReceipt{
@@ -1499,7 +1414,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 		Transactions: []string{"0x123"},
 	}
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 
 	t.Run("normal case: ", func(t *testing.T) {
 		t.Run("call w/ eth_getBlockByNumber and return response", func(t *testing.T) {
@@ -1633,7 +1548,7 @@ func Test_GetBlockByHash(t *testing.T) {
 		Transactions: []string{"0x123"},
 	}
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider).(*ether.Ether)
+	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
 
 	t.Run("normal case: ", func(t *testing.T) {
 		t.Run("call w/ eth_getBlockByHash and return response", func(t *testing.T) {
@@ -1752,6 +1667,78 @@ func Test_GetBlockByHash(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, err, expectedErr)
+		})
+	})
+}
+
+func TestEther_EstimateGas(t *testing.T) {
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+			transaction := types.TransactionRequest{
+				From:  "0x0",
+				To:    "0x0",
+				Value: "0x0",
+			}
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed from bigHex, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+			transaction := types.TransactionRequest{
+				From:  "0x0",
+				To:    "0x0",
+				Value: "0x0",
+			}
+
+			// Mock
+			patches.ApplyFunc(utils.FromBigHex, func(_ string) (*big.Int, error) {
+				return nil, errors.New("error")
+			})
+
+			// Act
+			_, err := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed estimate gas, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			transaction := types.TransactionRequest{
+				From:  "0x0",
+				To:    "0x0",
+				Value: "0x0",
+			}
+
+			// Act
+			_, err := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.Error(t, err)
 		})
 	})
 }

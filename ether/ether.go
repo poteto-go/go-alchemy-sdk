@@ -1,10 +1,15 @@
 package ether
 
 import (
+	"context"
 	"errors"
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/poteto-go/go-alchemy-sdk/constant"
@@ -13,6 +18,8 @@ import (
 )
 
 type EtherApi interface {
+	GetEthClient() (*ethclient.Client, error)
+
 	/* get  the number of the most recent block. */
 	GetBlockNumber() (int, error)
 
@@ -102,12 +109,23 @@ type EtherApi interface {
 
 type Ether struct {
 	provider types.IAlchemyProvider
+	url      string
 }
 
-func NewEtherApi(provider types.IAlchemyProvider) EtherApi {
+func NewEtherApi(provider types.IAlchemyProvider, url string) EtherApi {
 	return &Ether{
 		provider: provider,
+		url:      url,
 	}
+}
+
+func (ether *Ether) GetEthClient() (*ethclient.Client, error) {
+	rpcClient, err := rpc.Dial(ether.url)
+	if err != nil {
+		return nil, err
+	}
+
+	return ethclient.NewClient(rpcClient), nil
 }
 
 func (ether *Ether) GetBlockNumber() (int, error) {
@@ -296,19 +314,28 @@ func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 }
 
 func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
-	result, err := ether.provider.Send(constant.Eth_EstimateGas, types.RequestArgs{
-		tx,
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return big.NewInt(0), err
+	}
+	defer client.Close()
+
+	toAddress := common.HexToAddress(tx.To)
+	value, err := utils.FromBigHex(tx.Value)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	res, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
+		From:  common.HexToAddress(tx.From),
+		To:    (&toAddress),
+		Value: value,
 	})
 	if err != nil {
 		return big.NewInt(0), err
 	}
 
-	estimatedGas, err := utils.FromBigHex(result.(string))
-	if err != nil {
-		return big.NewInt(0), err
-	}
-
-	return estimatedGas, nil
+	return big.NewInt(int64(res)), nil
 }
 
 func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, error) {
