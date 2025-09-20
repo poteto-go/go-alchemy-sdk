@@ -3,6 +3,7 @@ package gas
 import (
 	"testing"
 
+	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,4 +37,20 @@ func TestAlchemyConfig_GetUrl(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, url, "https://matic-mainnet.g.alchemy.com/v2/api-key")
+}
+
+func TestAlchemyConfig_toEtherApiConfig(t *testing.T) {
+	// Arrange
+	config := NewAlchemyConfig(
+		AlchemySetting{
+			ApiKey:  "api-key",
+			Network: types.MaticMainnet,
+		},
+	)
+
+	// Act
+	etherConfig := config.toEtherApiConfig()
+
+	// Assert
+	assert.IsType(t, etherConfig, ether.EtherApiConfig{})
 }
