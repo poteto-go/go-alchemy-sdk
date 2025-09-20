@@ -335,6 +335,8 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 		return big.NewInt(0), err
 	}
 
+	// NOTE: this is false positive
+	// nolint:gosec
 	return big.NewInt(int64(res)), nil
 }
 
