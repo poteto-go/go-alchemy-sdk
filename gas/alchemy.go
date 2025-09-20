@@ -13,7 +13,10 @@ type Alchemy struct {
 func NewAlchemy(setting AlchemySetting) Alchemy {
 	alchemyConfig := NewAlchemyConfig(setting)
 	alchemyProvider := NewAlchemyProvider(alchemyConfig)
-	ether := ether.NewEtherApi(alchemyProvider, alchemyConfig.GetUrl())
+	ether := ether.NewEtherApi(
+		alchemyProvider,
+		alchemyConfig.toEtherApiConfig(),
+	)
 	coreNamespace := namespace.NewCore(ether)
 
 	return Alchemy{

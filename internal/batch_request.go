@@ -117,7 +117,12 @@ func (b *RequestBatcher) flush(batch []QueuedRequest) {
 
 	for _, req := range batch {
 		var requestBody types.AlchemyRequestBody
-		json.Unmarshal(req.Body, &requestBody)
+		err := json.Unmarshal(req.Body, &requestBody)
+		if err != nil {
+			req.Response <- types.AlchemyResponse{Error: err}
+			continue
+		}
+
 		if res, ok := responseMap[requestBody.Id]; ok {
 			req.Response <- res
 		} else {

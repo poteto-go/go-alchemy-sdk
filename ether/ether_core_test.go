@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -23,7 +24,27 @@ import (
 
 func newEtherApiForTest() *eth.Ether {
 	provider := newProviderForTest()
-	return ether.NewEtherApi(provider, "https://mainnet.infura.io/v3/").(*eth.Ether)
+	return ether.NewEtherApi(
+		provider,
+		eth.NewEtherApiConfig(
+			"https://mainnet.infura.io/v3/",
+			0,
+			time.Duration(0),
+			nil,
+		),
+	).(*eth.Ether)
+}
+
+func newNilEtherApiForTest(provider *gas.AlchemyProvider) *eth.Ether {
+	return eth.NewEtherApi(
+		provider,
+		eth.NewEtherApiConfig(
+			"",
+			0,
+			time.Duration(0),
+			nil,
+		),
+	).(*eth.Ether)
 }
 
 func newProviderForTest() *gas.AlchemyProvider {
@@ -56,7 +77,7 @@ func TestEther_GetEthClient(t *testing.T) {
 	t.Run("cannot create eth client", func(t *testing.T) {
 		// Arrange
 		provider := newProviderForTest()
-		ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+		ether := newNilEtherApiForTest(provider)
 
 		// Act
 		_, err := ether.GetEthClient()
@@ -387,7 +408,7 @@ func TestEther_GetCode(t *testing.T) {
 func TestEther_GetTransaction(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("call eth_getTransactionByHash & return transaction", func(t *testing.T) {
@@ -543,7 +564,7 @@ func TestEther_GetTransaction(t *testing.T) {
 func TestEther_GetStorageAt(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 
 	t.Run("normal case:", func(t *testing.T) {
 		t.Run("call eth_getStorageAt & return provided block", func(t *testing.T) {
@@ -608,7 +629,7 @@ func TestEther_GetStorageAt(t *testing.T) {
 func TestEther_GetTokenBalances(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 	expectedResponse := map[string]any{
 		"address": "0x123",
 		"tokenBalances": []map[string]any{
@@ -776,7 +797,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 func TestEther_GetTokenMetadata(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 	expectedResponse := map[string]any{
 		"name":     "USD Coin",
 		"symbol":   "USDC",
@@ -868,7 +889,7 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 func TestEther_GetLogs(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 	expectedRes := []any{
 		map[string]any{
 			"logIndex":         "0x0",
@@ -1011,7 +1032,7 @@ func TestEther_GetLogs(t *testing.T) {
 
 func Test_Call(t *testing.T) {
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 
 	transaction := types.TransactionRequest{
 		To:    "0x2345",
@@ -1103,7 +1124,7 @@ var expectedTransactionReceipt = `
 
 func Test_GetTransactionReceipt(t *testing.T) {
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 
 	t.Run("normal case: ", func(t *testing.T) {
 		t.Run("call eth_getTransactionReceipt & return result", func(t *testing.T) {
@@ -1229,7 +1250,7 @@ var expectedTransactionReceipts = `
 
 func Test_GetTransactionReceipts(t *testing.T) {
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 
 	t.Run("normal case: ", func(t *testing.T) {
 		expected := []types.TransactionReceipt{
@@ -1414,7 +1435,7 @@ func Test_GetBlockByNumber(t *testing.T) {
 		Transactions: []string{"0x123"},
 	}
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 
 	t.Run("normal case: ", func(t *testing.T) {
 		t.Run("call w/ eth_getBlockByNumber and return response", func(t *testing.T) {
@@ -1548,7 +1569,7 @@ func Test_GetBlockByHash(t *testing.T) {
 		Transactions: []string{"0x123"},
 	}
 	provider := newProviderForTest()
-	ether := ether.NewEtherApi(provider, "").(*eth.Ether)
+	ether := newNilEtherApiForTest(provider)
 
 	t.Run("normal case: ", func(t *testing.T) {
 		t.Run("call w/ eth_getBlockByHash and return response", func(t *testing.T) {

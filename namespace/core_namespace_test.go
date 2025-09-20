@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
@@ -26,7 +27,12 @@ func newEtherApi() *ether.Ether {
 	}
 	config := gas.NewAlchemyConfig(setting)
 	provider := gas.NewAlchemyProvider(config)
-	return ether.NewEtherApi(provider, config.GetUrl()).(*ether.Ether)
+	return ether.NewEtherApi(provider, ether.NewEtherApiConfig(
+		config.GetUrl(),
+		0,
+		time.Duration(0),
+		nil,
+	)).(*ether.Ether)
 }
 
 func TestNewCore(t *testing.T) {

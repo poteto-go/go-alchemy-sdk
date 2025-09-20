@@ -3,6 +3,7 @@ package gas
 import (
 	"time"
 
+	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
@@ -45,4 +46,14 @@ func settingToUrl(setting AlchemySetting) string {
 
 func (config *AlchemyConfig) GetUrl() string {
 	return config.url
+}
+
+// To avoid circle import
+func (config *AlchemyConfig) toEtherApiConfig() ether.EtherApiConfig {
+	return ether.NewEtherApiConfig(
+		config.url,
+		config.maxRetries,
+		config.requestTimeout,
+		config.backoffConfig,
+	)
 }

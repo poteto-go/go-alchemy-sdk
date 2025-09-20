@@ -109,18 +109,18 @@ type EtherApi interface {
 
 type Ether struct {
 	provider types.IAlchemyProvider
-	url      string
+	config   EtherApiConfig
 }
 
-func NewEtherApi(provider types.IAlchemyProvider, url string) EtherApi {
+func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) EtherApi {
 	return &Ether{
 		provider: provider,
-		url:      url,
+		config:   config,
 	}
 }
 
 func (ether *Ether) GetEthClient() (*ethclient.Client, error) {
-	rpcClient, err := rpc.Dial(ether.url)
+	rpcClient, err := rpc.Dial(ether.config.url)
 	if err != nil {
 		return nil, err
 	}
@@ -335,6 +335,8 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 		return big.NewInt(0), err
 	}
 
+	// NOTE: this is false positive
+	// nolint:gosec
 	return big.NewInt(int64(res)), nil
 }
 
