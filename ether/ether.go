@@ -1,7 +1,6 @@
 package ether
 
 import (
-	"context"
 	"errors"
 	"math/big"
 	"strings"
@@ -329,8 +328,8 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 
 	res, err := internal.GethRequestWithBackOff(
 		*ether.config.backoffConfig,
+		ether.config.requestTimeout,
 		client.EstimateGas,
-		context.Background(),
 		ethereum.CallMsg{
 			From:  common.HexToAddress(tx.From),
 			To:    (&toAddress),

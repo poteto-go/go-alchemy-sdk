@@ -108,11 +108,10 @@ func TestGethRequestWithBackOff(t *testing.T) {
 		) (int, error) {
 			return 1, nil
 		}
-		ctx := context.Background()
 		msg := ethereum.CallMsg{}
 
 		// Act
-		result, err := GethRequestWithBackOff(backoffConfig, mockHandler, ctx, msg)
+		result, err := GethRequestWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
 
 		// Assert
 		assert.NoError(t, err)
@@ -137,11 +136,10 @@ func TestGethRequestWithBackOff(t *testing.T) {
 			}
 			return 1, nil
 		}
-		ctx := context.Background()
 		msg := ethereum.CallMsg{}
 
 		// Act
-		result, err := GethRequestWithBackOff(backoffConfig, mockHandler, ctx, msg)
+		result, err := GethRequestWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
 
 		// Assert
 		assert.NoError(t, err)
@@ -161,11 +159,10 @@ func TestGethRequestWithBackOff(t *testing.T) {
 		) (int, error) {
 			return 0, errors.New("test error")
 		}
-		ctx := context.Background()
 		msg := ethereum.CallMsg{}
 
 		// Act
-		_, err := GethRequestWithBackOff(backoffConfig, mockHandler, ctx, msg)
+		_, err := GethRequestWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
 
 		// Assert
 		assert.Error(t, err)
