@@ -18,7 +18,7 @@ type BackoffConfig struct {
 
 var DefaultBackoffConfig = BackoffConfig{
 	Mode:           "exponential",
-	MaxRetries:     5,
+	MaxRetries:     1,
 	InitialDelayMs: 1000,
 	MaxDelayMs:     30000,
 }

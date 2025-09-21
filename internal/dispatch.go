@@ -1,6 +1,11 @@
 package internal
 
 import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/ethereum/go-ethereum"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
@@ -24,6 +29,39 @@ func RequestHttpWithBackoff(
 
 		if err := backoffManager.Backoff(); err != nil {
 			return types.AlchemyResponse{}, lastHttpError
+		}
+	}
+}
+
+func GethRequestWithBackOff[T any](
+	backoffConfig *BackoffConfig,
+	timeout time.Duration,
+	handler func(
+		context.Context, ethereum.CallMsg,
+	) (T, error),
+	msg ethereum.CallMsg,
+) (T, error) {
+	var lastHttpError error
+	if backoffConfig == nil {
+		backoffConfig = &DefaultBackoffConfig
+	}
+
+	backoffManager := NewBackoffManager(*backoffConfig)
+	for {
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		fmt.Println("hello2")
+
+		result, err := handler(ctx, msg)
+		if err == nil {
+			return result, nil
+		}
+
+		lastHttpError = err
+		if err := backoffManager.Backoff(); err != nil {
+			return result, lastHttpError
 		}
 	}
 }
