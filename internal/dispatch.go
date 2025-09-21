@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -33,7 +34,7 @@ func RequestHttpWithBackoff(
 }
 
 func GethRequestWithBackOff[T any](
-	BackoffConfig BackoffConfig,
+	backoffConfig *BackoffConfig,
 	timeout time.Duration,
 	handler func(
 		context.Context, ethereum.CallMsg,
@@ -41,12 +42,17 @@ func GethRequestWithBackOff[T any](
 	msg ethereum.CallMsg,
 ) (T, error) {
 	var lastHttpError error
+	if backoffConfig == nil {
+		backoffConfig = &DefaultBackoffConfig
+	}
 
-	backoffManager := NewBackoffManager(BackoffConfig)
+	backoffManager := NewBackoffManager(*backoffConfig)
 	for {
 		ctx := context.Background()
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
+
+		fmt.Println("hello2")
 
 		result, err := handler(ctx, msg)
 		if err == nil {

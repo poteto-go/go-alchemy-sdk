@@ -97,7 +97,7 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 func TestGethRequestWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := BackoffConfig{
+		backoffConfig := &BackoffConfig{
 			Mode:           "exponential",
 			MaxRetries:     3,
 			InitialDelayMs: 10,
@@ -118,9 +118,26 @@ func TestGethRequestWithBackOff(t *testing.T) {
 		assert.Equal(t, result, 1)
 	})
 
+	t.Run("if backoffConfig is nil, use DefaultBackoffConfig", func(t *testing.T) {
+		// Arrange
+		mockHandler := func(
+			context.Context, ethereum.CallMsg,
+		) (int, error) {
+			return 1, nil
+		}
+		msg := ethereum.CallMsg{}
+
+		// Act
+		result, err := GethRequestWithBackOff(nil, 10*time.Second, mockHandler, msg)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, result, 1)
+	})
+
 	t.Run("backoff first 1 is error, & success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := BackoffConfig{
+		backoffConfig := &BackoffConfig{
 			Mode:           "exponential",
 			MaxRetries:     3,
 			InitialDelayMs: 10,
@@ -148,7 +165,7 @@ func TestGethRequestWithBackOff(t *testing.T) {
 
 	t.Run("max retries exceeded", func(t *testing.T) {
 		// Arrange
-		backoffConfig := BackoffConfig{
+		backoffConfig := &BackoffConfig{
 			Mode:           "exponential",
 			MaxRetries:     3,
 			InitialDelayMs: 10,
