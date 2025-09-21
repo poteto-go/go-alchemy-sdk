@@ -118,7 +118,7 @@ func TestAPI_Core_GetGasPrice(t *testing.T) {
 		res, err := alchemy.Core.GetGasPrice()
 
 		assert.Nil(t, err)
-		assert.Greater(t, res, 0)
+		assert.Equal(t, res.Cmp(big.NewInt(0)), 1)
 	})
 }
 

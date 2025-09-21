@@ -24,7 +24,7 @@ type EtherApi interface {
 	GetBlockNumber() (int, error)
 
 	/* Returns the best guess of the current gas price to use in a transaction. */
-	GetGasPrice() (int, error)
+	GasPrice() (*big.Int, error)
 
 	/* Returns the balance of a given address as of the provided block. */
 	GetBalance(address string, blockTag string) (*big.Int, error)
@@ -141,17 +141,23 @@ func (ether *Ether) GetBlockNumber() (int, error) {
 	return blockNumber, nil
 }
 
-func (ether *Ether) GetGasPrice() (int, error) {
-	priceHex, err := ether.provider.Send(constant.Eth_GasPrice, types.RequestArgs{})
+func (ether *Ether) GasPrice() (*big.Int, error) {
+	client, err := ether.GetEthClient()
 	if err != nil {
-		return 0, err
+		return big.NewInt(0), err
+	}
+	defer client.Close()
+
+	res, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.SuggestGasPrice,
+	)
+	if err != nil {
+		return big.NewInt(0), err
 	}
 
-	price, err := utils.FromHex(priceHex.(string))
-	if err != nil {
-		return 0, err
-	}
-	return price, nil
+	return res, nil
 }
 
 func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error) {
@@ -325,7 +331,7 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	if err != nil {
 		return big.NewInt(0), err
 	}
-	res, err := internal.GethRequestWithBackOff(
+	res, err := internal.GethRequestMsgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
 		client.EstimateGas,
