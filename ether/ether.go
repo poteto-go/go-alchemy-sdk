@@ -13,6 +13,7 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
@@ -326,11 +327,16 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 		return big.NewInt(0), err
 	}
 
-	res, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
-		From:  common.HexToAddress(tx.From),
-		To:    (&toAddress),
-		Value: value,
-	})
+	res, err := internal.GethRequestWithBackOff(
+		*ether.config.backoffConfig,
+		client.EstimateGas,
+		context.Background(),
+		ethereum.CallMsg{
+			From:  common.HexToAddress(tx.From),
+			To:    (&toAddress),
+			Value: value,
+		},
+	)
 	if err != nil {
 		return big.NewInt(0), err
 	}
