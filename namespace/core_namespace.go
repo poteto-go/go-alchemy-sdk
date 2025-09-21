@@ -13,7 +13,7 @@ type ICore interface {
 	GetBlockNumber() (int, error)
 
 	/* Returns the best guess of the current gas price to use in a transaction. */
-	GetGasPrice() (int, error)
+	GetGasPrice() (*big.Int, error)
 
 	/* Returns the balance of a given address as of the provided block. */
 	GetBalance(address string, blockTag string) (*big.Int, error)
@@ -114,10 +114,10 @@ func (c *Core) GetBlockNumber() (int, error) {
 	return blockNumber, nil
 }
 
-func (c *Core) GetGasPrice() (int, error) {
-	price, err := c.ether.GetGasPrice()
+func (c *Core) GetGasPrice() (*big.Int, error) {
+	price, err := c.ether.GasPrice()
 	if err != nil {
-		return 0, err
+		return big.NewInt(0), err
 	}
 	return price, nil
 }

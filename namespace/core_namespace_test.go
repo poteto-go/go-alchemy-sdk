@@ -110,18 +110,18 @@ func TestCore_GetGasPrice(t *testing.T) {
 	core := namespace.NewCore(api).(*namespace.Core)
 
 	t.Run("normal case:", func(t *testing.T) {
-		t.Run("return block number", func(t *testing.T) {
+		t.Run("return gas price", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
 			// Arrange
-			expectedNumber := 100
+			expectedNumber := big.NewInt(100)
 
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(api),
-				"GetGasPrice",
-				func(_ *ether.Ether) (int, error) {
+				"GasPrice",
+				func(_ *ether.Ether) (*big.Int, error) {
 					return expectedNumber, nil
 				},
 			)
@@ -131,7 +131,7 @@ func TestCore_GetGasPrice(t *testing.T) {
 
 			// Assert
 			assert.NoError(t, err)
-			assert.Equal(t, expectedNumber, price)
+			assert.Equal(t, price.Cmp(expectedNumber), 0)
 		})
 	})
 
@@ -146,18 +146,17 @@ func TestCore_GetGasPrice(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(api),
-				"GetGasPrice",
-				func(_ *ether.Ether) (int, error) {
-					return 0, errExpected
+				"GasPrice",
+				func(_ *ether.Ether) (*big.Int, error) {
+					return big.NewInt(0), errExpected
 				},
 			)
 
 			// Act
-			price, err := core.GetGasPrice()
+			_, err := core.GetGasPrice()
 
 			// Assert
 			assert.ErrorIs(t, errExpected, err)
-			assert.Equal(t, 0, price)
 		})
 	})
 }

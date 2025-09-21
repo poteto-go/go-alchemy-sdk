@@ -164,79 +164,40 @@ func TestEther_GetBlockNumber(t *testing.T) {
 	})
 }
 
-func TestEther_GetGasPrice(t *testing.T) {
-	// Arrange
-	ether := newEtherApiForTest()
-
-	t.Run("normal case", func(t *testing.T) {
-		t.Run("success request", func(t *testing.T) {
-			httpmock.Activate(t)
-			patches := gomonkey.NewPatches()
-			defer func() {
-				httpmock.DeactivateAndReset()
-				patches.Reset()
-			}()
-
-			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				"https://fuga.g.alchemy.com/v2/hoge",
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
-			)
-
-			patches.ApplyFunc(
-				utils.FromHex,
-				func(s string) (int, error) {
-					return 1234, nil
-				},
-			)
-			// Act
-			result, err := ether.GetGasPrice()
-
-			// Assert
-			assert.NoError(t, err)
-			assert.Equal(t, 1234, result)
-		})
-	})
-
-	t.Run("error case:", func(t *testing.T) {
-		t.Run("if failed to send request -> constant.ErrFailedToConnect", func(t *testing.T) {
+func TestEther_GasPrice(t *testing.T) {
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
-			// Act
-			_, err := ether.GetGasPrice()
-
-			// Assert
-			assert.ErrorIs(t, constant.ErrFailedToConnect, err)
-		})
-
-		t.Run("if failed from hex -> error", func(t *testing.T) {
-			httpmock.Activate(t)
-			patches := gomonkey.NewPatches()
-			defer func() {
-				httpmock.DeactivateAndReset()
-				patches.Reset()
-			}()
+			// Arrange
+			ether := newEtherApiForTest()
 
 			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				"https://fuga.g.alchemy.com/v2/hoge",
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
-			)
-
-			patches.ApplyFunc(
-				utils.FromHex,
-				func(s string) (int, error) {
-					return 0, constant.ErrInvalidHexString
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
 				},
 			)
+
 			// Act
-			_, err := ether.GetGasPrice()
+			_, err := ether.GasPrice()
 
 			// Assert
-			assert.ErrorIs(t, constant.ErrInvalidHexString, err)
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed estimate gas, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Act
+			_, err := ether.GasPrice()
+
+			// Assert
+			assert.Error(t, err)
 		})
 	})
 }
