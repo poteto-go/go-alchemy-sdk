@@ -5,6 +5,10 @@ golang sdk for alchemy, inspired by https://github.com/alchemyplatform/alchemy-s
 > [!Important]
 > The methods in `geth` are scheduled to undergo major changes with the goal of using `gethclient`.
 
+## Documentation
+
+- https://go-alchemy-sdk.poteto-mahiro.com/
+
 ## QuickStart
 
 ```go
@@ -13,7 +17,7 @@ package main
 import (
   "fmt"
 
-  "github.com/poteto-go/go-alchemy-sdk/alchemy"
+  "github.com/poteto-go/go-alchemy-sdk/gas"
   "github.com/poteto-go/go-alchemy-sdk/types"
 )
 

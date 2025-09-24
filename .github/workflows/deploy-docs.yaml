@@ -1,0 +1,34 @@
+name: Deploy Worker
+on:
+  push:
+    branches:
+      - develop
+      - poteto0/#113/docs
+    path:
+      - docs/**
+      - .github/workflows/deploy-docs.yaml
+
+jobs:
+  deploy-worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./docs
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install dependencies
+        run: pnpm install
+      - name: prisma generate
+        run: pnpm run prisma:generate
+      - name: Build & Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./
+          wranglerVersion: "4.24.3"
