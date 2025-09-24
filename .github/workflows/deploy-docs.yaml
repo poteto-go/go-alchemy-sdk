@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - develop
+      - poteto0/#113/docs
     path:
       - docs/**
       - .github/workflows/deploy-docs.yaml
