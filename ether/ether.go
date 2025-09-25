@@ -21,7 +21,7 @@ type EtherApi interface {
 	GetEthClient() (*ethclient.Client, error)
 
 	/* get  the number of the most recent block. */
-	GetBlockNumber() (int, error)
+	BlockNumber() (uint64, error)
 
 	/* Returns the best guess of the current gas price to use in a transaction. */
 	GasPrice() (*big.Int, error)
@@ -128,17 +128,23 @@ func (ether *Ether) GetEthClient() (*ethclient.Client, error) {
 	return ethclient.NewClient(rpcClient), nil
 }
 
-func (ether *Ether) GetBlockNumber() (int, error) {
-	blockNumberHex, err := ether.provider.Send(constant.Eth_BlockNumber, types.RequestArgs{})
+func (ether *Ether) BlockNumber() (uint64, error) {
+	client, err := ether.GetEthClient()
 	if err != nil {
-		return 0, err
+		return uint64(0), err
+	}
+	defer client.Close()
+
+	res, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.BlockNumber,
+	)
+	if err != nil {
+		return uint64(0), err
 	}
 
-	blockNumber, err := utils.FromHex(blockNumberHex.(string))
-	if err != nil {
-		return 0, err
-	}
-	return blockNumber, nil
+	return res, nil
 }
 
 func (ether *Ether) GasPrice() (*big.Int, error) {

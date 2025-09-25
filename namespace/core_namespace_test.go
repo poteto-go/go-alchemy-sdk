@@ -57,13 +57,13 @@ func TestCore_GetBlockNumber(t *testing.T) {
 			defer patches.Reset()
 
 			// Arrange
-			expectedNumber := 100
+			expectedNumber := uint64(100)
 
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(api),
-				"GetBlockNumber",
-				func(_ *ether.Ether) (int, error) {
+				"BlockNumber",
+				func(_ *ether.Ether) (uint64, error) {
 					return expectedNumber, nil
 				},
 			)
@@ -88,9 +88,9 @@ func TestCore_GetBlockNumber(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(api),
-				"GetBlockNumber",
-				func(_ *ether.Ether) (int, error) {
-					return 0, errExpected
+				"BlockNumber",
+				func(_ *ether.Ether) (uint64, error) {
+					return uint64(0), errExpected
 				},
 			)
 
@@ -99,7 +99,7 @@ func TestCore_GetBlockNumber(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, errExpected, err)
-			assert.Equal(t, 0, blockNumber)
+			assert.Equal(t, uint64(0), blockNumber)
 		})
 	})
 }
