@@ -107,7 +107,7 @@ func TestAPI_Core_GetBlockNumber(t *testing.T) {
 		res, err := alchemy.Core.GetBlockNumber()
 
 		assert.Nil(t, err)
-		assert.Greater(t, res, 0)
+		assert.Greater(t, res, uint64(0))
 	})
 }
 

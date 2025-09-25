@@ -10,7 +10,7 @@ import (
 
 type ICore interface {
 	/* get  the number of the most recent block. */
-	GetBlockNumber() (int, error)
+	GetBlockNumber() (uint64, error)
 
 	/* Returns the best guess of the current gas price to use in a transaction. */
 	GetGasPrice() (*big.Int, error)
@@ -106,8 +106,8 @@ func NewCore(ether ether.EtherApi) ICore {
 	}
 }
 
-func (c *Core) GetBlockNumber() (int, error) {
-	blockNumber, err := c.ether.GetBlockNumber()
+func (c *Core) GetBlockNumber() (uint64, error) {
+	blockNumber, err := c.ether.BlockNumber()
 	if err != nil {
 		return 0, err
 	}
