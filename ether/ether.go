@@ -427,6 +427,10 @@ func (ether *Ether) GetBlockByNumber(blockNumber string) (*gethTypes.Block, erro
 		client.BlockByNumber,
 		bigBlockNumber,
 	)
+	if err != nil {
+		return nil, err
+	}
+
 	if res == nil {
 		return nil, constant.ErrResultIsNil
 	}
