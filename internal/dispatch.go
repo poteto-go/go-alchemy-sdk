@@ -63,6 +63,37 @@ func GethRequestMsgWithBackOff[T any](
 	}
 }
 
+func GethRequestArgWithBackOff[T any, A any](
+	backoffConfig *BackoffConfig,
+	timeout time.Duration,
+	handler func(
+		context.Context, A,
+	) (T, error),
+	arg A,
+) (T, error) {
+	var lastHttpError error
+	if backoffConfig == nil {
+		backoffConfig = &DefaultBackoffConfig
+	}
+
+	backoffManager := NewBackoffManager(*backoffConfig)
+	for {
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		result, err := handler(ctx, arg)
+		if err == nil {
+			return result, nil
+		}
+
+		lastHttpError = err
+		if err := backoffManager.Backoff(); err != nil {
+			return result, lastHttpError
+		}
+	}
+}
+
 func GethRequestWithBackOff[T any](
 	backoffConfig *BackoffConfig,
 	timeout time.Duration,

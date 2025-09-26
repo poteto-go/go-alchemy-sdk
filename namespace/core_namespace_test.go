@@ -1022,7 +1022,7 @@ func TestCore_GetBlock(t *testing.T) {
 
 				// Arrange
 				expectedBlock := types.Block{
-					Number: 123,
+					Number: big.NewInt(123),
 				}
 
 				// Mock
@@ -1082,7 +1082,7 @@ func TestCore_GetBlock(t *testing.T) {
 
 				// Arrange
 				expectedBlock := types.Block{
-					Number: 123,
+					Number: big.NewInt(123),
 				}
 
 				// Mock

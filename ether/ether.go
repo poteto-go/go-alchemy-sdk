@@ -409,47 +409,49 @@ func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]
 }
 
 func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
-	result, err := ether.provider.Send(constant.Eth_GetBlockByNumber, types.RequestArgs{
-		blockNumber,
-		false,
-	})
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return types.Block{}, err
+	}
+	defer client.Close()
+
+	bigBlockNumber, err := utils.FromBigHex(blockNumber)
 	if err != nil {
 		return types.Block{}, err
 	}
 
-	resultMap := result.(map[string]any)
-	var BlockResponse types.BlockResponse
-	if err := mapstructure.Decode(resultMap, &BlockResponse); err != nil {
-		return types.Block{}, constant.ErrFailedToMapBlockResponse
+	res, err := internal.GethRequestArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.BlockByNumber,
+		bigBlockNumber,
+	)
+	if res == nil {
+		return types.Block{}, constant.ErrResultIsNil
 	}
 
-	block, err := utils.TransformBlock(BlockResponse)
-	if err != nil {
-		return types.Block{}, err
-	}
-
-	return block, nil
+	return utils.TransformAlchemyBlock(res), nil
 }
 
 func (ether *Ether) GetBlockByHash(blockHash string) (types.Block, error) {
-	result, err := ether.provider.Send(constant.Eth_GetBlockByHash, types.RequestArgs{
-		blockHash,
-		false,
-	})
+	client, err := ether.GetEthClient()
 	if err != nil {
 		return types.Block{}, err
 	}
+	defer client.Close()
 
-	resultMap := result.(map[string]any)
-	var BlockResponse types.BlockResponse
-	if err := mapstructure.Decode(resultMap, &BlockResponse); err != nil {
-		return types.Block{}, constant.ErrFailedToMapBlockResponse
-	}
-
-	block, err := utils.TransformBlock(BlockResponse)
+	res, err := internal.GethRequestArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.BlockByHash,
+		common.HexToHash(blockHash),
+	)
 	if err != nil {
 		return types.Block{}, err
 	}
+	if res == nil {
+		return types.Block{}, constant.ErrResultIsNil
+	}
 
-	return block, nil
+	return utils.TransformAlchemyBlock(res), nil
 }
