@@ -3,6 +3,7 @@ package namespace
 import (
 	"math/big"
 
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -93,7 +94,7 @@ type ICore interface {
 
 		@param BlockHashOrBlockTag The block number or hash to get the block for.
 	*/
-	GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (types.Block, error)
+	GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (*gethTypes.Block, error)
 }
 
 type Core struct {
@@ -234,12 +235,11 @@ func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types
 	return receipts, nil
 }
 
-func (c *Core) GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (types.Block, error) {
-	var block types.Block
+func (c *Core) GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (*gethTypes.Block, error) {
 	if blockHashOrBlockTag.BlockHash != "" {
 		block, err := c.ether.GetBlockByHash(blockHashOrBlockTag.BlockHash)
 		if err != nil {
-			return types.Block{}, err
+			return nil, err
 		}
 
 		return block, nil
@@ -248,11 +248,11 @@ func (c *Core) GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (types.Bl
 	if blockHashOrBlockTag.BlockTag != "" {
 		block, err := c.ether.GetBlockByNumber(blockHashOrBlockTag.BlockTag)
 		if err != nil {
-			return types.Block{}, err
+			return nil, err
 		}
 
 		return block, nil
 	}
 
-	return block, constant.ErrInvalidArgs
+	return nil, constant.ErrInvalidArgs
 }

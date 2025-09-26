@@ -42,8 +42,7 @@ type BlockHead struct {
 	BlockResponse
 }
 
-// refs:
-// https://www.alchemy.com/docs/reference/sdk-getblock
+// refs: https://www.alchemy.com/docs/reference/sdk-getblock
 type Block struct {
 	Hash       string   `json:"hash"`
 	ParentHash string   `json:"parentHash"`

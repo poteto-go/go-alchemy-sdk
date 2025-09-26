@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-viper/mapstructure/v2"
@@ -98,13 +99,13 @@ type EtherApi interface {
 		Simple wrapper around eth_getBlockByNumber.
 		This returns the complete block information for the provided block number.
 	*/
-	GetBlockByNumber(blockNumber string) (types.Block, error)
+	GetBlockByNumber(blockNumber string) (*gethTypes.Block, error)
 
 	/*
 		Simple wrapper around eth_getBlockByHash.
 		This returns the complete block information for the provided block hash.
 	*/
-	GetBlockByHash(blockHash string) (types.Block, error)
+	GetBlockByHash(blockHash string) (*gethTypes.Block, error)
 }
 
 type Ether struct {
@@ -408,16 +409,16 @@ func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]
 	return txReceipts, nil
 }
 
-func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
+func (ether *Ether) GetBlockByNumber(blockNumber string) (*gethTypes.Block, error) {
 	client, err := ether.GetEthClient()
 	if err != nil {
-		return types.Block{}, err
+		return nil, err
 	}
 	defer client.Close()
 
 	bigBlockNumber, err := utils.FromBigHex(blockNumber)
 	if err != nil {
-		return types.Block{}, err
+		return nil, err
 	}
 
 	res, err := internal.GethRequestArgWithBackOff(
@@ -427,16 +428,16 @@ func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
 		bigBlockNumber,
 	)
 	if res == nil {
-		return types.Block{}, constant.ErrResultIsNil
+		return nil, constant.ErrResultIsNil
 	}
 
-	return utils.TransformAlchemyBlock(res), nil
+	return res, nil
 }
 
-func (ether *Ether) GetBlockByHash(blockHash string) (types.Block, error) {
+func (ether *Ether) GetBlockByHash(blockHash string) (*gethTypes.Block, error) {
 	client, err := ether.GetEthClient()
 	if err != nil {
-		return types.Block{}, err
+		return nil, err
 	}
 	defer client.Close()
 
@@ -447,11 +448,11 @@ func (ether *Ether) GetBlockByHash(blockHash string) (types.Block, error) {
 		common.HexToHash(blockHash),
 	)
 	if err != nil {
-		return types.Block{}, err
+		return nil, err
 	}
 	if res == nil {
-		return types.Block{}, constant.ErrResultIsNil
+		return nil, constant.ErrResultIsNil
 	}
 
-	return utils.TransformAlchemyBlock(res), nil
+	return res, nil
 }
