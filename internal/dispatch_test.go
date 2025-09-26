@@ -94,7 +94,7 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 	})
 }
 
-func TestGethRequestMsgWithBackOff(t *testing.T) {
+func TestGethRequestArgWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
 		backoffConfig := &BackoffConfig{
@@ -111,7 +111,7 @@ func TestGethRequestMsgWithBackOff(t *testing.T) {
 		msg := ethereum.CallMsg{}
 
 		// Act
-		result, err := GethRequestMsgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
+		result, err := GethRequestArgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
 
 		// Assert
 		assert.NoError(t, err)
@@ -128,7 +128,7 @@ func TestGethRequestMsgWithBackOff(t *testing.T) {
 		msg := ethereum.CallMsg{}
 
 		// Act
-		result, err := GethRequestMsgWithBackOff(nil, 10*time.Second, mockHandler, msg)
+		result, err := GethRequestArgWithBackOff(nil, 10*time.Second, mockHandler, msg)
 
 		// Assert
 		assert.NoError(t, err)
@@ -156,7 +156,7 @@ func TestGethRequestMsgWithBackOff(t *testing.T) {
 		msg := ethereum.CallMsg{}
 
 		// Act
-		result, err := GethRequestMsgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
+		result, err := GethRequestArgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
 
 		// Assert
 		assert.NoError(t, err)
@@ -179,7 +179,7 @@ func TestGethRequestMsgWithBackOff(t *testing.T) {
 		msg := ethereum.CallMsg{}
 
 		// Act
-		_, err := GethRequestMsgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
+		_, err := GethRequestArgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
 
 		// Assert
 		assert.Error(t, err)

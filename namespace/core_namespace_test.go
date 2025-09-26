@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
@@ -1021,15 +1022,16 @@ func TestCore_GetBlock(t *testing.T) {
 				defer patches.Reset()
 
 				// Arrange
-				expectedBlock := types.Block{
-					Number: 123,
+				header := gethTypes.Header{
+					Number: big.NewInt(123),
 				}
+				expectedBlock := gethTypes.NewBlockWithHeader(&header)
 
 				// Mock
 				patches.ApplyMethod(
 					reflect.TypeOf(api),
 					"GetBlockByHash",
-					func(_ *ether.Ether, _ string) (types.Block, error) {
+					func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
 						return expectedBlock, nil
 					},
 				)
@@ -1057,8 +1059,8 @@ func TestCore_GetBlock(t *testing.T) {
 				patches.ApplyMethod(
 					reflect.TypeOf(api),
 					"GetBlockByHash",
-					func(_ *ether.Ether, _ string) (types.Block, error) {
-						return types.Block{}, errExpected
+					func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
+						return nil, errExpected
 					},
 				)
 
@@ -1069,7 +1071,7 @@ func TestCore_GetBlock(t *testing.T) {
 
 				// Assert
 				assert.ErrorIs(t, errExpected, err)
-				assert.Equal(t, types.Block{}, block)
+				assert.Nil(t, block)
 			})
 		})
 	})
@@ -1081,15 +1083,16 @@ func TestCore_GetBlock(t *testing.T) {
 				defer patches.Reset()
 
 				// Arrange
-				expectedBlock := types.Block{
-					Number: 123,
+				header := gethTypes.Header{
+					Number: big.NewInt(123),
 				}
+				expectedBlock := gethTypes.NewBlockWithHeader(&header)
 
 				// Mock
 				patches.ApplyMethod(
 					reflect.TypeOf(api),
 					"GetBlockByNumber",
-					func(_ *ether.Ether, _ string) (types.Block, error) {
+					func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
 						return expectedBlock, nil
 					},
 				)
@@ -1117,8 +1120,8 @@ func TestCore_GetBlock(t *testing.T) {
 				patches.ApplyMethod(
 					reflect.TypeOf(api),
 					"GetBlockByNumber",
-					func(_ *ether.Ether, _ string) (types.Block, error) {
-						return types.Block{}, errExpected
+					func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
+						return nil, errExpected
 					},
 				)
 
@@ -1129,7 +1132,7 @@ func TestCore_GetBlock(t *testing.T) {
 
 				// Assert
 				assert.ErrorIs(t, errExpected, err)
-				assert.Equal(t, types.Block{}, block)
+				assert.Nil(t, block)
 			})
 		})
 	})

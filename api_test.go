@@ -234,7 +234,18 @@ func TestAPI_Core_GetBlock(t *testing.T) {
 		)
 
 		assert.Nil(t, err)
-		assert.Equal(t, res.Hash, blockHash)
+		assert.Equal(t, res.Hash().Hex(), blockHash)
+	})
+
+	t.Run("get block by block hash, but result is nil error", func(t *testing.T) {
+		blockHash := "0x123"
+		_, err := alchemy.Core.GetBlock(
+			types.BlockHashOrBlockTag{
+				BlockHash: blockHash,
+			},
+		)
+
+		assert.Error(t, err)
 	})
 
 	t.Run("get block by block number", func(t *testing.T) {
@@ -246,7 +257,18 @@ func TestAPI_Core_GetBlock(t *testing.T) {
 		)
 
 		assert.Nil(t, err)
-		assert.Equal(t, res.Number, 26803)
+		assert.Equal(t, res.Number().Cmp(big.NewInt(26803)), 0)
+	})
+
+	t.Run("get block by block number, but result is nil error", func(t *testing.T) {
+		blockNumber := "0x9999999999999999999999999999"
+		_, err := alchemy.Core.GetBlock(
+			types.BlockHashOrBlockTag{
+				BlockTag: blockNumber,
+			},
+		)
+
+		assert.Error(t, err)
 	})
 }
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-viper/mapstructure/v2"
@@ -98,13 +99,13 @@ type EtherApi interface {
 		Simple wrapper around eth_getBlockByNumber.
 		This returns the complete block information for the provided block number.
 	*/
-	GetBlockByNumber(blockNumber string) (types.Block, error)
+	GetBlockByNumber(blockNumber string) (*gethTypes.Block, error)
 
 	/*
 		Simple wrapper around eth_getBlockByHash.
 		This returns the complete block information for the provided block hash.
 	*/
-	GetBlockByHash(blockHash string) (types.Block, error)
+	GetBlockByHash(blockHash string) (*gethTypes.Block, error)
 }
 
 type Ether struct {
@@ -337,7 +338,7 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	if err != nil {
 		return big.NewInt(0), err
 	}
-	res, err := internal.GethRequestMsgWithBackOff(
+	res, err := internal.GethRequestArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
 		client.EstimateGas,
@@ -408,48 +409,54 @@ func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]
 	return txReceipts, nil
 }
 
-func (ether *Ether) GetBlockByNumber(blockNumber string) (types.Block, error) {
-	result, err := ether.provider.Send(constant.Eth_GetBlockByNumber, types.RequestArgs{
-		blockNumber,
-		false,
-	})
+func (ether *Ether) GetBlockByNumber(blockNumber string) (*gethTypes.Block, error) {
+	client, err := ether.GetEthClient()
 	if err != nil {
-		return types.Block{}, err
+		return nil, err
 	}
+	defer client.Close()
 
-	resultMap := result.(map[string]any)
-	var BlockResponse types.BlockResponse
-	if err := mapstructure.Decode(resultMap, &BlockResponse); err != nil {
-		return types.Block{}, constant.ErrFailedToMapBlockResponse
-	}
-
-	block, err := utils.TransformBlock(BlockResponse)
+	bigBlockNumber, err := utils.FromBigHex(blockNumber)
 	if err != nil {
-		return types.Block{}, err
+		return nil, err
 	}
 
-	return block, nil
+	res, err := internal.GethRequestArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.BlockByNumber,
+		bigBlockNumber,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if res == nil {
+		return nil, constant.ErrResultIsNil
+	}
+
+	return res, nil
 }
 
-func (ether *Ether) GetBlockByHash(blockHash string) (types.Block, error) {
-	result, err := ether.provider.Send(constant.Eth_GetBlockByHash, types.RequestArgs{
-		blockHash,
-		false,
-	})
+func (ether *Ether) GetBlockByHash(blockHash string) (*gethTypes.Block, error) {
+	client, err := ether.GetEthClient()
 	if err != nil {
-		return types.Block{}, err
+		return nil, err
 	}
+	defer client.Close()
 
-	resultMap := result.(map[string]any)
-	var BlockResponse types.BlockResponse
-	if err := mapstructure.Decode(resultMap, &BlockResponse); err != nil {
-		return types.Block{}, constant.ErrFailedToMapBlockResponse
-	}
-
-	block, err := utils.TransformBlock(BlockResponse)
+	res, err := internal.GethRequestArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.BlockByHash,
+		common.HexToHash(blockHash),
+	)
 	if err != nil {
-		return types.Block{}, err
+		return nil, err
+	}
+	if res == nil {
+		return nil, constant.ErrResultIsNil
 	}
 
-	return block, nil
+	return res, nil
 }

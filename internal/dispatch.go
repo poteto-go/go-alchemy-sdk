@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
@@ -32,13 +31,13 @@ func RequestHttpWithBackoff(
 	}
 }
 
-func GethRequestMsgWithBackOff[T any](
+func GethRequestArgWithBackOff[T any, A any](
 	backoffConfig *BackoffConfig,
 	timeout time.Duration,
 	handler func(
-		context.Context, ethereum.CallMsg,
+		context.Context, A,
 	) (T, error),
-	msg ethereum.CallMsg,
+	arg A,
 ) (T, error) {
 	var lastHttpError error
 	if backoffConfig == nil {
@@ -51,7 +50,7 @@ func GethRequestMsgWithBackOff[T any](
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 
-		result, err := handler(ctx, msg)
+		result, err := handler(ctx, arg)
 		if err == nil {
 			return result, nil
 		}

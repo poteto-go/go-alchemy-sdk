@@ -42,17 +42,16 @@ type BlockHead struct {
 	BlockResponse
 }
 
-// refs:
-// https://www.alchemy.com/docs/reference/sdk-getblock
+// refs: https://www.alchemy.com/docs/reference/sdk-getblock
 type Block struct {
 	Hash       string   `json:"hash"`
 	ParentHash string   `json:"parentHash"`
-	Number     int      `json:"number"`
-	Timestamp  int      `json:"timestamp"`
-	Nonce      string   `json:"nonce"`
-	Difficulty int      `json:"difficulty"`
-	GasLimit   *big.Int `json:"gasLimit"`
-	GasUsed    *big.Int `json:"gasUsed"`
+	Number     *big.Int `json:"number"`
+	Timestamp  uint64   `json:"timestamp"`
+	Nonce      uint64   `json:"nonce"`
+	Difficulty *big.Int `json:"difficulty"`
+	GasLimit   uint64   `json:"gasLimit"`
+	GasUsed    uint64   `json:"gasUsed"`
 	Miner      string   `json:"miner"`
 
 	// hash of transactions
