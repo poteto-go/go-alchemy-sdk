@@ -337,7 +337,7 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	if err != nil {
 		return big.NewInt(0), err
 	}
-	res, err := internal.GethRequestMsgWithBackOff(
+	res, err := internal.GethRequestArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
 		client.EstimateGas,
