@@ -84,7 +84,7 @@ type EtherApi interface {
 	Call(tx types.TransactionRequest, blockTag string) (string, error)
 
 	/*
-		TODO: null if the tx has not been mined.
+		Null if the tx has not been mined.
 		Returns the transaction receipt for hash.
 		To stall until the transaction has been mined, consider the waitForTransaction method below.
 	*/
@@ -92,8 +92,9 @@ type EtherApi interface {
 
 	/*
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
+		Returns geth's Receipt.
 	*/
-	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
+	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error)
 
 	/*
 		Simple wrapper around eth_getBlockByNumber.
@@ -393,22 +394,28 @@ func (ether *Ether) GetTransactionReceipt(hash string) (*gethTypes.Receipt, erro
 	return txReceipt, nil
 }
 
-func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
 	result, err := ether.provider.Send(constant.Alchemy_TransactionReceipts, types.RequestArgs{
 		arg,
 	})
 	if err != nil {
-		return []types.TransactionReceipt{}, err
+		return []*gethTypes.Receipt{}, err
 	}
 
 	resultMap := result.(map[string]any)
 	var txReceiptsRes types.TransactionReceiptsResponse
 	if err := mapstructure.Decode(resultMap, &txReceiptsRes); err != nil {
-		return []types.TransactionReceipt{}, constant.ErrFailedToMapTransactionReceipt
+		return []*gethTypes.Receipt{}, constant.ErrFailedToMapTransactionReceipt
 	}
 
-	txReceipts := make([]types.TransactionReceipt, len(txReceiptsRes.Receipts))
-	copy(txReceipts, txReceiptsRes.Receipts)
+	txReceipts := make([]*gethTypes.Receipt, len(txReceiptsRes.Receipts))
+	for i, receipt := range txReceiptsRes.Receipts {
+		gethReceipt, err := utils.TransformAlchemyReceiptToGeth(receipt)
+		if err != nil {
+			return []*gethTypes.Receipt{}, err
+		}
+		txReceipts[i] = gethReceipt
+	}
 	return txReceipts, nil
 }
 

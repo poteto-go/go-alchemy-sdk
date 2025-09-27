@@ -16,6 +16,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -959,17 +960,32 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		txArg := types.TransactionReceiptsArg{
 			BlockHash: txHash,
 		}
-		expected := []types.TransactionReceipt{
+		expectedAlchemyReceipt := []types.TransactionReceipt{
 			{
-				TransactionHash: txHash,
+				TransactionHash:   "0x504ce587a65bdbdb6414a0c6c16d86a04dd79bfcc4f2950eec9634b30ce5370f",
+				TransactionIndex:  "0x0",
+				BlockHash:         "0xe7212a92cfb9b06addc80dec2a0dfae9ea94fd344efeb157c41e12994fcad60a",
+				BlockNumber:       "0x50",
+				From:              "0x627306090abab3a6e1400e9345bc60c78a8bef57",
+				To:                "0xf17f52151ebef6c7334fad080c5704d77216b732",
+				CumulativeGasUsed: "0x5208",
+				GasUsed:           "0x5208",
+				Logs:              []types.LogResponse{},
+				LogsBloom:         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+				EffectiveGasPrice: "0x1",
+				Type:              "0x0",
+				Status:            "0x1",
 			},
 		}
+
+		expected := make([]*gethTypes.Receipt, 1)
+		expected[0], _ = utils.TransformAlchemyReceiptToGeth(expectedAlchemyReceipt[0])
 
 		// Mock & Assert
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransactionReceipts",
-			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
 				assert.Equal(t, arg, txArg)
 				return expected, nil
 			},
@@ -997,9 +1013,9 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransactionReceipts",
-			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
 				assert.Equal(t, arg, txArg)
-				return []types.TransactionReceipt{}, expectedErr
+				return []*gethTypes.Receipt{}, expectedErr
 			},
 		)
 

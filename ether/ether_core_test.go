@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/goccy/go-json"
@@ -1112,7 +1113,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 	ether := newNilEtherApiForTest(provider)
 
 	t.Run("normal case: ", func(t *testing.T) {
-		expected := []types.TransactionReceipt{
+		expectedAlchemyReceipt := []types.TransactionReceipt{
 			{
 				TransactionHash:   "0x504ce587a65bdbdb6414a0c6c16d86a04dd79bfcc4f2950eec9634b30ce5370f",
 				TransactionIndex:  "0x0",
@@ -1129,6 +1130,9 @@ func Test_GetTransactionReceipts(t *testing.T) {
 				Status:            "0x1",
 			},
 		}
+
+		expected := make([]*gethTypes.Receipt, 1)
+		expected[0], _ = utils.TransformAlchemyReceiptToGeth(expectedAlchemyReceipt[0])
 
 		t.Run("call alchemy_getTransactionReceipts & return result, blockHash pattern", func(t *testing.T) {
 			patches := gomonkey.NewPatches()

@@ -20,16 +20,17 @@ func TestFromHex(t *testing.T) {
 		// Assert
 		assert.NoError(t, err)
 		assert.Equal(t, 1193046, result)
+
+		t.Run("empty string => 0", func(t *testing.T) {
+			// Act
+			res, _ := utils.FromHex("")
+
+			// Assert
+			assert.Equal(t, 0, res)
+		})
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("empty string => constant.ErrInvalidHexString", func(t *testing.T) {
-			// Act
-			_, err := utils.FromHex("")
-
-			// Assert
-			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
-		})
 
 		t.Run("invalid hex string => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act

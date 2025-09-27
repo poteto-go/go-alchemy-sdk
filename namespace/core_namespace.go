@@ -84,8 +84,9 @@ type ICore interface {
 
 	/*
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
+		Returns geth's Receipt.
 	*/
-	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
+	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error)
 
 	/*
 		Returns the block from the network based on the provided block number or hash.
@@ -226,10 +227,10 @@ func (c *Core) GetTransactionReceipt(hash string) (*gethTypes.Receipt, error) {
 	return receipt, nil
 }
 
-func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
 	receipts, err := c.ether.GetTransactionReceipts(arg)
 	if err != nil {
-		return []types.TransactionReceipt{}, err
+		return []*gethTypes.Receipt{}, err
 	}
 
 	return receipts, nil

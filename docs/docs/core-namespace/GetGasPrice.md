@@ -8,8 +8,8 @@ func GetGasPrice() (price *big.Int, err error)
 
 ```go
 func main() {
-  ...
-  alchemy := gas.NewAlchemy(setting)
-  res, _ := alchemy.Core.GetGasPrice()
+	...
+	alchemy := gas.NewAlchemy(setting)
+	res, _ := alchemy.Core.GetGasPrice()
 }
 ```
