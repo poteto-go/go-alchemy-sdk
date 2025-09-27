@@ -10,14 +10,14 @@ func EstimateGas(tx types.TransactionRequest) (price *big.Int, err error)
 
 ```go
 func main() {
-  ...
-  alchemy := gas.NewAlchemy(setting)
-  res, _ := alchemy.Core.EstimateGas(
-    types.TransactionRequest{
-      From:  "0x44aa93095d6749a706051658b970b941c72c1d53",
-      To:    "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",
-      Value: "0x1",
-    },
-  )
+	...
+	alchemy := gas.NewAlchemy(setting)
+	res, _ := alchemy.Core.EstimateGas(
+		types.TransactionRequest{
+			From:  "0x44aa93095d6749a706051658b970b941c72c1d53",
+			To:    "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",
+			Value: "0x1",
+		},
+	)
 }
 ```

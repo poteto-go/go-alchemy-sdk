@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/goccy/go-json"
@@ -1045,104 +1046,41 @@ var expectedTransactionReceipt = `
 `
 
 func Test_GetTransactionReceipt(t *testing.T) {
-	provider := newProviderForTest()
-	ether := newNilEtherApiForTest(provider)
-
-	t.Run("normal case: ", func(t *testing.T) {
-		t.Run("call eth_getTransactionReceipt & return result", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			transactionHash := "hash"
-			expected := types.TransactionReceipt{
-				TransactionHash:   "0x504ce587a65bdbdb6414a0c6c16d86a04dd79bfcc4f2950eec9634b30ce5370f",
-				TransactionIndex:  "0x0",
-				BlockHash:         "0xe7212a92cfb9b06addc80dec2a0dfae9ea94fd344efeb157c41e12994fcad60a",
-				BlockNumber:       "0x50",
-				From:              "0x627306090abab3a6e1400e9345bc60c78a8bef57",
-				To:                "0xf17f52151ebef6c7334fad080c5704d77216b732",
-				CumulativeGasUsed: "0x5208",
-				GasUsed:           "0x5208",
-				Logs:              []types.LogResponse{},
-				LogsBloom:         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-				EffectiveGasPrice: "0x1",
-				Type:              "0x0",
-				Status:            "0x1",
-			}
-
-			// Mock
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_GetTransactionReceipt, method)
-					var result map[string]any
-					json.Unmarshal([]byte(expectedTransactionReceipt), &result)
-					return result, nil
-				},
-			)
-
-			// Act
-			res, err := ether.GetTransactionReceipt(transactionHash)
-
-			// Assert
-			assert.Nil(t, err)
-			assert.Equal(t, expected, res)
-		})
-	})
-
 	t.Run("error case:", func(t *testing.T) {
-		t.Run("if error on send, return internal error", func(t *testing.T) {
+		t.Run("if internal error, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			txHash := "hash"
+
+			// Act
+			_, err := ether.GetTransactionReceipt(txHash)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
 			// Arrange
-			expectedErr := errors.New("error")
+			ether := newEtherApiForTest()
+			txHash := "hash"
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					return "", expectedErr
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
 				},
 			)
 
 			// Act
-			_, err := ether.GetTransactionReceipt("hash")
+			_, err := ether.GetTransactionReceipt(txHash)
 
 			// Assert
-			assert.ErrorIs(t, err, expectedErr)
-		})
-
-		t.Run("if map structure failed, return constant.ErrFailedToMapTransactionReceipt", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Mock
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_GetTransactionReceipt, method)
-					var result map[string]any
-					json.Unmarshal([]byte(expectedTransactionReceipt), &result)
-					return result, nil
-				},
-			)
-			patches.ApplyFunc(
-				mapstructure.Decode,
-				func(_ any, _ any) error {
-					return errors.New("error")
-				},
-			)
-
-			// Act
-			_, err := ether.GetTransactionReceipt("0x123")
-
-			// Assert
-			assert.ErrorIs(t, constant.ErrFailedToMapTransactionReceipt, err)
+			assert.Error(t, err)
 		})
 	})
 }
@@ -1175,7 +1113,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 	ether := newNilEtherApiForTest(provider)
 
 	t.Run("normal case: ", func(t *testing.T) {
-		expected := []types.TransactionReceipt{
+		expectedAlchemyReceipt := []types.TransactionReceipt{
 			{
 				TransactionHash:   "0x504ce587a65bdbdb6414a0c6c16d86a04dd79bfcc4f2950eec9634b30ce5370f",
 				TransactionIndex:  "0x0",
@@ -1192,6 +1130,9 @@ func Test_GetTransactionReceipts(t *testing.T) {
 				Status:            "0x1",
 			},
 		}
+
+		expected := make([]*gethTypes.Receipt, 1)
+		expected[0], _ = utils.TransformAlchemyReceiptToGeth(expectedAlchemyReceipt[0])
 
 		t.Run("call alchemy_getTransactionReceipts & return result, blockHash pattern", func(t *testing.T) {
 			patches := gomonkey.NewPatches()

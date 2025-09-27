@@ -33,4 +33,5 @@ var (
 	ErrResultIsNil                      = errors.New("result is nil")
 	ErrFailedToCreateRequestBody        = errors.New("failed to create request body")
 	ErrInvalidArgs                      = errors.New("invalid args")
+	ErrOverFlow                         = errors.New("overflow")
 )

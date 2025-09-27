@@ -76,16 +76,17 @@ type ICore interface {
 	Call(tx types.TransactionRequest, blockTag string) (string, error)
 
 	/*
-		TODO: null if the tx has not been mined.
+		Null if the tx has not been mined.
 		Returns the transaction receipt for hash.
 		To stall until the transaction has been mined, consider the waitForTransaction method below.
 	*/
-	GetTransactionReceipt(hash string) (types.TransactionReceipt, error)
+	GetTransactionReceipt(hash string) (*gethTypes.Receipt, error)
 
 	/*
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
+		Returns geth's Receipt.
 	*/
-	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error)
+	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error)
 
 	/*
 		Returns the block from the network based on the provided block number or hash.
@@ -217,19 +218,19 @@ func (c *Core) Call(tx types.TransactionRequest, blockTag string) (string, error
 	return result, nil
 }
 
-func (c *Core) GetTransactionReceipt(hash string) (types.TransactionReceipt, error) {
+func (c *Core) GetTransactionReceipt(hash string) (*gethTypes.Receipt, error) {
 	receipt, err := c.ether.GetTransactionReceipt(hash)
 	if err != nil {
-		return types.TransactionReceipt{}, err
+		return nil, err
 	}
 
 	return receipt, nil
 }
 
-func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]types.TransactionReceipt, error) {
+func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
 	receipts, err := c.ether.GetTransactionReceipts(arg)
 	if err != nil {
-		return []types.TransactionReceipt{}, err
+		return []*gethTypes.Receipt{}, err
 	}
 
 	return receipts, nil

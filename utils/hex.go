@@ -26,6 +26,25 @@ func FromHex(hexString string) (int, error) {
 	return int(num), nil
 }
 
+func FromHexU64(hexString string) (uint64, error) {
+	if len(hexString) <= 1 {
+		return uint64(0), nil
+	}
+
+	if hexString[0:2] != "0x" {
+		return 0, constant.ErrInvalidHexString
+	}
+
+	// remove 0x
+	numString := hexString[2:]
+	num, err := strconv.ParseUint(numString, 16, 64)
+	if err != nil {
+		return 0, constant.ErrInvalidHexString
+	}
+
+	return num, nil
+}
+
 func FromBigHex(hexString string) (*big.Int, error) {
 	if len(hexString) <= 1 {
 		return big.NewInt(0), constant.ErrInvalidHexString
