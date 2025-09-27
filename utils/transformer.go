@@ -59,6 +59,7 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 	}
 
 	return &gethTypes.Receipt{
+		// nolint:gosec
 		Type:              uint8(typeU64),
 		PostState:         []byte(receipt.Root),
 		Status:            status,
