@@ -1,7 +1,9 @@
 package utils_test
 
 import (
+	"math"
 	"math/big"
+	"strconv"
 	"testing"
 
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -71,7 +73,7 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 			receipt := types.TransactionReceipt{
 				Logs: []types.LogResponse{
 					{
-						Address: "address",
+						LogIndex: "hello",
 					},
 				},
 			}
@@ -87,6 +89,21 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 			// Arrange
 			receipt := types.TransactionReceipt{
 				Type: "hello",
+				Logs: validLogs,
+			}
+
+			// Act
+			_, err := utils.TransformAlchemyReceiptToGeth(receipt)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if type is overflow", func(t *testing.T) {
+			// Arrange
+			var overFlowed uint64 = math.MaxUint
+			receipt := types.TransactionReceipt{
+				Type: "0x" + strconv.FormatUint(overFlowed, 16),
 				Logs: validLogs,
 			}
 
@@ -222,6 +239,28 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 		})
+
+		t.Run("if TransactionIndex overflow", func(t *testing.T) {
+			// Arrange
+			var overFlowed uint64 = math.MaxUint
+			receipt := types.TransactionReceipt{
+				Status:            "0x1",
+				Logs:              validLogs,
+				Type:              "0x1",
+				CumulativeGasUsed: "0x1",
+				GasUsed:           "0x1",
+				EffectiveGasPrice: "0x1",
+				BlobGasUsed:       "0x1",
+				BlockNumber:       "0x1",
+				TransactionIndex:  "0x" + strconv.FormatUint(overFlowed, 16),
+			}
+
+			// Act
+			_, err := utils.TransformAlchemyReceiptToGeth(receipt)
+
+			// Assert
+			assert.Error(t, err)
+		})
 	})
 }
 
@@ -301,11 +340,47 @@ func TestTransformAlchemyLogToGeth(t *testing.T) {
 			assert.Error(t, err)
 		})
 
+		t.Run("if txIndex overflow", func(t *testing.T) {
+			// Arrange
+			blockNumber := "0x123"
+			var overFlowed uint64 = math.MaxUint
+			txIndex := "0x" + strconv.FormatUint(overFlowed, 16)
+
+			logResponse := types.LogResponse{
+				BlockNumber:      blockNumber,
+				TransactionIndex: txIndex,
+			}
+
+			// Act
+			_, err := utils.TransformAlchemyLogToGeth(logResponse)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
 		t.Run("if logIndex is invalid", func(t *testing.T) {
 			// Arrange
 			blockNumber := "0x123"
 			txIndex := "0x123"
 			logIndex := "hello"
+
+			// Act
+			_, err := utils.TransformAlchemyLogToGeth(types.LogResponse{
+				BlockNumber:      blockNumber,
+				TransactionIndex: txIndex,
+				LogIndex:         logIndex,
+			})
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if logIndex overflow", func(t *testing.T) {
+			// Arrange
+			blockNumber := "0x123"
+			txIndex := "0x123"
+			var overFlowed uint64 = math.MaxUint
+			logIndex := "0x" + strconv.FormatUint(overFlowed, 16)
 
 			// Act
 			_, err := utils.TransformAlchemyLogToGeth(types.LogResponse{

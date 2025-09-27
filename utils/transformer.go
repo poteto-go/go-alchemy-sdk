@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"math"
+
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
@@ -22,6 +25,10 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 	if err != nil {
 		return nil, err
 	}
+	if typeU64 > math.MaxUint8 {
+		return nil, constant.ErrOverFlow
+	}
+	typeU8 := uint8(typeU64)
 
 	status, err := FromHexU64(receipt.Status)
 	if err != nil {
@@ -53,14 +60,17 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 		return nil, err
 	}
 
-	txIndex, err := FromHexU64(receipt.TransactionIndex)
+	txIndexU64, err := FromHexU64(receipt.TransactionIndex)
 	if err != nil {
 		return nil, err
 	}
+	if txIndexU64 > math.MaxUint32 {
+		return nil, constant.ErrOverFlow
+	}
+	txIndex := uint(txIndexU64)
 
 	return &gethTypes.Receipt{
-		// nolint:gosec
-		Type:              uint8(typeU64),
+		Type:              typeU8,
 		PostState:         []byte(receipt.Root),
 		Status:            status,
 		CumulativeGasUsed: cGasUsed,
@@ -73,7 +83,7 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 		BlobGasUsed:       bGasUsed,
 		BlockHash:         common.HexToHash(receipt.BlockHash),
 		BlockNumber:       blockNumber,
-		TransactionIndex:  uint(txIndex),
+		TransactionIndex:  txIndex,
 	}, nil
 }
 
@@ -89,15 +99,23 @@ func TransformAlchemyLogToGeth(log types.LogResponse) (*gethTypes.Log, error) {
 		return nil, err
 	}
 
-	txIndex, err := FromHexU64(log.TransactionIndex)
+	txIndexU64, err := FromHexU64(log.TransactionIndex)
 	if err != nil {
 		return nil, err
 	}
+	if txIndexU64 > math.MaxUint32 {
+		return nil, constant.ErrOverFlow
+	}
+	txIndex := uint(txIndexU64)
 
-	logIndex, err := FromHexU64(log.LogIndex)
+	logIndexU64, err := FromHexU64(log.LogIndex)
 	if err != nil {
 		return nil, err
 	}
+	if logIndexU64 > math.MaxUint32 {
+		return nil, constant.ErrOverFlow
+	}
+	logIndex := uint(logIndexU64)
 
 	return &gethTypes.Log{
 		Address:     common.HexToAddress(log.Address),
@@ -105,9 +123,9 @@ func TransformAlchemyLogToGeth(log types.LogResponse) (*gethTypes.Log, error) {
 		Data:        []byte(log.Data),
 		BlockNumber: blockNumber,
 		TxHash:      common.HexToHash(log.TransactionHash),
-		TxIndex:     uint(txIndex),
+		TxIndex:     txIndex,
 		BlockHash:   common.HexToHash(log.BlockHash),
-		Index:       uint(logIndex),
+		Index:       logIndex,
 		Removed:     log.Removed,
 	}, nil
 }
