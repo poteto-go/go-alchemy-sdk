@@ -200,7 +200,7 @@ func TestAPI_Core_GetTransactionReceipt(t *testing.T) {
 		)
 
 		assert.Nil(t, err)
-		assert.Equal(t, res.TransactionHash, txHash)
+		assert.Equal(t, res.TxHash.Hex(), txHash)
 	})
 }
 

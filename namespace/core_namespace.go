@@ -76,11 +76,11 @@ type ICore interface {
 	Call(tx types.TransactionRequest, blockTag string) (string, error)
 
 	/*
-		TODO: null if the tx has not been mined.
+		Null if the tx has not been mined.
 		Returns the transaction receipt for hash.
 		To stall until the transaction has been mined, consider the waitForTransaction method below.
 	*/
-	GetTransactionReceipt(hash string) (types.TransactionReceipt, error)
+	GetTransactionReceipt(hash string) (*gethTypes.Receipt, error)
 
 	/*
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
@@ -217,10 +217,10 @@ func (c *Core) Call(tx types.TransactionRequest, blockTag string) (string, error
 	return result, nil
 }
 
-func (c *Core) GetTransactionReceipt(hash string) (types.TransactionReceipt, error) {
+func (c *Core) GetTransactionReceipt(hash string) (*gethTypes.Receipt, error) {
 	receipt, err := c.ether.GetTransactionReceipt(hash)
 	if err != nil {
-		return types.TransactionReceipt{}, err
+		return nil, err
 	}
 
 	return receipt, nil

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
@@ -896,16 +897,16 @@ func TestCore_GetTransactionReceipt(t *testing.T) {
 		defer patches.Reset()
 
 		// Arrange
-		txHash := "hash"
-		expected := types.TransactionReceipt{
-			TransactionHash: txHash,
+		txHash := "0x0000000000000000000000000000000000000000000000000000000000000123"
+		expected := &gethTypes.Receipt{
+			TxHash: common.HexToHash(txHash),
 		}
 
 		// Mock & Assert
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransactionReceipt",
-			func(_ *ether.Ether, hash string) (types.TransactionReceipt, error) {
+			func(_ *ether.Ether, hash string) (*gethTypes.Receipt, error) {
 				assert.Equal(t, hash, txHash)
 				return expected, nil
 			},
@@ -915,7 +916,7 @@ func TestCore_GetTransactionReceipt(t *testing.T) {
 		actual, _ := core.GetTransactionReceipt(txHash)
 
 		// Assert
-		assert.Equal(t, expected, actual)
+		assert.Equal(t, txHash, actual.TxHash.Hex())
 	})
 
 	t.Run("if error occur in ether.TransactionReceipts & return internal error", func(t *testing.T) {
@@ -930,9 +931,9 @@ func TestCore_GetTransactionReceipt(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransactionReceipt",
-			func(_ *ether.Ether, hash string) (types.TransactionReceipt, error) {
+			func(_ *ether.Ether, hash string) (*gethTypes.Receipt, error) {
 				assert.Equal(t, hash, txHash)
-				return types.TransactionReceipt{}, expectedErr
+				return nil, expectedErr
 			},
 		)
 

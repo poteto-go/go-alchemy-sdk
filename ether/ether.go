@@ -88,7 +88,7 @@ type EtherApi interface {
 		Returns the transaction receipt for hash.
 		To stall until the transaction has been mined, consider the waitForTransaction method below.
 	*/
-	GetTransactionReceipt(hash string) (types.TransactionReceipt, error)
+	GetTransactionReceipt(hash string) (*gethTypes.Receipt, error)
 
 	/*
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
@@ -373,18 +373,21 @@ func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, 
 	return result.(string), nil
 }
 
-func (ether *Ether) GetTransactionReceipt(hash string) (types.TransactionReceipt, error) {
-	result, err := ether.provider.Send(constant.Eth_GetTransactionReceipt, types.RequestArgs{
-		hash,
-	})
+func (ether *Ether) GetTransactionReceipt(hash string) (*gethTypes.Receipt, error) {
+	client, err := ether.GetEthClient()
 	if err != nil {
-		return types.TransactionReceipt{}, err
+		return nil, err
 	}
+	defer client.Close()
 
-	resultMap := result.(map[string]any)
-	var txReceipt types.TransactionReceipt
-	if err := mapstructure.Decode(resultMap, &txReceipt); err != nil {
-		return types.TransactionReceipt{}, constant.ErrFailedToMapTransactionReceipt
+	txReceipt, err := internal.GethRequestArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.TransactionReceipt,
+		common.HexToHash(hash),
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	return txReceipt, nil
