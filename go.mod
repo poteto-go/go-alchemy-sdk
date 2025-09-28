@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
 	github.com/ethereum/go-ethereum v1.16.3
-	github.com/go-viper/mapstructure/v2 v2.3.0
+	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/goccy/go-json v0.10.5
 	github.com/jarcoal/httpmock v1.4.0
 	github.com/joho/godotenv v1.5.1
