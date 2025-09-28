@@ -329,157 +329,41 @@ func TestEther_GetCode(t *testing.T) {
 }
 
 func TestEther_GetTransaction(t *testing.T) {
-	// Arrange
-	provider := newProviderForTest()
-	ether := newNilEtherApiForTest(provider)
-
-	t.Run("normal case:", func(t *testing.T) {
-		t.Run("call eth_getTransactionByHash & return transaction", func(t *testing.T) {
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
 			// Arrange
-			expectedTransaction := types.TransactionResponse{
-				BlockHash:   "0x1",
-				Index:       1,
-				BlockNumber: 2,
-				From:        "0x3",
-				To:          "0x4",
-				GasLimit:    big.NewInt(5),
-				GasPrice:    big.NewInt(6),
-				Hash:        "0x7",
-				Data:        "0x8",
-				Nonce:       9,
-				Type:        17,
-				Value:       big.NewInt(10),
-				ChainID:     11,
-				Signature: types.Signature{
-					R: "0xd",
-					S: "0xe",
-					V: big.NewInt(12),
-				},
-				MaxPriorityFeePerGas: big.NewInt(0),
-				MaxFeePerGas:         big.NewInt(0),
-				AccessList:           []string{},
-				BlobVersionedHashes:  []string{},
-				AuthorizationList:    []string{},
-			}
-
-			// Mock & Assert
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_GetTransactionByHash, method)
-					return `{"hello": "world"}`, nil
-				},
-			)
-			patches.ApplyFunc(
-				mapstructure.Decode,
-				func(_ any, _ any) error {
-					return nil
-				},
-			)
-			patches.ApplyFunc(
-				utils.TransformTransaction,
-				func(rawTx types.TransactionRawResponse) (types.TransactionResponse, error) {
-					return expectedTransaction, nil
-				},
-			)
-
-			// Act
-			actual, err := ether.GetTransaction("hoge")
-
-			// Assert
-			assert.Nil(t, err)
-			assert.Equal(t, expectedTransaction, actual)
-		})
-	})
-
-	t.Run("error case:", func(t *testing.T) {
-		t.Run("if invalid send, throw error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			expectedErr := errors.New("error")
-
-			// Mock & Assert
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_GetTransactionByHash, method)
-					return "", expectedErr
-				},
-			)
-
-			// Act
-			_, err := ether.GetTransaction("hoge")
-
-			// Assert
-			assert.ErrorIs(t, err, expectedErr)
-		})
-
-		t.Run("if error on mapstructure, throw constant.ErrFailedToMapTransaction", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
+			ether := newEtherApiForTest()
+			txHash := "hash"
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					return `invalid json`, nil
-				},
-			)
-			patches.ApplyFunc(
-				mapstructure.Decode,
-				func(_ any, _ any) error {
-					return errors.New("error")
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
 				},
 			)
 
 			// Act
-			_, err := ether.GetTransaction("hoge")
+			_, _, err := ether.GetTransaction(txHash)
 
 			// Assert
-			assert.ErrorIs(t, err, constant.ErrFailedToMapTransaction)
+			assert.Error(t, err)
 		})
 
-		t.Run("if error on transform, throw error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
+		t.Run("if failed get transaction, return error", func(t *testing.T) {
 			// Arrange
-			expectedErr := errors.New("error")
-
-			// Mock
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					return `{"hello": "world"}`, nil
-				},
-			)
-			patches.ApplyFunc(
-				mapstructure.Decode,
-				func(_ any, _ any) error {
-					return nil
-				},
-			)
-			patches.ApplyFunc(
-				utils.TransformTransaction,
-				func(rawTx types.TransactionRawResponse) (types.TransactionResponse, error) {
-					return types.TransactionResponse{}, expectedErr
-				},
-			)
+			ether := newEtherApiForTest()
+			txHash := "hash"
 
 			// Act
-			_, err := ether.GetTransaction("hoge")
+			_, _, err := ether.GetTransaction(txHash)
 
 			// Assert
-			assert.ErrorIs(t, err, expectedErr)
+			assert.Error(t, err)
 		})
 	})
 }

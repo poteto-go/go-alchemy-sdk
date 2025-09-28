@@ -780,25 +780,32 @@ func TestCore_GetTransaction(t *testing.T) {
 
 		// Arrange
 		txHash := "hash"
-		expected := types.TransactionResponse{
-			Hash: txHash,
-		}
+		expectedIsPending := false
+		expected := gethTypes.NewTransaction(
+			uint64(0),
+			common.HexToAddress("0x1"),
+			big.NewInt(0),
+			uint64(0),
+			big.NewInt(0),
+			nil,
+		)
 
 		// Mock & Assert
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransaction",
-			func(_ *ether.Ether, hash string) (types.TransactionResponse, error) {
+			func(_ *ether.Ether, hash string) (*gethTypes.Transaction, bool, error) {
 				assert.Equal(t, hash, txHash)
-				return expected, nil
+				return expected, expectedIsPending, nil
 			},
 		)
 
 		// Act
-		actual, _ := core.GetTransaction(txHash)
+		actual, isPending, _ := core.GetTransaction(txHash)
 
 		// Assert
 		assert.Equal(t, expected, actual)
+		assert.Equal(t, expectedIsPending, isPending)
 	})
 
 	t.Run("if error occur in ether.GetTransaction & return internal error", func(t *testing.T) {
@@ -813,14 +820,14 @@ func TestCore_GetTransaction(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransaction",
-			func(_ *ether.Ether, hash string) (types.TransactionResponse, error) {
+			func(_ *ether.Ether, hash string) (*gethTypes.Transaction, bool, error) {
 				assert.Equal(t, hash, txHash)
-				return types.TransactionResponse{}, expectedErr
+				return nil, false, expectedErr
 			},
 		)
 
 		// Act
-		_, err := core.GetTransaction(txHash)
+		_, _, err := core.GetTransaction(txHash)
 
 		// Assert
 		assert.Equal(t, expectedErr, err)

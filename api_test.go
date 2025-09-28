@@ -141,23 +141,30 @@ func TestAPI_Core_GetBalance(t *testing.T) {
 }
 
 func TestAPI_Core_GetTransaction(t *testing.T) {
+	setting.Network = types.EthMainnet
 	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get transaction", func(t *testing.T) {
-		res, err := alchemy.Core.GetTransaction(
-			"0x591b59017dc8b5b154dbca6b27811206e2794f636c7a9cb26a6b26afe0526eb1",
+		tx, isPending, err := alchemy.Core.GetTransaction(
+			"0x9b300f515857b60d52cd23fb75b56aeae6eb96aa60778ce3758bc8f68db061e3",
 		)
 
 		assert.Nil(t, err)
 		assert.Equal(
 			t,
-			"0x591b59017dc8b5b154dbca6b27811206e2794f636c7a9cb26a6b26afe0526eb1",
-			res.Hash,
+			"0x9b300f515857b60d52cd23fb75b56aeae6eb96aa60778ce3758bc8f68db061e3",
+			tx.Hash().Hex(),
+		)
+		assert.Equal(
+			t,
+			false,
+			isPending,
 		)
 	})
 }
 
 func TestAPI_Core_GetStorageAt(t *testing.T) {
+	setting.Network = types.PolygonAmoy // I don't have on eth
 	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get storage at", func(t *testing.T) {

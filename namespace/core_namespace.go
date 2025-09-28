@@ -38,7 +38,7 @@ type ICore interface {
 
 		NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
 	*/
-	GetTransaction(hash string) (types.TransactionResponse, error)
+	GetTransaction(hash string) (tx *gethTypes.Transaction, isPending bool, err error)
 
 	/*
 		Return the value of the provided position at the provided address, at the provided block in `Bytes32` format.
@@ -150,13 +150,13 @@ func (c *Core) IsContractAddress(address string) bool {
 	return hexCode != "0x"
 }
 
-func (c *Core) GetTransaction(hash string) (types.TransactionResponse, error) {
-	transaction, err := c.ether.GetTransaction(hash)
+func (c *Core) GetTransaction(hash string) (*gethTypes.Transaction, bool, error) {
+	transaction, isPending, err := c.ether.GetTransaction(hash)
 	if err != nil {
-		return types.TransactionResponse{}, err
+		return nil, false, err
 	}
 
-	return transaction, nil
+	return transaction, isPending, nil
 }
 
 func (c *Core) GetStorageAt(address, position, blockTag string) (string, error) {

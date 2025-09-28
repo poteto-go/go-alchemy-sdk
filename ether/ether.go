@@ -44,9 +44,11 @@ type EtherApi interface {
 		pool access (e.g. if the gas price is too low or the transaction was only
 		recently sent and not yet indexed) in which case this method may also return null.
 
+		internal call geth.TransactionByHash
+
 		NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
 	*/
-	GetTransaction(hash string) (types.TransactionResponse, error)
+	GetTransaction(hash string) (tx *gethTypes.Transaction, isPending bool, err error)
 
 	/*
 		Return the value of the provided position at the provided address, at the provided block in `Bytes32` format.
@@ -210,25 +212,24 @@ func (ether *Ether) GetCode(address, blockTag string) (string, error) {
 	return code.(string), nil
 }
 
-func (ether *Ether) GetTransaction(hash string) (types.TransactionResponse, error) {
-	result, err := ether.provider.Send(constant.Eth_GetTransactionByHash, types.RequestArgs{
-		hash,
-	})
+func (ether *Ether) GetTransaction(hash string) (*gethTypes.Transaction, bool, error) {
+	client, err := ether.GetEthClient()
 	if err != nil {
-		return types.TransactionResponse{}, err
+		return nil, false, err
 	}
+	defer client.Close()
 
-	var txRaw types.TransactionRawResponse
-	if err := mapstructure.Decode(result, &txRaw); err != nil {
-		return types.TransactionResponse{}, constant.ErrFailedToMapTransaction
-	}
-
-	tx, err := utils.TransformTransaction(txRaw)
+	tx, isPending, err := internal.GethRequestArgWithBackOffTuple(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.TransactionByHash,
+		common.HexToHash(hash),
+	)
 	if err != nil {
-		return types.TransactionResponse{}, err
+		return nil, isPending, err
 	}
 
-	return tx, nil
+	return tx, isPending, nil
 }
 
 func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, error) {
@@ -339,6 +340,7 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	if err != nil {
 		return big.NewInt(0), err
 	}
+
 	res, err := internal.GethRequestArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
