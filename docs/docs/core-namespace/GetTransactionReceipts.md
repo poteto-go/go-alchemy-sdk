@@ -10,7 +10,7 @@ Returns geth's Receipt.
   - refs: https://www.alchemy.com/docs/data/utility-apis/transactions-receipts-endpoints/alchemy-get-transaction-receipts
 
 ```go
-func GetTransactionReceipts(arg types.TransactionReceiptsArg) (receipts []*types.Receipt, err error)
+func GetTransactionReceipts(arg types.BlockNumberOrHash) (receipts []*types.Receipt, err error)
 ```
 
 ```go
@@ -18,7 +18,7 @@ func main() {
 	...
 	alchemy := gas.NewAlchemy(setting)
 	res, err := alchemy.Core.GetTransactionReceipts(
-		types.TransactionReceiptsArg{
+		types.BlockNumberOrHash{
 			BlockNumber: "0xF1D1C6",
 		},
 	)

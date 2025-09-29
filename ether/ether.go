@@ -96,7 +96,7 @@ type EtherApi interface {
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
 		Returns geth's Receipt.
 	*/
-	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error)
+	GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error)
 
 	/*
 		Simple wrapper around eth_getBlockByNumber.
@@ -396,7 +396,7 @@ func (ether *Ether) GetTransactionReceipt(hash string) (*gethTypes.Receipt, erro
 	return txReceipt, nil
 }
 
-func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
+func (ether *Ether) GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error) {
 	result, err := ether.provider.Send(constant.Alchemy_TransactionReceipts, types.RequestArgs{
 		arg,
 	})

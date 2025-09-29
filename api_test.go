@@ -218,7 +218,7 @@ func TestAPI_Core_GetTransactionReceipts(t *testing.T) {
 	t.Run("get transaction receipts", func(t *testing.T) {
 		blockNumber := "0xF1D1C6"
 		res, err := alchemy.Core.GetTransactionReceipts(
-			types.TransactionReceiptsArg{
+			types.BlockNumberOrHash{
 				BlockNumber: blockNumber,
 			},
 		)
@@ -235,7 +235,7 @@ func TestAPI_Core_GetBlock(t *testing.T) {
 	t.Run("get block by block hash", func(t *testing.T) {
 		blockHash := "0xf7756d836b6716aaeffc2139c032752ba5acf02fe94acb65743f0d177554b2e2"
 		res, err := alchemy.Core.GetBlock(
-			types.BlockHashOrBlockTag{
+			types.BlockTagOrHash{
 				BlockHash: blockHash,
 			},
 		)
@@ -247,7 +247,7 @@ func TestAPI_Core_GetBlock(t *testing.T) {
 	t.Run("get block by block hash, but result is nil error", func(t *testing.T) {
 		blockHash := "0x123"
 		_, err := alchemy.Core.GetBlock(
-			types.BlockHashOrBlockTag{
+			types.BlockTagOrHash{
 				BlockHash: blockHash,
 			},
 		)
@@ -258,7 +258,7 @@ func TestAPI_Core_GetBlock(t *testing.T) {
 	t.Run("get block by block number", func(t *testing.T) {
 		blockNumber := "0x68b3"
 		res, err := alchemy.Core.GetBlock(
-			types.BlockHashOrBlockTag{
+			types.BlockTagOrHash{
 				BlockTag: blockNumber,
 			},
 		)
@@ -270,7 +270,7 @@ func TestAPI_Core_GetBlock(t *testing.T) {
 	t.Run("get block by block number, but result is nil error", func(t *testing.T) {
 		blockNumber := "0x9999999999999999999999999999"
 		_, err := alchemy.Core.GetBlock(
-			types.BlockHashOrBlockTag{
+			types.BlockTagOrHash{
 				BlockTag: blockNumber,
 			},
 		)

@@ -1023,7 +1023,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			defer patches.Reset()
 
 			// Arrange
-			txReceiptsArg := types.TransactionReceiptsArg{
+			txReceiptsArg := types.BlockNumberOrHash{
 				BlockHash: "hash",
 			}
 
@@ -1052,7 +1052,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			defer patches.Reset()
 
 			// Arrange
-			txReceiptsArg := types.TransactionReceiptsArg{
+			txReceiptsArg := types.BlockNumberOrHash{
 				BlockNumber: "number",
 			}
 
@@ -1084,7 +1084,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 
 			// Arrange
 			expectedErr := errors.New("error")
-			txReceiptsArg := types.TransactionReceiptsArg{
+			txReceiptsArg := types.BlockNumberOrHash{
 				BlockHash: "hash",
 			}
 
@@ -1109,7 +1109,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			defer patches.Reset()
 
 			// Arrange
-			txReceiptsArg := types.TransactionReceiptsArg{
+			txReceiptsArg := types.BlockNumberOrHash{
 				BlockHash: "hash",
 			}
 

@@ -86,7 +86,7 @@ type ICore interface {
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
 		Returns geth's Receipt.
 	*/
-	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error)
+	GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error)
 
 	/*
 		Returns the block from the network based on the provided block number or hash.
@@ -95,7 +95,7 @@ type ICore interface {
 
 		@param BlockHashOrBlockTag The block number or hash to get the block for.
 	*/
-	GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (*gethTypes.Block, error)
+	GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error)
 }
 
 type Core struct {
@@ -227,7 +227,7 @@ func (c *Core) GetTransactionReceipt(hash string) (*gethTypes.Receipt, error) {
 	return receipt, nil
 }
 
-func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
+func (c *Core) GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error) {
 	receipts, err := c.ether.GetTransactionReceipts(arg)
 	if err != nil {
 		return []*gethTypes.Receipt{}, err
@@ -236,7 +236,7 @@ func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*geth
 	return receipts, nil
 }
 
-func (c *Core) GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (*gethTypes.Block, error) {
+func (c *Core) GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error) {
 	if blockHashOrBlockTag.BlockHash != "" {
 		block, err := c.ether.GetBlockByHash(blockHashOrBlockTag.BlockHash)
 		if err != nil {

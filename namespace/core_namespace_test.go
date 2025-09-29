@@ -964,7 +964,7 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 
 		// Arrange
 		txHash := "hash"
-		txArg := types.TransactionReceiptsArg{
+		txArg := types.BlockNumberOrHash{
 			BlockHash: txHash,
 		}
 		expectedAlchemyReceipt := []types.TransactionReceipt{
@@ -992,7 +992,7 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransactionReceipts",
-			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error) {
 				assert.Equal(t, arg, txArg)
 				return expected, nil
 			},
@@ -1012,7 +1012,7 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		// Arrange
 		expectedErr := errors.New("error")
 		txHash := "hash"
-		txArg := types.TransactionReceiptsArg{
+		txArg := types.BlockNumberOrHash{
 			BlockHash: txHash,
 		}
 
@@ -1020,7 +1020,7 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransactionReceipts",
-			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error) {
 				assert.Equal(t, arg, txArg)
 				return []*gethTypes.Receipt{}, expectedErr
 			},
@@ -1061,7 +1061,7 @@ func TestCore_GetBlock(t *testing.T) {
 				)
 
 				// Act
-				block, err := core.GetBlock(types.BlockHashOrBlockTag{
+				block, err := core.GetBlock(types.BlockTagOrHash{
 					BlockHash: "hash",
 				})
 
@@ -1089,7 +1089,7 @@ func TestCore_GetBlock(t *testing.T) {
 				)
 
 				// Act
-				block, err := core.GetBlock(types.BlockHashOrBlockTag{
+				block, err := core.GetBlock(types.BlockTagOrHash{
 					BlockHash: "hash",
 				})
 
@@ -1122,7 +1122,7 @@ func TestCore_GetBlock(t *testing.T) {
 				)
 
 				// Act
-				block, err := core.GetBlock(types.BlockHashOrBlockTag{
+				block, err := core.GetBlock(types.BlockTagOrHash{
 					BlockTag: "0x123",
 				})
 
@@ -1150,7 +1150,7 @@ func TestCore_GetBlock(t *testing.T) {
 				)
 
 				// Act
-				block, err := core.GetBlock(types.BlockHashOrBlockTag{
+				block, err := core.GetBlock(types.BlockTagOrHash{
 					BlockTag: "0x123",
 				})
 
@@ -1164,7 +1164,7 @@ func TestCore_GetBlock(t *testing.T) {
 	t.Run("invalid arg case", func(t *testing.T) {
 		t.Run("should return core.ErrInvalidArgs on empty args", func(t *testing.T) {
 			// Act
-			_, err := core.GetBlock(types.BlockHashOrBlockTag{})
+			_, err := core.GetBlock(types.BlockTagOrHash{})
 
 			// Assert
 			assert.ErrorIs(t, err, constant.ErrInvalidArgs)
