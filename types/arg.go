@@ -1,8 +1,8 @@
 package types
 
 type BlockNumberOrHash struct {
-	BlockNumber string
-	BlockHash   string
+	BlockNumber string `json:"blockNumber,omitempty"` // use w/ alchemy method
+	BlockHash   string `json:"blockHash,omitempty"`
 }
 
 type BlockTagOrHash struct {
