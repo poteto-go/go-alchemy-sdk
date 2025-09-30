@@ -16,9 +16,11 @@ jobs:
       - name: Use golang
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.x"
+          go-version: "1.25.1"
       - name: install dependencies
         run: go mod download
+      - name: set env
+        run: go env -w GOTOOLCHAIN=go1.25.1+auto
       - name: test coverage
         run: go test ./... -cover -gcflags=all=-l
         env:
