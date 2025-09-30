@@ -31,10 +31,15 @@ type EtherApi interface {
 	GetBalance(address string, blockTag string) (*big.Int, error)
 
 	/*
-		Returns the contract code of the provided address at the block.
-		If there is no contract deployed, the result is 0x.
+		StorageAt returns the value of key in the contract storage of the given account.
+		The block number can be nil, in which case the value is taken from the latest known block.
 	*/
-	GetCode(address, blockTag string) (string, error)
+	CodeAt(address string, blockTag string) (string, error)
+
+	/*
+		CodeAtHash returns the contract code of the given account.
+	*/
+	CodeAtHash(address string, blockHash string) (string, error)
 
 	/*
 		Returns the transaction with hash or null if the transaction is unknown.
@@ -96,7 +101,7 @@ type EtherApi interface {
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
 		Returns geth's Receipt.
 	*/
-	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error)
+	GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error)
 
 	/*
 		Simple wrapper around eth_getBlockByNumber.
@@ -193,23 +198,51 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 	return balance, nil
 }
 
-func (ether *Ether) GetCode(address, blockTag string) (string, error) {
-	if err := utils.ValidateBlockTag(blockTag); err != nil {
+func (ether *Ether) CodeAt(address string, blockTag string) (string, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	blockNumber, err := utils.ToBlockNumber(blockTag)
+	if err != nil {
 		return "", err
 	}
 
-	code, err := ether.provider.Send(
-		constant.Eth_GetCode,
-		types.RequestArgs{
-			strings.ToLower(address),
-			blockTag,
-		},
+	code, err := internal.GethRequestTwoArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.CodeAt,
+		common.HexToAddress(address),
+		blockNumber,
 	)
 	if err != nil {
 		return "", err
 	}
 
-	return code.(string), nil
+	return common.Bytes2Hex(code), nil
+}
+
+func (ether *Ether) CodeAtHash(address string, blockHash string) (string, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	code, err := internal.GethRequestTwoArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.CodeAtHash,
+		common.HexToAddress(address),
+		common.HexToHash(blockHash),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return common.Bytes2Hex(code), nil
 }
 
 func (ether *Ether) GetTransaction(hash string) (*gethTypes.Transaction, bool, error) {
@@ -396,7 +429,7 @@ func (ether *Ether) GetTransactionReceipt(hash string) (*gethTypes.Receipt, erro
 	return txReceipt, nil
 }
 
-func (ether *Ether) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
+func (ether *Ether) GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error) {
 	result, err := ether.provider.Send(constant.Alchemy_TransactionReceipts, types.RequestArgs{
 		arg,
 	})

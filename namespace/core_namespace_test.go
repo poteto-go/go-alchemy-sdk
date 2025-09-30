@@ -235,7 +235,69 @@ func TestCore_GetCode(t *testing.T) {
 	api := newEtherApi()
 	core := namespace.NewCore(api).(*namespace.Core)
 
-	t.Run("normal case:", func(t *testing.T) {
+	t.Run("if arg is empty return error", func(t *testing.T) {
+		// Act
+		_, err := core.GetCode("", types.BlockTagOrHash{})
+
+		// Assert
+		assert.ErrorIs(t, constant.ErrInvalidArgs, err)
+	})
+
+	t.Run("blockHash case:", func(t *testing.T) {
+		t.Run("call ether.CodeAtHash", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expected := "0x123"
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"CodeAtHash",
+				func(_ *ether.Ether, _ string, _ string) (string, error) {
+					return expected, nil
+				},
+			)
+
+			// Act
+			actual, err := core.GetCode("0x123", types.BlockTagOrHash{
+				BlockHash: "hash",
+			})
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expected, actual)
+		})
+
+		t.Run("if internal error, return error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedErr := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"CodeAtHash",
+				func(_ *ether.Ether, _ string, _ string) (string, error) {
+					return "", expectedErr
+				},
+			)
+
+			// Act
+			actual, err := core.GetCode("0x123", types.BlockTagOrHash{
+				BlockHash: "hash",
+			})
+
+			// Assert
+			assert.ErrorIs(t, expectedErr, err)
+			assert.Equal(t, "", actual)
+		})
+	})
+
+	t.Run("blockTag case:", func(t *testing.T) {
 		t.Run("call ether.GetCode", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
@@ -246,22 +308,22 @@ func TestCore_GetCode(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(api),
-				"GetCode",
-				func(_ *ether.Ether, _address string, _blockTag string) (string, error) {
+				"CodeAt",
+				func(_ *ether.Ether, _ string, _ string) (string, error) {
 					return expected, nil
 				},
 			)
 
 			// Act
-			actual, err := core.GetCode("0x123", "latest")
+			actual, err := core.GetCode("0x123", types.BlockTagOrHash{
+				BlockTag: "latest",
+			})
 
 			// Assert
 			assert.Nil(t, err)
 			assert.Equal(t, expected, actual)
 		})
-	})
 
-	t.Run("error case:", func(t *testing.T) {
 		t.Run("if ether occur error, return empty string & error", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
@@ -272,14 +334,16 @@ func TestCore_GetCode(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(api),
-				"GetCode",
-				func(_ *ether.Ether, _address string, _blockTag string) (string, error) {
+				"CodeAt",
+				func(_ *ether.Ether, _ string, _ string) (string, error) {
 					return "", expected
 				},
 			)
 
 			// Act
-			actual, err := core.GetCode("0x123", "latest")
+			actual, err := core.GetCode("0x123", types.BlockTagOrHash{
+				BlockTag: "latest",
+			})
 
 			// Assert
 			assert.ErrorIs(t, expected, err)
@@ -289,71 +353,76 @@ func TestCore_GetCode(t *testing.T) {
 }
 
 func TestCore_IsContractAddress(t *testing.T) {
-	// Arrange
-	api := newEtherApi()
-	core := namespace.NewCore(api).(*namespace.Core)
-
-	t.Run("call with latest & if valid code hexString, return true", func(t *testing.T) {
+	t.Run("call core.GetCode & if error occur return false", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
-		// Mock & Assert
+		// Arrange
+		api := newEtherApi()
+		core := namespace.NewCore(api).(*namespace.Core)
+
+		// Mock
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
-			"GetCode",
-			func(_ *ether.Ether, _ string, blockTag string) (string, error) {
-				assert.Equal(t, "latest", blockTag)
-				return "0x123", nil
-			},
-		)
-
-		// Act
-		actual := core.IsContractAddress("address")
-
-		// Assert
-		assert.True(t, actual)
-	})
-
-	t.Run("call with latest & if 0x, return false", func(t *testing.T) {
-		patches := gomonkey.NewPatches()
-		defer patches.Reset()
-
-		// Mock & Assert
-		patches.ApplyMethod(
-			reflect.TypeOf(api),
-			"GetCode",
-			func(_ *ether.Ether, _ string, blockTag string) (string, error) {
-				assert.Equal(t, "latest", blockTag)
-				return "0x", nil
-			},
-		)
-
-		// Act
-		actual := core.IsContractAddress("address")
-
-		// Assert
-		assert.False(t, actual)
-	})
-
-	t.Run("call with latest & if error, return false", func(t *testing.T) {
-		patches := gomonkey.NewPatches()
-		defer patches.Reset()
-
-		// Mock & Assert
-		patches.ApplyMethod(
-			reflect.TypeOf(api),
-			"GetCode",
-			func(_ *ether.Ether, _ string, blockTag string) (string, error) {
-				assert.Equal(t, "latest", blockTag)
+			"CodeAt",
+			func(_ *ether.Ether, _ string, _ string) (string, error) {
 				return "", errors.New("error")
 			},
 		)
 
 		// Act
-		actual := core.IsContractAddress("address")
+		isContractAddress := core.IsContractAddress("0x")
 
 		// Assert
-		assert.False(t, actual)
+		assert.False(t, isContractAddress)
+	})
+
+	t.Run("call core.GetCode & if starts w/ 0x is return false", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		api := newEtherApi()
+		core := namespace.NewCore(api).(*namespace.Core)
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"CodeAt",
+			func(_ *ether.Ether, _ string, _ string) (string, error) {
+				return "0x", nil
+			},
+		)
+
+		// Act
+		isContractAddress := core.IsContractAddress("0x")
+
+		// Assert
+		assert.False(t, isContractAddress)
+	})
+
+	t.Run("call core.GetCode & if not starts w/ 0x is return true", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		api := newEtherApi()
+		core := namespace.NewCore(api).(*namespace.Core)
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"CodeAt",
+			func(_ *ether.Ether, _ string, _ string) (string, error) {
+				return "contract", nil
+			},
+		)
+
+		// Act
+		isContractAddress := core.IsContractAddress("0x")
+
+		// Assert
+		assert.True(t, isContractAddress)
 	})
 }
 
@@ -964,7 +1033,7 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 
 		// Arrange
 		txHash := "hash"
-		txArg := types.TransactionReceiptsArg{
+		txArg := types.BlockNumberOrHash{
 			BlockHash: txHash,
 		}
 		expectedAlchemyReceipt := []types.TransactionReceipt{
@@ -992,7 +1061,7 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransactionReceipts",
-			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error) {
 				assert.Equal(t, arg, txArg)
 				return expected, nil
 			},
@@ -1012,7 +1081,7 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		// Arrange
 		expectedErr := errors.New("error")
 		txHash := "hash"
-		txArg := types.TransactionReceiptsArg{
+		txArg := types.BlockNumberOrHash{
 			BlockHash: txHash,
 		}
 
@@ -1020,7 +1089,7 @@ func TestCore_GetTransactionReceipts(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"GetTransactionReceipts",
-			func(_ *ether.Ether, arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error) {
 				assert.Equal(t, arg, txArg)
 				return []*gethTypes.Receipt{}, expectedErr
 			},
@@ -1061,7 +1130,7 @@ func TestCore_GetBlock(t *testing.T) {
 				)
 
 				// Act
-				block, err := core.GetBlock(types.BlockHashOrBlockTag{
+				block, err := core.GetBlock(types.BlockTagOrHash{
 					BlockHash: "hash",
 				})
 
@@ -1089,7 +1158,7 @@ func TestCore_GetBlock(t *testing.T) {
 				)
 
 				// Act
-				block, err := core.GetBlock(types.BlockHashOrBlockTag{
+				block, err := core.GetBlock(types.BlockTagOrHash{
 					BlockHash: "hash",
 				})
 
@@ -1122,7 +1191,7 @@ func TestCore_GetBlock(t *testing.T) {
 				)
 
 				// Act
-				block, err := core.GetBlock(types.BlockHashOrBlockTag{
+				block, err := core.GetBlock(types.BlockTagOrHash{
 					BlockTag: "0x123",
 				})
 
@@ -1150,7 +1219,7 @@ func TestCore_GetBlock(t *testing.T) {
 				)
 
 				// Act
-				block, err := core.GetBlock(types.BlockHashOrBlockTag{
+				block, err := core.GetBlock(types.BlockTagOrHash{
 					BlockTag: "0x123",
 				})
 
@@ -1164,7 +1233,7 @@ func TestCore_GetBlock(t *testing.T) {
 	t.Run("invalid arg case", func(t *testing.T) {
 		t.Run("should return core.ErrInvalidArgs on empty args", func(t *testing.T) {
 			// Act
-			_, err := core.GetBlock(types.BlockHashOrBlockTag{})
+			_, err := core.GetBlock(types.BlockTagOrHash{})
 
 			// Assert
 			assert.ErrorIs(t, err, constant.ErrInvalidArgs)

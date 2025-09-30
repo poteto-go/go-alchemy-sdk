@@ -85,11 +85,6 @@ type TransactionReceipt struct {
 	Status            string        `json:"status,omitempty"`
 }
 
-type TransactionReceiptsArg struct {
-	BlockNumber string `json:"blockNumber,omitempty"`
-	BlockHash   string `json:"blockHash,omitempty"`
-}
-
 type TransactionReceiptsResponse struct {
 	Receipts []TransactionReceipt `json:"receipts"`
 }

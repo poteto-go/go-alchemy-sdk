@@ -23,7 +23,7 @@ type ICore interface {
 		Returns the contract code of the provided address at the block.
 		If there is no contract deployed, the result is 0x.
 	*/
-	GetCode(address, blockTag string) (string, error)
+	GetCode(address string, arg types.BlockTagOrHash) (string, error)
 
 	/* Checks if the provided address is a smart contract. */
 	IsContractAddress(address string) bool
@@ -86,7 +86,7 @@ type ICore interface {
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
 		Returns geth's Receipt.
 	*/
-	GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error)
+	GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error)
 
 	/*
 		Returns the block from the network based on the provided block number or hash.
@@ -95,7 +95,7 @@ type ICore interface {
 
 		@param BlockHashOrBlockTag The block number or hash to get the block for.
 	*/
-	GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (*gethTypes.Block, error)
+	GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error)
 }
 
 type Core struct {
@@ -132,17 +132,32 @@ func (c *Core) GetBalance(address string, blockTag string) (*big.Int, error) {
 	return balance, nil
 }
 
-func (c *Core) GetCode(address, blockTag string) (string, error) {
-	hexCode, err := c.ether.GetCode(address, blockTag)
+func (c *Core) GetCode(address string, arg types.BlockTagOrHash) (string, error) {
+	if arg.IsEmpty() {
+		return "", constant.ErrInvalidArgs
+	}
+
+	if arg.BlockHash != "" {
+		code, err := c.ether.CodeAtHash(address, arg.BlockHash)
+		if err != nil {
+			return "", err
+		}
+		return code, nil
+	}
+
+	code, err := c.ether.CodeAt(address, arg.BlockTag)
 	if err != nil {
 		return "", err
 	}
-	return hexCode, nil
+	return code, nil
 }
 
 /* Checks if the provided address is a smart contract. */
 func (c *Core) IsContractAddress(address string) bool {
-	hexCode, err := c.GetCode(address, "latest")
+	hexCode, err := c.GetCode(address, types.BlockTagOrHash{
+		BlockTag: "latest",
+	})
+
 	if err != nil {
 		return false
 	}
@@ -227,7 +242,7 @@ func (c *Core) GetTransactionReceipt(hash string) (*gethTypes.Receipt, error) {
 	return receipt, nil
 }
 
-func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*gethTypes.Receipt, error) {
+func (c *Core) GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error) {
 	receipts, err := c.ether.GetTransactionReceipts(arg)
 	if err != nil {
 		return []*gethTypes.Receipt{}, err
@@ -236,7 +251,7 @@ func (c *Core) GetTransactionReceipts(arg types.TransactionReceiptsArg) ([]*geth
 	return receipts, nil
 }
 
-func (c *Core) GetBlock(blockHashOrBlockTag types.BlockHashOrBlockTag) (*gethTypes.Block, error) {
+func (c *Core) GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error) {
 	if blockHashOrBlockTag.BlockHash != "" {
 		block, err := c.ether.GetBlockByHash(blockHashOrBlockTag.BlockHash)
 		if err != nil {

@@ -252,75 +252,96 @@ func TestEther_GetBalance(t *testing.T) {
 	})
 }
 
-func TestEther_GetCode(t *testing.T) {
-	// Arrange
-	provider := newProviderForTest()
-	ether := newEtherApiForTest()
-
-	t.Run("normal case:", func(t *testing.T) {
-		t.Run("call eth_getCode & if contract exist, return hex string of code", func(t *testing.T) {
+func TestEther_CodeAt(t *testing.T) {
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
 			// Arrange
-			expected := "0x60806040526004361061020f57600035"
+			ether := newEtherApiForTest()
+			address := "0x1234"
+			blockTag := "0x123"
 
-			// Mock & Assert
+			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_GetCode, method)
-					return expected, nil
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
 				},
 			)
 
 			// Act
-			actual, err := ether.GetCode("hoge", "latest")
+			_, err := ether.CodeAt(address, blockTag)
 
 			// Assert
-			assert.Nil(t, err)
-			assert.Equal(t, expected, actual)
+			assert.Error(t, err)
 		})
 
-		t.Run("call eth_getCode & if not contract exists, return 0x", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
+		t.Run("if failed from blockTag to blockNumber, return error", func(t *testing.T) {
 			// Arrange
-			expected := "0x"
-
-			// Mock & Assert
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_GetCode, method)
-					return "0x", nil
-				},
-			)
+			ether := newEtherApiForTest()
+			address := "0x1234"
+			blockTag := "invalid"
 
 			// Act
-			actual, err := ether.GetCode("hoge", "latest")
+			_, err := ether.CodeAt(address, blockTag)
 
 			// Assert
-			assert.Nil(t, err)
-			assert.Equal(t, expected, actual)
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed get code, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			address := "0x1234"
+			blockTag := "latest"
+
+			// Act
+			_, err := ether.CodeAt(address, blockTag)
+
+			// Assert
+			assert.Error(t, err)
 		})
 	})
+}
 
-	t.Run("errir case:", func(t *testing.T) {
-		t.Run("if invalid blockTag provided, throw constant.ErrInvalidBlockTag", func(t *testing.T) {
+func TestEther_CodeAtHash(t *testing.T) {
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+			address := "0x1234"
+			blockHash := "0x123"
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
+				},
+			)
+
 			// Act
-			_, err := ether.GetCode("hoge", "unxpected")
+			_, err := ether.CodeAtHash(address, blockHash)
 
 			// Assert
-			assert.ErrorIs(t, err, constant.ErrInvalidBlockTag)
+			assert.Error(t, err)
 		})
 
-		t.Run("if invalid send, throw error", func(t *testing.T) {
+		t.Run("if failed get code, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			address := "0x1234"
+			blockHash := "0x123"
+
 			// Act
-			_, err := ether.GetCode("hoge", "latest")
+			_, err := ether.CodeAtHash(address, blockHash)
 
 			// Assert
 			assert.Error(t, err)
@@ -1023,7 +1044,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			defer patches.Reset()
 
 			// Arrange
-			txReceiptsArg := types.TransactionReceiptsArg{
+			txReceiptsArg := types.BlockNumberOrHash{
 				BlockHash: "hash",
 			}
 
@@ -1052,7 +1073,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			defer patches.Reset()
 
 			// Arrange
-			txReceiptsArg := types.TransactionReceiptsArg{
+			txReceiptsArg := types.BlockNumberOrHash{
 				BlockNumber: "number",
 			}
 
@@ -1084,7 +1105,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 
 			// Arrange
 			expectedErr := errors.New("error")
-			txReceiptsArg := types.TransactionReceiptsArg{
+			txReceiptsArg := types.BlockNumberOrHash{
 				BlockHash: "hash",
 			}
 
@@ -1109,7 +1130,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 			defer patches.Reset()
 
 			// Arrange
-			txReceiptsArg := types.TransactionReceiptsArg{
+			txReceiptsArg := types.BlockNumberOrHash{
 				BlockHash: "hash",
 			}
 
