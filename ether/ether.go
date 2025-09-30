@@ -31,10 +31,15 @@ type EtherApi interface {
 	GetBalance(address string, blockTag string) (*big.Int, error)
 
 	/*
-		Returns the contract code of the provided address at the block.
-		If there is no contract deployed, the result is 0x.
+		StorageAt returns the value of key in the contract storage of the given account.
+		The block number can be nil, in which case the value is taken from the latest known block.
 	*/
-	GetCode(address, blockTag string) (string, error)
+	CodeAt(address string, blockTag string) (string, error)
+
+	/*
+		CodeAtHash returns the contract code of the given account.
+	*/
+	CodeAtHash(address string, blockHash string) (string, error)
 
 	/*
 		Returns the transaction with hash or null if the transaction is unknown.
@@ -193,23 +198,51 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 	return balance, nil
 }
 
-func (ether *Ether) GetCode(address, blockTag string) (string, error) {
-	if err := utils.ValidateBlockTag(blockTag); err != nil {
+func (ether *Ether) CodeAt(address string, blockTag string) (string, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	blockNumber, err := utils.ToBlockNumber(blockTag)
+	if err != nil {
 		return "", err
 	}
 
-	code, err := ether.provider.Send(
-		constant.Eth_GetCode,
-		types.RequestArgs{
-			strings.ToLower(address),
-			blockTag,
-		},
+	code, err := internal.GethRequestTwoArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.CodeAt,
+		common.HexToAddress(address),
+		blockNumber,
 	)
 	if err != nil {
 		return "", err
 	}
 
-	return code.(string), nil
+	return common.Bytes2Hex(code), nil
+}
+
+func (ether *Ether) CodeAtHash(address string, blockHash string) (string, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	code, err := internal.GethRequestTwoArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.CodeAtHash,
+		common.HexToAddress(address),
+		common.HexToHash(blockHash),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return common.Bytes2Hex(code), nil
 }
 
 func (ether *Ether) GetTransaction(hash string) (*gethTypes.Transaction, bool, error) {

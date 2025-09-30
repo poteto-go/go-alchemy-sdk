@@ -23,7 +23,7 @@ type ICore interface {
 		Returns the contract code of the provided address at the block.
 		If there is no contract deployed, the result is 0x.
 	*/
-	GetCode(address, blockTag string) (string, error)
+	GetCode(address string, arg types.BlockTagOrHash) (string, error)
 
 	/* Checks if the provided address is a smart contract. */
 	IsContractAddress(address string) bool
@@ -132,17 +132,32 @@ func (c *Core) GetBalance(address string, blockTag string) (*big.Int, error) {
 	return balance, nil
 }
 
-func (c *Core) GetCode(address, blockTag string) (string, error) {
-	hexCode, err := c.ether.GetCode(address, blockTag)
+func (c *Core) GetCode(address string, arg types.BlockTagOrHash) (string, error) {
+	if arg.IsEmpty() {
+		return "", constant.ErrInvalidArgs
+	}
+
+	if arg.BlockHash != "" {
+		code, err := c.ether.CodeAtHash(address, arg.BlockHash)
+		if err != nil {
+			return "", err
+		}
+		return code, nil
+	}
+
+	code, err := c.ether.CodeAt(address, arg.BlockTag)
 	if err != nil {
 		return "", err
 	}
-	return hexCode, nil
+	return code, nil
 }
 
 /* Checks if the provided address is a smart contract. */
 func (c *Core) IsContractAddress(address string) bool {
-	hexCode, err := c.GetCode(address, "latest")
+	hexCode, err := c.GetCode(address, types.BlockTagOrHash{
+		BlockTag: "latest",
+	})
+
 	if err != nil {
 		return false
 	}
