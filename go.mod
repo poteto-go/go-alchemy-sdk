@@ -1,6 +1,6 @@
 module github.com/poteto-go/go-alchemy-sdk
 
-go 1.24.1
+go 1.25.1
 
 require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
