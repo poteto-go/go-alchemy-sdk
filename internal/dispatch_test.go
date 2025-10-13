@@ -4,93 +4,143 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
-func TestRequestHttpWithBackoff(t *testing.T) {
+func TestRequestWithBackoff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
+		operation := func() (int, error) {
+			return 1, nil
 		}
-		requestConfig := types.RequestConfig{
-			Timeout: 10 * time.Second,
-		}
-		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig, _ []byte) (types.AlchemyResponse, error) {
-			return types.AlchemyResponse{}, nil
-		}
-		request := types.AlchemyRequest{}
-		body := []byte{}
 
 		// Act
-		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request, body)
+		result, err := requestWithBackoff(DefaultBackoffConfig, operation)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, types.AlchemyResponse{}, response)
+		assert.Equal(t, 1, result)
 	})
 
 	t.Run("backoff", func(t *testing.T) {
 		// Arrange
-		backoffConfig := BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		requestConfig := types.RequestConfig{
-			Timeout: 10 * time.Second,
-		}
 		callCount := 0
-		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig, _ []byte) (types.AlchemyResponse, error) {
+		operation := func() (int, error) {
 			callCount++
 			if callCount < 3 {
-				return types.AlchemyResponse{}, errors.New("test error")
+				return 0, errors.New("test error")
 			}
-			return types.AlchemyResponse{}, nil
+			return 1, nil
 		}
-		request := types.AlchemyRequest{}
-		body := []byte{}
+		config := BackoffConfig{
+			MaxRetries: 3,
+		}
 
 		// Act
-		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request, body)
+		result, err := requestWithBackoff(config, operation)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, types.AlchemyResponse{}, response)
+		assert.Equal(t, 1, result)
 		assert.Equal(t, 3, callCount)
 	})
 
 	t.Run("max retries exceeded", func(t *testing.T) {
 		// Arrange
+		operation := func() (int, error) {
+			return 0, errors.New("test error")
+		}
+		config := BackoffConfig{
+			MaxRetries: 3,
+		}
+
+		// Act
+		_, err := requestWithBackoff(config, operation)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}
+
+func TestRequestWithBackoffTuple(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		// Arrange
+		operation := func() (int, int, error) {
+			return 1, 2, nil
+		}
+
+		// Act
+		result1, result2, err := requestWithBackoffTuple(DefaultBackoffConfig, operation)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, 1, result1)
+		assert.Equal(t, 2, result2)
+	})
+
+	t.Run("backoff", func(t *testing.T) {
+		// Arrange
+		callCount := 0
+		operation := func() (int, int, error) {
+			callCount++
+			if callCount < 3 {
+				return 0, 0, errors.New("test error")
+			}
+			return 1, 2, nil
+		}
+		config := BackoffConfig{
+			MaxRetries: 3,
+		}
+
+		// Act
+		result1, result2, err := requestWithBackoffTuple(config, operation)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, 1, result1)
+		assert.Equal(t, 2, result2)
+		assert.Equal(t, 3, callCount)
+	})
+
+	t.Run("max retries exceeded", func(t *testing.T) {
+		// Arrange
+		operation := func() (int, int, error) {
+			return 0, 0, errors.New("test error")
+		}
+		config := BackoffConfig{
+			MaxRetries: 3,
+		}
+
+		// Act
+		_, _, err := requestWithBackoffTuple(config, operation)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}
+
+func TestRequestHttpWithBackoff(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		// Arrange
 		backoffConfig := BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
+			MaxRetries: 1,
 		}
-		requestConfig := types.RequestConfig{
-			Timeout: 10 * time.Second,
-		}
+		requestConfig := types.RequestConfig{}
 		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig, _ []byte) (types.AlchemyResponse, error) {
-			return types.AlchemyResponse{}, errors.New("test error")
+			return types.AlchemyResponse{Jsonrpc: "2.0"}, nil
 		}
 		request := types.AlchemyRequest{}
 		body := []byte{}
 
 		// Act
-		_, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request, body)
+		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request, body)
 
 		// Assert
-		assert.Error(t, err)
+		assert.NoError(t, err)
+		assert.Equal(t, "2.0", response.Jsonrpc)
 	})
 }
 
@@ -98,91 +148,32 @@ func TestGethRequestArgWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
 		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
+			MaxRetries: 1,
 		}
-		mockHandler := func(
-			context.Context, ethereum.CallMsg,
-		) (int, error) {
-			return 1, nil
+		mockHandler := func(ctx context.Context, a int) (int, error) {
+			return a, nil
 		}
-		msg := ethereum.CallMsg{}
 
 		// Act
-		result, err := GethRequestArgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
+		result, err := GethRequestArgWithBackOff(backoffConfig, 0, mockHandler, 1)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
+		assert.Equal(t, 1, result)
 	})
 
-	t.Run("if backoffConfig is nil, use DefaultBackoffConfig", func(t *testing.T) {
+	t.Run("nil backoffConfig", func(t *testing.T) {
 		// Arrange
-		mockHandler := func(
-			context.Context, ethereum.CallMsg,
-		) (int, error) {
-			return 1, nil
+		mockHandler := func(ctx context.Context, a int) (int, error) {
+			return a, nil
 		}
-		msg := ethereum.CallMsg{}
 
 		// Act
-		result, err := GethRequestArgWithBackOff(nil, 10*time.Second, mockHandler, msg)
+		result, err := GethRequestArgWithBackOff(nil, 0, mockHandler, 1)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
-	})
-
-	t.Run("backoff first 1 is error, & success", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		callCount := 0
-		mockHandler := func(
-			context.Context, ethereum.CallMsg,
-		) (int, error) {
-			callCount++
-			if callCount < 2 {
-				return 0, errors.New("test error")
-			}
-			return 1, nil
-		}
-		msg := ethereum.CallMsg{}
-
-		// Act
-		result, err := GethRequestArgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
-
-		// Assert
-		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
-	})
-
-	t.Run("max retries exceeded", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		mockHandler := func(
-			context.Context, ethereum.CallMsg,
-		) (int, error) {
-			return 0, errors.New("test error")
-		}
-		msg := ethereum.CallMsg{}
-
-		// Act
-		_, err := GethRequestArgWithBackOff(backoffConfig, 10*time.Second, mockHandler, msg)
-
-		// Assert
-		assert.Error(t, err)
+		assert.Equal(t, 1, result)
 	})
 }
 
@@ -190,119 +181,32 @@ func TestGethRequestTwoArgWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
 		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
+			MaxRetries: 1,
 		}
-		mockHandler := func(
-			context.Context, string, string,
-		) (int, error) {
-			return 1, nil
+		mockHandler := func(ctx context.Context, a, b int) (int, error) {
+			return a + b, nil
 		}
-		arg1 := "arg1"
-		arg2 := "arg2"
 
 		// Act
-		result, err := GethRequestTwoArgWithBackOff(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			arg1,
-			arg2,
-		)
+		result, err := GethRequestTwoArgWithBackOff(backoffConfig, 0, mockHandler, 1, 2)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
+		assert.Equal(t, 3, result)
 	})
 
-	t.Run("if backoffConfig is nil, use DefaultBackoffConfig", func(t *testing.T) {
+	t.Run("nil backoffConfig", func(t *testing.T) {
 		// Arrange
-		mockHandler := func(
-			context.Context, string, string,
-		) (int, error) {
-			return 1, nil
+		mockHandler := func(ctx context.Context, a, b int) (int, error) {
+			return a + b, nil
 		}
-		arg1 := "arg1"
-		arg2 := "arg2"
 
 		// Act
-		result, err := GethRequestTwoArgWithBackOff(
-			nil,
-			10*time.Second,
-			mockHandler,
-			arg1,
-			arg2,
-		)
+		result, err := GethRequestTwoArgWithBackOff(nil, 0, mockHandler, 1, 2)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
-	})
-
-	t.Run("backoff first 1 is error, & success", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		callCount := 0
-		mockHandler := func(
-			context.Context, string, string,
-		) (int, error) {
-			callCount++
-			if callCount < 2 {
-				return 0, errors.New("test error")
-			}
-			return 1, nil
-		}
-		arg1 := "arg1"
-		arg2 := "arg2"
-
-		// Act
-		result, err := GethRequestTwoArgWithBackOff(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			arg1,
-			arg2,
-		)
-
-		// Assert
-		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
-	})
-
-	t.Run("max retries exceeded", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		mockHandler := func(
-			context.Context, string, string,
-		) (int, error) {
-			return 0, errors.New("test error")
-		}
-		arg1 := "arg1"
-		arg2 := "arg2"
-
-		// Act
-		_, err := GethRequestTwoArgWithBackOff(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			arg1,
-			arg2,
-		)
-
-		// Assert
-		assert.Error(t, err)
+		assert.Equal(t, 3, result)
 	})
 }
 
@@ -310,225 +214,67 @@ func TestGethRequestThreeArgWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
 		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
+			MaxRetries: 1,
 		}
-		mockHandler := func(
-			context.Context, string, string, string,
-		) (int, error) {
-			return 1, nil
+		mockHandler := func(ctx context.Context, a, b, c int) (int, error) {
+			return a + b + c, nil
 		}
 
 		// Act
-		result, err := GethRequestThreeArgWithBackOff(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			"arg1",
-			"arg2",
-			"arg3",
-		)
+		result, err := GethRequestThreeArgWithBackOff(backoffConfig, 0, mockHandler, 1, 2, 3)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
+		assert.Equal(t, 6, result)
 	})
 
-	t.Run("if backoffConfig is nil, use DefaultBackoffConfig", func(t *testing.T) {
+	t.Run("nil backoffConfig", func(t *testing.T) {
 		// Arrange
-		mockHandler := func(
-			context.Context, string, string, string,
-		) (int, error) {
-			return 1, nil
+		mockHandler := func(ctx context.Context, a, b, c int) (int, error) {
+			return a + b + c, nil
 		}
 
 		// Act
-		result, err := GethRequestThreeArgWithBackOff(
-			nil,
-			10*time.Second,
-			mockHandler,
-			"arg1",
-			"arg2",
-			"arg3",
-		)
+		result, err := GethRequestThreeArgWithBackOff(nil, 0, mockHandler, 1, 2, 3)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
-	})
-
-	t.Run("backoff first 1 is error, & success", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		callCount := 0
-		mockHandler := func(
-			context.Context, string, string, string,
-		) (int, error) {
-			callCount++
-			if callCount < 2 {
-				return 0, errors.New("test error")
-			}
-			return 1, nil
-		}
-
-		// Act
-		result, err := GethRequestThreeArgWithBackOff(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			"arg1",
-			"arg2",
-			"arg3",
-		)
-
-		// Assert
-		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
-	})
-
-	t.Run("max retries exceeded", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		mockHandler := func(
-			context.Context, string, string, string,
-		) (int, error) {
-			return 0, errors.New("test error")
-		}
-
-		// Act
-		_, err := GethRequestThreeArgWithBackOff(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			"arg1",
-			"arg2",
-			"arg3",
-		)
-
-		// Assert
-		assert.Error(t, err)
+		assert.Equal(t, 6, result)
 	})
 }
 
-func TestGethRequestWithBackOffTuple(t *testing.T) {
+func TestGethRequestArgWithBackOffTuple(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
 		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
+			MaxRetries: 1,
 		}
-		mockHandler := func(
-			context.Context, string,
-		) (int, int, error) {
-			return 1, 1, nil
+		mockHandler := func(ctx context.Context, a int) (int, int, error) {
+			return a, a, nil
 		}
 
 		// Act
-		result1, result2, err := GethRequestArgWithBackOffTuple(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			"arg1",
-		)
+		result1, result2, err := GethRequestArgWithBackOffTuple(backoffConfig, 0, mockHandler, 1)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result1, 1)
-		assert.Equal(t, result2, 1)
+		assert.Equal(t, 1, result1)
+		assert.Equal(t, 1, result2)
 	})
 
-	t.Run("if backoffConfig is nil, use DefaultBackoffConfig", func(t *testing.T) {
+	t.Run("nil backoffConfig", func(t *testing.T) {
 		// Arrange
-		mockHandler := func(
-			context.Context, string,
-		) (int, int, error) {
-			return 1, 1, nil
+		mockHandler := func(ctx context.Context, a int) (int, int, error) {
+			return a, a, nil
 		}
 
 		// Act
-		result1, result2, err := GethRequestArgWithBackOffTuple(
-			nil,
-			10*time.Second,
-			mockHandler,
-			"arg1",
-		)
+		result1, result2, err := GethRequestArgWithBackOffTuple(nil, 0, mockHandler, 1)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result1, 1)
-		assert.Equal(t, result2, 1)
-	})
-
-	t.Run("backoff first 1 is error, & success", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		callCount := 0
-		mockHandler := func(
-			context.Context, string,
-		) (int, int, error) {
-			callCount++
-			if callCount < 2 {
-				return 0, 0, errors.New("test error")
-			}
-			return 1, 1, nil
-		}
-		// Act
-		result1, result2, err := GethRequestArgWithBackOffTuple(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			"arg1",
-		)
-
-		// Assert
-		assert.NoError(t, err)
-		assert.Equal(t, result1, 1)
-		assert.Equal(t, result2, 1)
-	})
-
-	t.Run("max retries exceeded", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		mockHandler := func(
-			context.Context, string,
-		) (int, int, error) {
-			return 0, 0, errors.New("test error")
-		}
-
-		// Act
-		_, _, err := GethRequestArgWithBackOffTuple(
-			backoffConfig,
-			10*time.Second,
-			mockHandler,
-			"arg1",
-		)
-
-		// Assert
-		assert.Error(t, err)
+		assert.Equal(t, 1, result1)
+		assert.Equal(t, 1, result2)
 	})
 }
 
@@ -536,85 +282,31 @@ func TestGethRequestWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
 		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
+			MaxRetries: 1,
 		}
-		mockHandler := func(
-			context.Context,
-		) (int, error) {
+		mockHandler := func(ctx context.Context) (int, error) {
 			return 1, nil
 		}
 
 		// Act
-		result, err := GethRequestWithBackOff(backoffConfig, 10*time.Second, mockHandler)
+		result, err := GethRequestWithBackOff(backoffConfig, 0, mockHandler)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
+		assert.Equal(t, 1, result)
 	})
 
-	t.Run("if backoffConfig is nil, use DefaultBackoffConfig", func(t *testing.T) {
+	t.Run("nil backoffConfig", func(t *testing.T) {
 		// Arrange
-		mockHandler := func(
-			context.Context,
-		) (int, error) {
+		mockHandler := func(ctx context.Context) (int, error) {
 			return 1, nil
 		}
 
 		// Act
-		result, err := GethRequestWithBackOff(nil, 10*time.Second, mockHandler)
+		result, err := GethRequestWithBackOff(nil, 0, mockHandler)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
-	})
-
-	t.Run("backoff first 1 is error, & success", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		callCount := 0
-		mockHandler := func(
-			context.Context,
-		) (int, error) {
-			callCount++
-			if callCount < 2 {
-				return 0, errors.New("test error")
-			}
-			return 1, nil
-		}
-		// Act
-		result, err := GethRequestWithBackOff(backoffConfig, 10*time.Second, mockHandler)
-
-		// Assert
-		assert.NoError(t, err)
-		assert.Equal(t, result, 1)
-	})
-
-	t.Run("max retries exceeded", func(t *testing.T) {
-		// Arrange
-		backoffConfig := &BackoffConfig{
-			Mode:           "exponential",
-			MaxRetries:     3,
-			InitialDelayMs: 10,
-			MaxDelayMs:     30,
-		}
-		mockHandler := func(
-			context.Context,
-		) (int, error) {
-			return 0, errors.New("test error")
-		}
-
-		// Act
-		_, err := GethRequestWithBackOff(backoffConfig, 10*time.Second, mockHandler)
-
-		// Assert
-		assert.Error(t, err)
+		assert.Equal(t, 1, result)
 	})
 }
