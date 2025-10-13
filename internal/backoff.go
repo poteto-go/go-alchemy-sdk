@@ -23,11 +23,6 @@ var DefaultBackoffConfig = BackoffConfig{
 	MaxDelayMs:     30000,
 }
 
-type IBackoffManager interface {
-	Reset()
-	Backoff() error
-}
-
 type BackoffManager struct {
 	config    BackoffConfig
 	retries   int
@@ -35,20 +30,12 @@ type BackoffManager struct {
 	lock      sync.Mutex
 }
 
-func NewBackoffManager(config BackoffConfig) IBackoffManager {
+func NewBackoffManager(config BackoffConfig) *BackoffManager {
 	return &BackoffManager{
 		config:    config,
 		retries:   0,
 		lastDelay: 0,
 	}
-}
-
-func (b *BackoffManager) Reset() {
-	b.lock.Lock()
-	defer b.lock.Unlock()
-
-	b.retries = 0
-	b.lastDelay = 0
 }
 
 func (b *BackoffManager) Backoff() error {
@@ -59,10 +46,7 @@ func (b *BackoffManager) Backoff() error {
 		return constant.ErrOverMaxRetries
 	}
 
-	var currentDelay float64 = 0
-	if b.config.Mode == "exponential" {
-		currentDelay = b.exponentialBackoff()
-	}
+	currentDelay := b.calculateBackOffDelay()
 
 	currentDelay = math.Max(currentDelay, b.config.InitialDelayMs)
 	currentDelay = math.Min(currentDelay, b.config.MaxDelayMs)
@@ -75,9 +59,20 @@ func (b *BackoffManager) Backoff() error {
 	return nil
 }
 
-func (b *BackoffManager) exponentialBackoff() float64 {
+func (b *BackoffManager) calculateBackOffDelay() float64 {
+	switch b.config.Mode {
+	case "exponential":
+		return b.calculateExponentialBackOffDelay()
+	default:
+		return b.config.InitialDelayMs
+	}
+}
+
+func (b *BackoffManager) calculateExponentialBackOffDelay() float64 {
+	// if first retry return 0
 	if b.retries == 0 {
 		return float64(0)
 	}
+
 	return math.Min(b.lastDelay+(utils.RandomF64(1)-0.5)*b.lastDelay, b.config.MaxDelayMs)
 }

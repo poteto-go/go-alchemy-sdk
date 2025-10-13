@@ -24,7 +24,7 @@ func TestNewBackoffManager(t *testing.T) {
 	}
 
 	// Act
-	manager := NewBackoffManager(config).(*BackoffManager)
+	manager := NewBackoffManager(config)
 
 	// Assert
 	assert.NotNil(t, manager)
@@ -36,23 +36,11 @@ func TestNewBackoffManager(t *testing.T) {
 	assert.Equal(t, float64(0), manager.lastDelay)
 }
 
-func TestBackoffManager_Reset(t *testing.T) {
-	// Arrange
-	manager := NewBackoffManager(backoffConfigTest).(*BackoffManager)
-
-	// Act
-	manager.Reset()
-
-	// Assert
-	assert.Equal(t, 0, manager.retries)
-	assert.Equal(t, float64(0), manager.lastDelay)
-}
-
 func TestBackoffManager_Backoff(t *testing.T) {
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("exponential backoff", func(t *testing.T) {
 			// Arrange
-			manager := NewBackoffManager(backoffConfigTest).(*BackoffManager)
+			manager := NewBackoffManager(backoffConfigTest)
 
 			for i := 1; i <= manager.config.MaxRetries; i++ {
 				// Act
@@ -74,7 +62,7 @@ func TestBackoffManager_Backoff(t *testing.T) {
 	t.Run("error case:", func(t *testing.T) {
 		t.Run("max over retries -> constant.ErrOverMaxRetries", func(t *testing.T) {
 			// Arrange
-			manager := NewBackoffManager(backoffConfigTest).(*BackoffManager)
+			manager := NewBackoffManager(backoffConfigTest)
 			manager.config.MaxRetries = 0
 
 			// Act

@@ -7,6 +7,47 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
+func requestWithBackoff[T any](
+	backoffConfig BackoffConfig,
+	operation func() (T, error),
+) (T, error) {
+	var lastHttpError error
+	backoffManager := NewBackoffManager(backoffConfig)
+	for {
+		result, err := operation()
+		if err == nil {
+			return result, nil
+		}
+
+		lastHttpError = err
+		if err := backoffManager.Backoff(); err != nil {
+			var zero T
+			return zero, lastHttpError
+		}
+	}
+}
+
+func requestWithBackoffTuple[T any, O any](
+	backoffConfig BackoffConfig,
+	operation func() (T, O, error),
+) (T, O, error) {
+	var lastHttpError error
+	backoffManager := NewBackoffManager(backoffConfig)
+	for {
+		result, other, err := operation()
+		if err == nil {
+			return result, other, nil
+		}
+
+		lastHttpError = err
+		if err := backoffManager.Backoff(); err != nil {
+			var zeroT T
+			var zeroO O
+			return zeroT, zeroO, lastHttpError
+		}
+	}
+}
+
 func RequestHttpWithBackoff(
 	backoffConfig BackoffConfig,
 	requestConfig types.RequestConfig,
@@ -14,21 +55,10 @@ func RequestHttpWithBackoff(
 	request types.AlchemyRequest,
 	body []byte,
 ) (types.AlchemyResponse, error) {
-	var lastHttpError error
-
-	backoffManager := NewBackoffManager(backoffConfig)
-	for {
-		response, err := handler(request, requestConfig, body)
-		if err == nil {
-			return response, nil
-		}
-
-		lastHttpError = err
-
-		if err := backoffManager.Backoff(); err != nil {
-			return types.AlchemyResponse{}, lastHttpError
-		}
+	operation := func() (types.AlchemyResponse, error) {
+		return handler(request, requestConfig, body)
 	}
+	return requestWithBackoff(backoffConfig, operation)
 }
 
 func GethRequestArgWithBackOff[T any, A any](
@@ -39,27 +69,15 @@ func GethRequestArgWithBackOff[T any, A any](
 	) (T, error),
 	arg A,
 ) (T, error) {
-	var lastHttpError error
 	if backoffConfig == nil {
 		backoffConfig = &DefaultBackoffConfig
 	}
-
-	backoffManager := NewBackoffManager(*backoffConfig)
-	for {
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+	operation := func() (T, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-
-		result, err := handler(ctx, arg)
-		if err == nil {
-			return result, nil
-		}
-
-		lastHttpError = err
-		if err := backoffManager.Backoff(); err != nil {
-			return result, lastHttpError
-		}
+		return handler(ctx, arg)
 	}
+	return requestWithBackoff(*backoffConfig, operation)
 }
 
 func GethRequestTwoArgWithBackOff[T any, A any, B any](
@@ -71,27 +89,15 @@ func GethRequestTwoArgWithBackOff[T any, A any, B any](
 	arg1 A,
 	arg2 B,
 ) (T, error) {
-	var lastHttpError error
 	if backoffConfig == nil {
 		backoffConfig = &DefaultBackoffConfig
 	}
-
-	backoffManager := NewBackoffManager(*backoffConfig)
-	for {
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+	operation := func() (T, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-
-		result, err := handler(ctx, arg1, arg2)
-		if err == nil {
-			return result, nil
-		}
-
-		lastHttpError = err
-		if err := backoffManager.Backoff(); err != nil {
-			return result, lastHttpError
-		}
+		return handler(ctx, arg1, arg2)
 	}
+	return requestWithBackoff(*backoffConfig, operation)
 }
 
 func GethRequestThreeArgWithBackOff[T any, A any, B any, C any](
@@ -104,27 +110,15 @@ func GethRequestThreeArgWithBackOff[T any, A any, B any, C any](
 	arg2 B,
 	arg3 C,
 ) (T, error) {
-	var lastHttpError error
 	if backoffConfig == nil {
 		backoffConfig = &DefaultBackoffConfig
 	}
-
-	backoffManager := NewBackoffManager(*backoffConfig)
-	for {
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+	operation := func() (T, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-
-		result, err := handler(ctx, arg1, arg2, arg3)
-		if err == nil {
-			return result, nil
-		}
-
-		lastHttpError = err
-		if err := backoffManager.Backoff(); err != nil {
-			return result, lastHttpError
-		}
+		return handler(ctx, arg1, arg2, arg3)
 	}
+	return requestWithBackoff(*backoffConfig, operation)
 }
 
 func GethRequestArgWithBackOffTuple[T any, A any, O any](
@@ -135,27 +129,15 @@ func GethRequestArgWithBackOffTuple[T any, A any, O any](
 	) (T, O, error),
 	arg A,
 ) (T, O, error) {
-	var lastHttpError error
 	if backoffConfig == nil {
 		backoffConfig = &DefaultBackoffConfig
 	}
-
-	backoffManager := NewBackoffManager(*backoffConfig)
-	for {
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+	operation := func() (T, O, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-
-		result, other, err := handler(ctx, arg)
-		if err == nil {
-			return result, other, nil
-		}
-
-		lastHttpError = err
-		if err := backoffManager.Backoff(); err != nil {
-			return result, other, lastHttpError
-		}
+		return handler(ctx, arg)
 	}
+	return requestWithBackoffTuple(*backoffConfig, operation)
 }
 
 func GethRequestWithBackOff[T any](
@@ -165,25 +147,13 @@ func GethRequestWithBackOff[T any](
 		context.Context,
 	) (T, error),
 ) (T, error) {
-	var lastHttpError error
 	if backoffConfig == nil {
 		backoffConfig = &DefaultBackoffConfig
 	}
-
-	backoffManager := NewBackoffManager(*backoffConfig)
-	for {
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+	operation := func() (T, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-
-		result, err := handler(ctx)
-		if err == nil {
-			return result, nil
-		}
-
-		lastHttpError = err
-		if err := backoffManager.Backoff(); err != nil {
-			return result, lastHttpError
-		}
+		return handler(ctx)
 	}
+	return requestWithBackoff(*backoffConfig, operation)
 }
