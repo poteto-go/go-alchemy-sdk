@@ -2,10 +2,10 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 	"time"
 
-	"github.com/goccy/go-json"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 

@@ -1,6 +1,7 @@
 package ether_test
 
 import (
+	"encoding/json"
 	"errors"
 	"math/big"
 	"reflect"
@@ -11,7 +12,6 @@ import (
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/goccy/go-json"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"

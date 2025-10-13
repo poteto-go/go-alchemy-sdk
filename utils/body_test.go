@@ -1,11 +1,11 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
-	"github.com/goccy/go-json"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
