@@ -25,7 +25,7 @@ func TestCreateRequestBodyToBytes(t *testing.T) {
 				id:       1,
 				method:   constant.Eth_BlockNumber,
 				params:   []string{},
-				wantBody: `{"jsonrpc":"2.0","method":"eth_blockNumber","params":null,"id":1}`,
+				wantBody: `{"jsonrpc":"2.0","method":"eth_blockNumber","id":1}`,
 			},
 			{
 				name:     "with params",
