@@ -46,7 +46,7 @@ func (b *BackoffManager) Backoff() error {
 		return constant.ErrOverMaxRetries
 	}
 
-	currentDelay := b.calcBackOffDelay()
+	currentDelay := b.calculateBackOffDelay()
 
 	currentDelay = math.Max(currentDelay, b.config.InitialDelayMs)
 	currentDelay = math.Min(currentDelay, b.config.MaxDelayMs)
@@ -59,16 +59,16 @@ func (b *BackoffManager) Backoff() error {
 	return nil
 }
 
-func (b *BackoffManager) calcBackOffDelay() float64 {
+func (b *BackoffManager) calculateBackOffDelay() float64 {
 	switch b.config.Mode {
 	case "exponential":
-		return b.calcExponentialBackOffDelay()
+		return b.calculateExponentialBackOffDelay()
 	default:
 		return b.config.InitialDelayMs
 	}
 }
 
-func (b *BackoffManager) calcExponentialBackOffDelay() float64 {
+func (b *BackoffManager) calculateExponentialBackOffDelay() float64 {
 	// if first retry return 0
 	if b.retries == 0 {
 		return float64(0)
