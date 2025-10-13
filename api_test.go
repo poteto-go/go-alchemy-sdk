@@ -164,7 +164,6 @@ func TestAPI_Core_GetTransaction(t *testing.T) {
 }
 
 func TestAPI_Core_GetStorageAt(t *testing.T) {
-	setting.Network = types.PolygonAmoy // I don't have on eth
 	alchemy := gas.NewAlchemy(setting)
 
 	t.Run("get storage at", func(t *testing.T) {
@@ -175,7 +174,7 @@ func TestAPI_Core_GetStorageAt(t *testing.T) {
 		)
 
 		assert.Nil(t, err)
-		assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", res)
+		assert.Equal(t, "0000000000000000000000008863786bebe8eb9659df00b49f8f1eeec7e2c8c1", res)
 	})
 }
 
