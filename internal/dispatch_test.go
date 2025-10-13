@@ -306,6 +306,122 @@ func TestGethRequestTwoArgWithBackOff(t *testing.T) {
 	})
 }
 
+func TestGethRequestThreeArgWithBackOff(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		// Arrange
+		backoffConfig := &BackoffConfig{
+			Mode:           "exponential",
+			MaxRetries:     3,
+			InitialDelayMs: 10,
+			MaxDelayMs:     30,
+		}
+		mockHandler := func(
+			context.Context, string, string, string,
+		) (int, error) {
+			return 1, nil
+		}
+
+		// Act
+		result, err := GethRequestThreeArgWithBackOff(
+			backoffConfig,
+			10*time.Second,
+			mockHandler,
+			"arg1",
+			"arg2",
+			"arg3",
+		)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, result, 1)
+	})
+
+	t.Run("if backoffConfig is nil, use DefaultBackoffConfig", func(t *testing.T) {
+		// Arrange
+		mockHandler := func(
+			context.Context, string, string, string,
+		) (int, error) {
+			return 1, nil
+		}
+
+		// Act
+		result, err := GethRequestThreeArgWithBackOff(
+			nil,
+			10*time.Second,
+			mockHandler,
+			"arg1",
+			"arg2",
+			"arg3",
+		)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, result, 1)
+	})
+
+	t.Run("backoff first 1 is error, & success", func(t *testing.T) {
+		// Arrange
+		backoffConfig := &BackoffConfig{
+			Mode:           "exponential",
+			MaxRetries:     3,
+			InitialDelayMs: 10,
+			MaxDelayMs:     30,
+		}
+		callCount := 0
+		mockHandler := func(
+			context.Context, string, string, string,
+		) (int, error) {
+			callCount++
+			if callCount < 2 {
+				return 0, errors.New("test error")
+			}
+			return 1, nil
+		}
+
+		// Act
+		result, err := GethRequestThreeArgWithBackOff(
+			backoffConfig,
+			10*time.Second,
+			mockHandler,
+			"arg1",
+			"arg2",
+			"arg3",
+		)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, result, 1)
+	})
+
+	t.Run("max retries exceeded", func(t *testing.T) {
+		// Arrange
+		backoffConfig := &BackoffConfig{
+			Mode:           "exponential",
+			MaxRetries:     3,
+			InitialDelayMs: 10,
+			MaxDelayMs:     30,
+		}
+		mockHandler := func(
+			context.Context, string, string, string,
+		) (int, error) {
+			return 0, errors.New("test error")
+		}
+
+		// Act
+		_, err := GethRequestThreeArgWithBackOff(
+			backoffConfig,
+			10*time.Second,
+			mockHandler,
+			"arg1",
+			"arg2",
+			"arg3",
+		)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}
+
 func TestGethRequestWithBackOffTuple(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange

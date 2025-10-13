@@ -36,13 +36,15 @@ type ICore interface {
 		pool access (e.g. if the gas price is too low or the transaction was only
 		recently sent and not yet indexed) in which case this method may also return null.
 
-		NOTE: This is an alias for {@link TransactNamespace.getTransaction}.
+		NOTE: internal call geth client's method
 	*/
 	GetTransaction(hash string) (tx *gethTypes.Transaction, isPending bool, err error)
 
 	/*
 		Return the value of the provided position at the provided address, at the provided block in `Bytes32` format.
 		For inspecting solidity code.
+
+		NOTE: internal call geth client's method
 	*/
 	GetStorageAt(address, position, blockTag string) (string, error)
 
@@ -64,7 +66,8 @@ type ICore interface {
 
 		An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
 		but after being mined affects the relevant state.
-		This is an alias for {@link TransactNamespace.estimateGas}.
+
+		NOTE: internal call geth client's method
 	*/
 	EstimateGas(tx types.TransactionRequest) (*big.Int, error)
 
@@ -79,12 +82,16 @@ type ICore interface {
 		Null if the tx has not been mined.
 		Returns the transaction receipt for hash.
 		To stall until the transaction has been mined, consider the waitForTransaction method below.
+
+		NOTE: internal call geth client's method
 	*/
 	GetTransactionReceipt(hash string) (*gethTypes.Receipt, error)
 
 	/*
 		An enhanced API that gets all transaction receipts for a given block by number or block hash.
 		Returns geth's Receipt.
+
+		NOTE: internal call geth client's method
 	*/
 	GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes.Receipt, error)
 
@@ -92,8 +99,6 @@ type ICore interface {
 		Returns the block from the network based on the provided block number or hash.
 		Transactions on the block are represented as an array of transaction hashes.
 		To get the full transaction details on the block, use {@link getBlockWithTransactions} instead.
-
-		@param BlockHashOrBlockTag The block number or hash to get the block for.
 	*/
 	GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error)
 }
@@ -175,7 +180,7 @@ func (c *Core) GetTransaction(hash string) (*gethTypes.Transaction, bool, error)
 }
 
 func (c *Core) GetStorageAt(address, position, blockTag string) (string, error) {
-	value, err := c.ether.GetStorageAt(address, position, blockTag)
+	value, err := c.ether.StorageAt(address, position, blockTag)
 	if err != nil {
 		return "", err
 	}

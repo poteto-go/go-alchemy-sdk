@@ -389,67 +389,63 @@ func TestEther_GetTransaction(t *testing.T) {
 	})
 }
 
-func TestEther_GetStorageAt(t *testing.T) {
-	// Arrange
-	provider := newProviderForTest()
-	ether := newNilEtherApiForTest(provider)
-
-	t.Run("normal case:", func(t *testing.T) {
-		t.Run("call eth_getStorageAt & return provided block", func(t *testing.T) {
+func TestEther_StorageAt(t *testing.T) {
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
 			// Arrange
-			expected := "0xffff"
-
-			// Mock & Assert
-			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					assert.Equal(t, constant.Eth_GetStorageAt, method)
-					return expected, nil
-				},
-			)
-
-			// Act
-			actual, _ := ether.GetStorageAt("0x", "0x", "latest")
-
-			// Assert
-			assert.Equal(t, expected, actual)
-		})
-	})
-
-	t.Run("error case:", func(t *testing.T) {
-		t.Run("if error occur, return error internal error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			expectedErr := errors.New("error")
+			ether := newEtherApiForTest()
+			address := "0x123"
+			position := "0x123"
+			blockTag := "0x123"
 
 			// Mock
 			patches.ApplyMethod(
-				reflect.TypeOf(provider),
-				"Send",
-				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
-					return "", expectedErr
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
 				},
 			)
 
 			// Act
-			_, err := ether.GetStorageAt("0x", "0x", "latest")
+			_, err := ether.StorageAt(address, position, blockTag)
 
 			// Assert
-			assert.ErrorIs(t, expectedErr, err)
+			assert.Error(t, err)
 		})
 
-		t.Run("if invalid blockTag, return error", func(t *testing.T) {
+		t.Run("if failed from to block number, return error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+			address := "0x123"
+			position := "0x123"
+			blockTag := "invalid"
+
 			// Act
-			_, err := ether.GetStorageAt("0x", "0x", "unxpected")
+			_, err := ether.StorageAt(address, position, blockTag)
 
 			// Assert
-			assert.ErrorIs(t, constant.ErrInvalidBlockTag, err)
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed storage at, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			address := "0x123"
+			position := "0x123"
+			blockTag := "0x123"
+
+			// Act
+			_, err := ether.StorageAt(address, position, blockTag)
+
+			// Assert
+			assert.Error(t, err)
 		})
 	})
 }
@@ -858,7 +854,7 @@ func TestEther_GetLogs(t *testing.T) {
 	})
 }
 
-func Test_Call(t *testing.T) {
+func TestEther_Call(t *testing.T) {
 	provider := newProviderForTest()
 	ether := newNilEtherApiForTest(provider)
 
@@ -950,7 +946,7 @@ var expectedTransactionReceipt = `
 }
 `
 
-func Test_GetTransactionReceipt(t *testing.T) {
+func TestEther_GetTransactionReceipt(t *testing.T) {
 	t.Run("error case:", func(t *testing.T) {
 		t.Run("if internal error, return error", func(t *testing.T) {
 			// Arrange
@@ -1013,7 +1009,7 @@ var expectedTransactionReceipts = `
 }
 `
 
-func Test_GetTransactionReceipts(t *testing.T) {
+func TestEther_GetTransactionReceipts(t *testing.T) {
 	provider := newProviderForTest()
 	ether := newNilEtherApiForTest(provider)
 
@@ -1161,7 +1157,7 @@ func Test_GetTransactionReceipts(t *testing.T) {
 	})
 }
 
-func Test_GetBlockByHash(t *testing.T) {
+func TestEther_GetBlockByHash(t *testing.T) {
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -1201,7 +1197,7 @@ func Test_GetBlockByHash(t *testing.T) {
 	})
 }
 
-func Test_GetBlockByNumber(t *testing.T) {
+func TestEther_GetBlockByNumber(t *testing.T) {
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
