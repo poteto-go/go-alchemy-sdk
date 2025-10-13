@@ -56,10 +56,9 @@ type EtherApi interface {
 	GetTransaction(hash string) (tx *gethTypes.Transaction, isPending bool, err error)
 
 	/*
-		Return the value of the provided position at the provided address, at the provided block in `Bytes32` format.
-		For inspecting solidity code.
+		internal call geth ethclient.StorageAt
 	*/
-	GetStorageAt(address, position, blockTag string) (string, error)
+	StorageAt(address, position, blockTag string) (string, error)
 
 	/*
 		Returns the ERC-20 token balances for a specific owner address w, w/o params
@@ -265,24 +264,33 @@ func (ether *Ether) GetTransaction(hash string) (*gethTypes.Transaction, bool, e
 	return tx, isPending, nil
 }
 
-func (ether *Ether) GetStorageAt(address, position, blockTag string) (string, error) {
-	if err := utils.ValidateBlockTag(blockTag); err != nil {
+func (ether *Ether) StorageAt(address, position, blockTag string) (string, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	account := common.HexToAddress(address)
+	key := common.HexToHash(position)
+	blockNumber, err := utils.ToBlockNumber(blockTag)
+	if err != nil {
 		return "", err
 	}
 
-	result, err := ether.provider.Send(
-		constant.Eth_GetStorageAt,
-		types.RequestArgs{
-			strings.ToLower(address),
-			position,
-			blockTag,
-		},
+	res, err := internal.GethRequestThreeArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.StorageAt,
+		account,
+		key,
+		blockNumber,
 	)
 	if err != nil {
 		return "", err
 	}
 
-	return result.(string), nil
+	return common.Bytes2Hex(res), nil
 }
 
 func (ether *Ether) GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error) {

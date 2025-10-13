@@ -441,7 +441,7 @@ func TestCore_GetStorageAt(t *testing.T) {
 		// Mock
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
-			"GetStorageAt",
+			"StorageAt",
 			func(_ *ether.Ether, _ string, _ string, _ string) (string, error) {
 				return expected, nil
 			},
@@ -464,7 +464,7 @@ func TestCore_GetStorageAt(t *testing.T) {
 		// Mock
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
-			"GetStorageAt",
+			"StorageAt",
 			func(_ *ether.Ether, _ string, _ string, _ string) (string, error) {
 				return "", expectedErr
 			},

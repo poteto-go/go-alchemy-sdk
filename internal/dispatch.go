@@ -94,6 +94,39 @@ func GethRequestTwoArgWithBackOff[T any, A any, B any](
 	}
 }
 
+func GethRequestThreeArgWithBackOff[T any, A any, B any, C any](
+	backoffConfig *BackoffConfig,
+	timeout time.Duration,
+	handler func(
+		context.Context, A, B, C,
+	) (T, error),
+	arg1 A,
+	arg2 B,
+	arg3 C,
+) (T, error) {
+	var lastHttpError error
+	if backoffConfig == nil {
+		backoffConfig = &DefaultBackoffConfig
+	}
+
+	backoffManager := NewBackoffManager(*backoffConfig)
+	for {
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		result, err := handler(ctx, arg1, arg2, arg3)
+		if err == nil {
+			return result, nil
+		}
+
+		lastHttpError = err
+		if err := backoffManager.Backoff(); err != nil {
+			return result, lastHttpError
+		}
+	}
+}
+
 func GethRequestArgWithBackOffTuple[T any, A any, O any](
 	backoffConfig *BackoffConfig,
 	timeout time.Duration,
