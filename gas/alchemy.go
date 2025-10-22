@@ -19,6 +19,7 @@ func NewAlchemy(setting AlchemySetting) Alchemy {
 		alchemyProvider,
 		alchemyConfig.toEtherApiConfig(),
 	)
+	alchemyProvider.SetEth(ether)
 	coreNamespace := namespace.NewCore(ether)
 
 	return Alchemy{

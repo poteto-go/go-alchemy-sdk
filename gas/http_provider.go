@@ -15,6 +15,7 @@ type AlchemyProvider struct {
 	config  AlchemyConfig
 	id      int
 	batcher *internal.RequestBatcher
+	eth     types.EtherApi
 }
 
 func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
@@ -40,6 +41,15 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	return provider
 }
 
+func (provider *AlchemyProvider) SetEth(eth types.EtherApi) {
+	provider.eth = eth
+}
+
+func (provider *AlchemyProvider) Eth() types.EtherApi {
+	return provider.eth
+}
+
+/* Send raw transaction */
 func (provider *AlchemyProvider) Send(method string, params types.RequestArgs) (any, error) {
 	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
 	if err != nil {

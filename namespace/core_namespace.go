@@ -5,7 +5,6 @@ import (
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
-	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
@@ -104,10 +103,10 @@ type ICore interface {
 }
 
 type Core struct {
-	ether ether.EtherApi
+	ether types.EtherApi
 }
 
-func NewCore(ether ether.EtherApi) ICore {
+func NewCore(ether types.EtherApi) ICore {
 	return &Core{
 		ether: ether,
 	}
