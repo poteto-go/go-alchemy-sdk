@@ -9,6 +9,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
+// Wallet class inherits Signer and can sign transactions and messages using
 type Wallet interface {
 	GetAddress() common.Address
 
