@@ -2,19 +2,25 @@ package wallet
 
 import (
 	"crypto/ecdsa"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 type Wallet interface {
 	GetAddress() common.Address
+
+	// connect provider to wallet
+	Connect(provider types.IAlchemyProvider)
 }
 
 type wallet struct {
 	privateKey *ecdsa.PrivateKey
 	publicKey  *ecdsa.PublicKey
-	// mu         sync.RWMutex
+	provider   types.IAlchemyProvider
+	mu         sync.RWMutex
 }
 
 func New(privateKeyStr string) (Wallet, error) {
@@ -33,4 +39,11 @@ func New(privateKeyStr string) (Wallet, error) {
 
 func (w *wallet) GetAddress() common.Address {
 	return crypto.PubkeyToAddress(*w.publicKey)
+}
+
+func (w *wallet) Connect(provider types.IAlchemyProvider) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.provider = provider
 }

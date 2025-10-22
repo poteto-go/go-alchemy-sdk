@@ -22,3 +22,18 @@ func TestNewAlchemy(t *testing.T) {
 	assert.Equal(t, alchemy.config, config)
 	assert.NotNil(t, alchemy.Core)
 }
+
+func TestAlchemy_GetProvider(t *testing.T) {
+	// Arrange
+	setting := AlchemySetting{
+		ApiKey:  "hoge",
+		Network: "fuga",
+	}
+	alchemy := NewAlchemy(setting)
+
+	// Act
+	provider := alchemy.GetProvider()
+
+	// Assert
+	assert.NotNil(t, provider)
+}
