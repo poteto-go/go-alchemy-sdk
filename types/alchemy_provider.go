@@ -34,6 +34,9 @@ type AlchemyResponse struct {
 }
 
 type IAlchemyProvider interface {
+	SetEth(eth EtherApi)
+	Eth() EtherApi
+
 	/* Send raw transaction */
 	Send(method string, params RequestArgs) (any, error)
 }
