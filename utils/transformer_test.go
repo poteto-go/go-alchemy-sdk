@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -392,5 +393,40 @@ func TestTransformAlchemyLogToGeth(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 		})
+	})
+}
+
+func TestTransformTxRequestToGethTxData(t *testing.T) {
+	t.Run("can transform txRequest to geth.AccessListTx", func(t *testing.T) {
+		txRequest := types.TransactionRequest{
+			To:       "0x123",
+			ChainID:  big.NewInt(0),
+			Nonce:    0,
+			GasPrice: big.NewInt(0),
+			GasLimit: 0,
+			Value:    "0x123",
+			Data:     "0x123",
+		}
+
+		txData, _ := utils.TransformTxRequestToGethTxData(txRequest)
+
+		assert.Equal(t, txData.To.Hex(), "0x0000000000000000000000000000000000000123")
+		assert.Equal(t, txData.ChainID, txRequest.ChainID)
+		assert.Equal(t, txData.Nonce, txRequest.Nonce)
+		assert.Equal(t, txData.GasPrice, txRequest.GasPrice)
+		assert.Equal(t, txData.Gas, txRequest.GasLimit)
+		value, _ := utils.FromBigHex(txRequest.Value)
+		assert.Equal(t, txData.Value, value)
+		assert.Equal(t, string(txData.Data), string(common.FromHex(txRequest.Data)))
+	})
+
+	t.Run("if failed from big hex, return error", func(t *testing.T) {
+		txRequest := types.TransactionRequest{
+			Value: "hello",
+		}
+
+		_, err := utils.TransformTxRequestToGethTxData(txRequest)
+
+		assert.Error(t, err)
 	})
 }
