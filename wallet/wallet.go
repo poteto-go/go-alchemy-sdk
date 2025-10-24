@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"crypto/ecdsa"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -101,12 +100,10 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	txRequest.GasPrice = gasPrice
 
 	if txRequest.GasLimit <= txRequest.GasPrice.Uint64() {
-		return nil, errors.New(
-			fmt.Sprintf(
-				"gasLimit(%d) is expected over estimated gasPrice %d",
-				txRequest.GasLimit,
-				txRequest.GasPrice.Uint64(),
-			),
+		return nil, fmt.Errorf(
+			"gasLimit(%d) is expected over estimated gasPrice %d",
+			txRequest.GasLimit,
+			txRequest.GasPrice.Uint64(),
 		)
 	}
 
