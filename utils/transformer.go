@@ -129,3 +129,24 @@ func TransformAlchemyLogToGeth(log types.LogResponse) (*gethTypes.Log, error) {
 		Removed:     log.Removed,
 	}, nil
 }
+
+func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (*gethTypes.AccessListTx, error) {
+	toAddress := common.HexToAddress(txRequest.To)
+	value, err := FromBigHex(txRequest.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	txData := gethTypes.AccessListTx{
+		To:       &toAddress,
+		ChainID:  txRequest.ChainID,
+		Nonce:    txRequest.Nonce,
+		GasPrice: txRequest.GasPrice,
+		Gas:      txRequest.GasLimit,
+		Value:    value,
+		Data:     common.FromHex(txRequest.Data),
+		// TODO: access list
+	}
+
+	return &txData, nil
+}

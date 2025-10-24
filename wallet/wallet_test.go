@@ -2,15 +2,19 @@ package wallet
 
 import (
 	"crypto/ecdsa"
+	"errors"
+	"math/big"
 	"reflect"
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -123,5 +127,233 @@ func TestWallet_PendingNonceAt(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, uint64(0), nonce)
+	})
+}
+
+func TestWallet_SignTx(t *testing.T) {
+	t.Run("can sign the transaction", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		reservedNonce := uint64(100)
+		txRequest := types.TransactionRequest{
+			To:       "0x123",
+			ChainID:  big.NewInt(1),
+			Nonce:    0,
+			GasPrice: big.NewInt(0),
+			GasLimit: 1000,
+			Value:    "0x123",
+			Data:     "0x123",
+		}
+		estimatedGasPrice := big.NewInt(100)
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return reservedNonce, nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
+				return estimatedGasPrice, nil
+			},
+		)
+
+		// Act
+		signedTx, err := w.SignTx(txRequest)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, txRequest.GasLimit, signedTx.Gas())
+		assert.Equal(t, estimatedGasPrice, signedTx.GasPrice())
+		assert.Equal(t, reservedNonce, signedTx.Nonce())
+		assert.Equal(t, "0x0000000000000000000000000000000000000123", signedTx.To().Hex())
+		v, r, s := signedTx.RawSignatureValues()
+		assert.Equal(t, v.Cmp(big.NewInt(1)), 0)
+		assert.Equal(t, common.BigToHash(r).Hex(), "0x30282c4886900c1309d12e53d1373fc675d905adc84d54e5a2b4afdda2490c07")
+		assert.Equal(t, common.BigToHash(s).Hex(), "0x75129dbf83fd1f473464bb1788ae136059d23c2786220da9d9f65ce8cfabb388")
+	})
+
+	t.Run("if error occur on PendingAt, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(types.TransactionRequest{})
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if error occur on Eth.EstimateGas", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(types.TransactionRequest{})
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if gasLimit < gasPrice, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
+				return big.NewInt(100), nil
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(types.TransactionRequest{
+			GasLimit: 0,
+		})
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if error occur on transform, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+
+		patches.ApplyFunc(
+			utils.TransformTxRequestToGethTxData,
+			func(_ types.TransactionRequest) (*gethTypes.AccessListTx, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(types.TransactionRequest{
+			GasLimit: 100,
+		})
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if error on gethTypes.SignTx, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		reservedNonce := uint64(100)
+		txRequest := types.TransactionRequest{
+			To:       "0x123",
+			ChainID:  big.NewInt(1),
+			Nonce:    0,
+			GasPrice: big.NewInt(0),
+			GasLimit: 1000,
+			Value:    "0x123",
+			Data:     "0x123",
+		}
+		estimatedGasPrice := big.NewInt(100)
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return reservedNonce, nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
+				return estimatedGasPrice, nil
+			},
+		)
+
+		patches.ApplyFunc(
+			gethTypes.SignTx,
+			func(tx *gethTypes.Transaction, s gethTypes.Signer, prv *ecdsa.PrivateKey) (*gethTypes.Transaction, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(txRequest)
+
+		// Assert
+		assert.Error(t, err)
 	})
 }
