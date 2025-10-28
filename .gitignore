@@ -1,3 +1,4 @@
 .env
 playground/
 .gemini/
+gha-creds-*.json
