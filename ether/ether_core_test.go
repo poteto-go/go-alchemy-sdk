@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-viper/mapstructure/v2"
@@ -1314,6 +1315,56 @@ func TestEther_EstimateGas(t *testing.T) {
 
 			// Act
 			_, err := ether.EstimateGas(transaction)
+
+			// Assert
+			assert.Error(t, err)
+		})
+	})
+}
+
+func TestEther_SendRawTransaction(t *testing.T) {
+	t.Run("error case", func(t *testing.T) {
+		// Arrange
+		address := common.HexToAddress("0x123")
+		txData := &gethTypes.AccessListTx{
+			To:       &address,
+			ChainID:  big.NewInt(1),
+			Nonce:    0,
+			GasPrice: big.NewInt(1),
+			Gas:      0,
+			Data:     []byte("data"),
+		}
+		signedTx := gethTypes.NewTx(txData)
+
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
+				},
+			)
+
+			// Act
+			err := ether.SendRawTransaction(signedTx)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed to send tx, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Act
+			err := ether.SendRawTransaction(signedTx)
 
 			// Assert
 			assert.Error(t, err)

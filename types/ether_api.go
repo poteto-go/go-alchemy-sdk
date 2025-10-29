@@ -110,4 +110,7 @@ type EtherApi interface {
 		internal call geth
 	*/
 	PendingNonceAt(address string) (uint64, error)
+
+	// send signed tx into the pending pool for execution w/geth
+	SendRawTransaction(signedTx *gethTypes.Transaction) error
 }

@@ -357,3 +357,109 @@ func TestWallet_SignTx(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestWallet_SendTransaction(t *testing.T) {
+	// Arrange
+	txRequest := types.TransactionRequest{
+		To:       "0x123",
+		ChainID:  big.NewInt(1),
+		Nonce:    0,
+		GasPrice: big.NewInt(0),
+		GasLimit: 1000,
+		Value:    "0x123",
+		Data:     "0x123",
+	}
+	address := common.HexToAddress("0x123")
+	txData := &gethTypes.AccessListTx{
+		To:       &address,
+		ChainID:  big.NewInt(1),
+		Nonce:    0,
+		GasPrice: big.NewInt(1),
+		Gas:      0,
+		Data:     []byte("data"),
+	}
+	signedTx := gethTypes.NewTx(txData)
+
+	t.Run("can sign and send transaction", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SignTx",
+			func(_ *wallet, txRequest types.TransactionRequest) (*gethTypes.Transaction, error) {
+				return signedTx, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SendRawTransaction",
+			func(_ *ether.Ether, _ *gethTypes.Transaction) error {
+				return nil
+			},
+		)
+
+		// Act
+		err := w.SendTransaction(txRequest)
+
+		// Assert
+		assert.Nil(t, err)
+	})
+
+	t.Run("if error occur on sign-tx, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SignTx",
+			func(_ *wallet, txRequest types.TransactionRequest) (*gethTypes.Transaction, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		err := w.SendTransaction(txRequest)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if error occur on send raw transaction, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SignTx",
+			func(_ *wallet, txRequest types.TransactionRequest) (*gethTypes.Transaction, error) {
+				return signedTx, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SendRawTransaction",
+			func(_ *ether.Ether, _ *gethTypes.Transaction) error {
+				return errors.New("error")
+			},
+		)
+
+		// Act
+		err := w.SendTransaction(types.TransactionRequest{})
+
+		// Assert
+		assert.Error(t, err)
+	})
+}

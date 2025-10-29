@@ -7,6 +7,25 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
+func requestWithBackoffError(
+	backoffConfig BackoffConfig,
+	operation func() error,
+) error {
+	var lastHttpError error
+	backoffManager := NewBackoffManager(backoffConfig)
+	for {
+		err := operation()
+		if err == nil {
+			return nil
+		}
+
+		lastHttpError = err
+		if err := backoffManager.Backoff(); err != nil {
+			return lastHttpError
+		}
+	}
+}
+
 func requestWithBackoff[T any](
 	backoffConfig BackoffConfig,
 	operation func() (T, error),
@@ -156,4 +175,23 @@ func GethRequestWithBackOff[T any](
 		return handler(ctx)
 	}
 	return requestWithBackoff(*backoffConfig, operation)
+}
+
+func GethRequestSingleErrorWithBackOff[A any](
+	backoffConfig *BackoffConfig,
+	timeout time.Duration,
+	handler func(
+		context.Context, A,
+	) error,
+	arg A,
+) error {
+	if backoffConfig == nil {
+		backoffConfig = &DefaultBackoffConfig
+	}
+	operation := func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		return handler(ctx, arg)
+	}
+	return requestWithBackoffError(*backoffConfig, operation)
 }
