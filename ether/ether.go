@@ -443,3 +443,24 @@ func (ether *Ether) PendingNonceAt(address string) (uint64, error) {
 
 	return nonce, nil
 }
+
+// send signed tx into the pending pool for execution w/ geth
+func (ether *Ether) SendRawTransaction(signedTx *gethTypes.Transaction) error {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	err = internal.GethRequestSingleErrorWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.SendTransaction,
+		signedTx,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

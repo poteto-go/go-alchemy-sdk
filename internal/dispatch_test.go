@@ -310,3 +310,125 @@ func TestGethRequestWithBackOff(t *testing.T) {
 		assert.Equal(t, 1, result)
 	})
 }
+
+func TestGethRequestSingleErrorWithBackOff(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		// Arrange
+		backoffConfig := &BackoffConfig{
+			MaxRetries: 1,
+		}
+		mockHandler := func(ctx context.Context, a int) error {
+			return nil
+		}
+
+		// Act
+		err := GethRequestSingleErrorWithBackOff(backoffConfig, 0, mockHandler, 1)
+
+		// Assert
+		assert.NoError(t, err)
+	})
+
+	t.Run("backoff", func(t *testing.T) {
+		// Arrange
+		callCount := 0
+		backoffConfig := &BackoffConfig{
+			MaxRetries: 3,
+		}
+		mockHandler := func(ctx context.Context, a int) error {
+			callCount++
+			if callCount < 3 {
+				return errors.New("test error")
+			}
+			return nil
+		}
+
+		// Act
+		err := GethRequestSingleErrorWithBackOff(backoffConfig, 0, mockHandler, 1)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, 3, callCount)
+	})
+
+	t.Run("max retries exceeded", func(t *testing.T) {
+		// Arrange
+		backoffConfig := &BackoffConfig{
+			MaxRetries: 3,
+		}
+		mockHandler := func(ctx context.Context, a int) error {
+			return errors.New("test error")
+		}
+
+		// Act
+		err := GethRequestSingleErrorWithBackOff(backoffConfig, 0, mockHandler, 1)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("nil backoffConfig", func(t *testing.T) {
+		// Arrange
+		mockHandler := func(ctx context.Context, a int) error {
+			return nil
+		}
+
+		// Act
+		err := GethRequestSingleErrorWithBackOff(nil, 0, mockHandler, 1)
+
+		// Assert
+		assert.NoError(t, err)
+	})
+}
+
+func TestRequestWithBackoffError(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		// Arrange
+		operation := func() error {
+			return nil
+		}
+
+		// Act
+		err := requestWithBackoffError(DefaultBackoffConfig, operation)
+
+		// Assert
+		assert.NoError(t, err)
+	})
+
+	t.Run("backoff", func(t *testing.T) {
+		// Arrange
+		callCount := 0
+		operation := func() error {
+			callCount++
+			if callCount < 3 {
+				return errors.New("test error")
+			}
+			return nil
+		}
+		config := BackoffConfig{
+			MaxRetries: 3,
+		}
+
+		// Act
+		err := requestWithBackoffError(config, operation)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, 3, callCount)
+	})
+
+	t.Run("max retries exceeded", func(t *testing.T) {
+		// Arrange
+		operation := func() error {
+			return errors.New("test error")
+		}
+		config := BackoffConfig{
+			MaxRetries: 3,
+		}
+
+		// Act
+		err := requestWithBackoffError(config, operation)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}

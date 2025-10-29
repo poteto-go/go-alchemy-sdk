@@ -35,6 +35,9 @@ type Wallet interface {
 		EIP155Signer sign w/ ChainID to protect replay-attack
 	*/
 	SignTx(txRequest types.TransactionRequest) (signedTx *gethTypes.Transaction, err error)
+
+	// Signs tx and sends it to the pending pool for execution
+	SendTransaction(txRequest types.TransactionRequest) (err error)
 }
 
 type wallet struct {
@@ -120,4 +123,20 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	}
 
 	return signedTx, nil
+}
+
+func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	signedTx, err := w.SignTx(txRequest)
+	if err != nil {
+		return err
+	}
+
+	if err := w.provider.Eth().SendRawTransaction(signedTx); err != nil {
+		return err
+	}
+
+	return nil
 }
