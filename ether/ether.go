@@ -464,3 +464,22 @@ func (ether *Ether) SendRawTransaction(signedTx *gethTypes.Transaction) error {
 
 	return nil
 }
+
+func (ether *Ether) ChainID() (*big.Int, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return big.NewInt(0), err
+	}
+	defer client.Close()
+
+	res, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.ChainID,
+	)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return res, nil
+}
