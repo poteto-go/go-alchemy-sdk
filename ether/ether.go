@@ -305,6 +305,25 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	return big.NewInt(int64(res)), nil
 }
 
+func (ether *Ether) SuggestGasPrice() (*big.Int, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return big.NewInt(0), err
+	}
+	defer client.Close()
+
+	res, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.SuggestGasPrice,
+	)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return res, nil
+}
+
 func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, error) {
 	if err := utils.ValidateBlockTag(blockTag); err != nil {
 		return "", err

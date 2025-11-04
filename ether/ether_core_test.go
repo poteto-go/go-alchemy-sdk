@@ -1322,6 +1322,44 @@ func TestEther_EstimateGas(t *testing.T) {
 	})
 }
 
+func TestEther_SuggestGasPrice(t *testing.T) {
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.SuggestGasPrice()
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed to get suggested gas price, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Act
+			_, err := ether.SuggestGasPrice()
+
+			// Assert
+			assert.Error(t, err)
+		})
+	})
+}
+
 func TestEther_SendRawTransaction(t *testing.T) {
 	t.Run("error case", func(t *testing.T) {
 		// Arrange
