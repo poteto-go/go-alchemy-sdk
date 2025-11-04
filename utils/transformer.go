@@ -45,16 +45,6 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 		return nil, err
 	}
 
-	eGasPrice, err := FromBigHex(receipt.EffectiveGasPrice)
-	if err != nil {
-		return nil, err
-	}
-
-	bGasUsed, err := FromHexU64(receipt.BlobGasUsed)
-	if err != nil {
-		return nil, err
-	}
-
 	blockNumber, err := FromBigHex(receipt.BlockNumber)
 	if err != nil {
 		return nil, err
@@ -79,8 +69,6 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 		TxHash:            common.HexToHash(receipt.TransactionHash),
 		ContractAddress:   common.HexToAddress(receipt.ContractAddress),
 		GasUsed:           gasUsed,
-		EffectiveGasPrice: eGasPrice,
-		BlobGasUsed:       bGasUsed,
 		BlockHash:         common.HexToHash(receipt.BlockHash),
 		BlockNumber:       blockNumber,
 		TransactionIndex:  txIndex,

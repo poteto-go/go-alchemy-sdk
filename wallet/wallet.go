@@ -3,8 +3,11 @@ package wallet
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 
@@ -38,6 +41,14 @@ type Wallet interface {
 
 	// Signs tx and sends it to the pending pool for execution
 	SendTransaction(txRequest types.TransactionRequest) (err error)
+
+	/*
+		DeployContract creates and submits a deployment transaction based on the
+		deployer bytecode. It returns
+		the address and creation transaction of the pending contract, or an error
+		if the creation failed.
+	*/
+	DeployContract(abi abi.ABI, bytecode []byte) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error)
 }
 
 type wallet struct {
@@ -139,4 +150,45 @@ func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
 	}
 
 	return nil
+}
+
+func (w *wallet) DeployContract(abi abi.ABI, bytecode []byte) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	client, err := w.provider.Eth().GetEthClient()
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	defer client.Close()
+
+	chainID, err := w.provider.Eth().ChainID()
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(w.privateKey, chainID)
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+
+	nonce, err := w.PendingNonceAt()
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)
+	auth.GasLimit = uint64(0)
+
+	gasPrice, err := w.provider.Eth().SuggestGasPrice()
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	auth.GasPrice = gasPrice
+
+	address, tx, instance, err := bind.DeployContract(auth, abi, bytecode, client, nil)
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	return address, tx, instance, nil
 }

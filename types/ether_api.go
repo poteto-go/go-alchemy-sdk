@@ -72,6 +72,12 @@ type EtherApi interface {
 	EstimateGas(tx TransactionRequest) (*big.Int, error)
 
 	/*
+		SuggestGasPrice retrieves the currently suggested gas price to allow a timely
+		execution of a transaction.
+	*/
+	SuggestGasPrice() (*big.Int, error)
+
+	/*
 		Returns the result of executing the transaction, using call.
 		A call does not require any ether, but cannot change any state.
 		This is useful for calling getters on Contracts.
@@ -113,4 +119,11 @@ type EtherApi interface {
 
 	// send signed tx into the pending pool for execution w/geth
 	SendRawTransaction(signedTx *gethTypes.Transaction) error
+
+	/*
+		ChainID retrieves the current chain ID for transaction replay protection.
+
+		internal call geth
+	*/
+	ChainID() (*big.Int, error)
 }

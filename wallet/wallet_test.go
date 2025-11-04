@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -463,3 +464,59 @@ func TestWallet_SendTransaction(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestWallet_DeployContract(t *testing.T) {
+	t.Run("can deploy contract", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		bytecode := []byte("binary")
+		expectedAddr := common.HexToAddress("0x123")
+		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(100), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(100), nil
+			},
+		)
+		patches.ApplyFunc(
+			bind.DeployContract,
+			func(
+				opts *bind.TransactOpts,
+				bytecode []byte,
+				backend bind.ContractBackend,
+				constructorInput []byte,
+			) (common.Address, *gethTypes.Transaction, error) {
+				return expectedAddr, expectedTx, nil
+			},
+		)
+
+		// Act
+		addr, tx, err := w.DeployContract(bytecode)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, expectedAddr, addr)
+		assert.Equal(t, expectedTx, tx)
+	})
+}
+
