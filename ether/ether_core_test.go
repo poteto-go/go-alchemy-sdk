@@ -9,11 +9,14 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/jarcoal/httpmock"
+	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
@@ -1441,6 +1444,79 @@ func TestEther_ChainID(t *testing.T) {
 
 			// Act
 			_, err := ether.ChainID()
+
+			// Assert
+			assert.Error(t, err)
+		})
+	})
+}
+
+func Test_DeployContract(t *testing.T) {
+	bytecode := []byte("binary")
+	parsed, _ := artifacts.StorageMetaData.GetAbi()
+
+	t.Run("can deploy contract", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		ether := newEtherApiForTest()
+		expectedAddr := common.HexToAddress("0x123")
+		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
+
+		// Mock
+		patches.ApplyFunc(
+			bind.DeployContract,
+			func(
+				opts *bind.TransactOpts,
+				abi abi.ABI,
+				bytecode []byte,
+				backend bind.ContractBackend,
+				params ...any,
+			) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error) {
+				return expectedAddr, expectedTx, nil, nil
+			},
+		)
+
+		// Act
+		addr, tx, _, err := ether.DeployContract(nil, *parsed, bytecode, nil)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, expectedAddr, addr)
+		assert.Equal(t, expectedTx, tx)
+	})
+
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"GetEthClient",
+				func(_ *eth.Ether) (*ethclient.Client, error) {
+					return nil, errors.New("error")
+				},
+			)
+
+			// Act
+			_, _, _, err := ether.DeployContract(nil, *parsed, bytecode, nil)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("cannot deploy contract, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Act
+			_, _, _, err := ether.DeployContract(nil, *parsed, bytecode, nil)
 
 			// Assert
 			assert.Error(t, err)

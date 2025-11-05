@@ -3,6 +3,8 @@ package types
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
+	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -126,4 +128,16 @@ type EtherApi interface {
 		internal call geth
 	*/
 	ChainID() (*big.Int, error)
+
+	/*
+		WaitDeployed waits for a contract deployment transaction with the provided hash and
+		returns the on-chain contract address when it is mined.
+		It stops waiting when ctx is canceled.
+
+		internal call geth
+	*/
+	DeployContract(
+		auth *bind.TransactOpts,
+		metaData *bind.MetaData,
+	) (common.Address, error)
 }

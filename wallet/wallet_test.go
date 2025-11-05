@@ -8,10 +8,13 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -118,6 +121,17 @@ func TestWallet_PendingNonceAt(t *testing.T) {
 		assert.Equal(t, uint64(100), nonce)
 	})
 
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		// Arrange
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.PendingNonceAt()
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
 	t.Run("cannot get nonce from address, return error", func(t *testing.T) {
 		// Arrange
 		w := createConnectedWallet()
@@ -180,6 +194,17 @@ func TestWallet_SignTx(t *testing.T) {
 		assert.Equal(t, v.Cmp(big.NewInt(1)), 0)
 		assert.Equal(t, common.BigToHash(r).Hex(), "0x30282c4886900c1309d12e53d1373fc675d905adc84d54e5a2b4afdda2490c07")
 		assert.Equal(t, common.BigToHash(s).Hex(), "0x75129dbf83fd1f473464bb1788ae136059d23c2786220da9d9f65ce8cfabb388")
+	})
+
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		// Arrange
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.SignTx(types.TransactionRequest{})
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
 
 	t.Run("if error occur on PendingAt, return error", func(t *testing.T) {
@@ -411,6 +436,17 @@ func TestWallet_SendTransaction(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		// Arrange
+		w, _ := New(testPrivHex)
+
+		// Act
+		err := w.SendTransaction(txRequest)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
 	t.Run("if error occur on sign-tx, return error", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
@@ -466,13 +502,15 @@ func TestWallet_SendTransaction(t *testing.T) {
 }
 
 func TestWallet_DeployContract(t *testing.T) {
+	bytecode := []byte("binary")
+	parsed, _ := artifacts.StorageMetaData.GetAbi()
+
 	t.Run("can deploy contract", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
 		// Arrange
 		w := createConnectedWallet()
-		bytecode := []byte("binary")
 		expectedAddr := common.HexToAddress("0x123")
 		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
 
@@ -498,25 +536,176 @@ func TestWallet_DeployContract(t *testing.T) {
 				return big.NewInt(100), nil
 			},
 		)
-		patches.ApplyFunc(
-			bind.DeployContract,
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"DeployContract",
 			func(
+				_ *ether.Ether,
 				opts *bind.TransactOpts,
+				abi abi.ABI,
 				bytecode []byte,
-				backend bind.ContractBackend,
-				constructorInput []byte,
-			) (common.Address, *gethTypes.Transaction, error) {
-				return expectedAddr, expectedTx, nil
+				params ...any,
+			) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error) {
+				return expectedAddr, expectedTx, nil, nil
 			},
 		)
 
 		// Act
-		addr, tx, err := w.DeployContract(bytecode)
+		addr, tx, _, err := w.DeployContract(*parsed, bytecode)
 
 		// Assert
 		assert.Nil(t, err)
 		assert.Equal(t, expectedAddr, addr)
 		assert.Equal(t, expectedTx, tx)
 	})
-}
 
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("if failed get chainId, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(0), errors.New("error")
+			},
+		)
+
+		// Act
+		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if failed get pending nonce, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return 0, errors.New("error")
+			},
+		)
+
+		// Act
+		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if failed get suggest gas price, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(100), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(0), errors.New("error")
+			},
+		)
+
+		// Act
+		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if failed to deploy contract, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(100), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(100), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"DeployContract",
+			func(
+				_ *ether.Ether,
+				opts *bind.TransactOpts,
+				abi abi.ABI,
+				bytecode []byte,
+				params ...any,
+			) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error) {
+				return common.Address{}, nil, nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
+
+		// Assert
+		assert.Error(t, err)
+	})
+}

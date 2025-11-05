@@ -1,11 +1,14 @@
 package ether
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -501,4 +504,37 @@ func (ether *Ether) ChainID() (*big.Int, error) {
 	}
 
 	return res, nil
+}
+
+// TODO: backoff
+func (ether *Ether) DeployContract(
+	auth *bind.TransactOpts,
+	metaData *bind.MetaData,
+) (common.Address, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return common.Address{}, err
+	}
+	defer client.Close()
+
+	// set up params to deploy an instance of the metadata
+	deployParams := bind.DeploymentParams{
+		Contracts: []*bind.MetaData{metaData},
+	}
+	deployer := bind.DefaultDeployer(auth, client)
+
+	// create and submit the contract deployment
+	deployRes, err := bind.LinkAndDeploy(&deployParams, deployer)
+	if err != nil {
+		panic(fmt.Errorf("error submitting contract: %v", err))
+	}
+
+	_, tx := deployRes.Addresses[metaData.ID], deployRes.Txs[metaData.ID]
+
+	// wait for deployment on chain
+	address, err := bind.WaitDeployed(context.Background(), client, tx.Hash())
+	if err != nil {
+		return common.Address{}, err
+	}
+	return address, nil
 }

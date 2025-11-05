@@ -34,4 +34,5 @@ var (
 	ErrFailedToCreateRequestBody        = errors.New("failed to create request body")
 	ErrInvalidArgs                      = errors.New("invalid args")
 	ErrOverFlow                         = errors.New("overflow")
+	ErrWalletIsNotConnected             = errors.New("wallet is not connected")
 )

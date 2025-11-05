@@ -3,15 +3,14 @@ package wallet
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"math/big"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
@@ -44,11 +43,11 @@ type Wallet interface {
 
 	/*
 		DeployContract creates and submits a deployment transaction based on the
-		deployer bytecode. It returns
-		the address and creation transaction of the pending contract, or an error
-		if the creation failed.
+		deployer bytecode.
+		It returns the address and creation transaction of the pending contract,
+		or an error if the creation failed.
 	*/
-	DeployContract(abi abi.ABI, bytecode []byte) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error)
+	DeployContract(metaData *bind.MetaData) (common.Address, error)
 }
 
 type wallet struct {
@@ -79,12 +78,7 @@ func (w *wallet) GetAddress() string {
 
 func (w *wallet) Connect(provider types.IAlchemyProvider) {
 	w.mu.Lock()
-	defer func() {
-		w.mu.Unlock()
-		fmt.Println("unlock")
-	}()
-
-	fmt.Println("connect")
+	defer w.mu.Unlock()
 
 	w.provider = provider
 }
@@ -92,6 +86,10 @@ func (w *wallet) Connect(provider types.IAlchemyProvider) {
 func (w *wallet) PendingNonceAt() (uint64, error) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
+
+	if w.provider == nil {
+		return 0, constant.ErrWalletIsNotConnected
+	}
 
 	nonce, err := w.provider.Eth().PendingNonceAt(w.GetAddress())
 	if err != nil {
@@ -103,6 +101,10 @@ func (w *wallet) PendingNonceAt() (uint64, error) {
 
 // sign Transaction by wallet's p8 key
 func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transaction, error) {
+	if w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
 	nonce, err := w.PendingNonceAt()
 	if err != nil {
 		return nil, err
@@ -139,6 +141,10 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 }
 
 func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
+	if w.provider == nil {
+		return constant.ErrWalletIsNotConnected
+	}
+
 	signedTx, err := w.SignTx(txRequest)
 	if err != nil {
 		return err
@@ -151,40 +157,20 @@ func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
 	return nil
 }
 
-func (w *wallet) DeployContract(abi abi.ABI, bytecode []byte) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error) {
-	client, err := w.provider.Eth().GetEthClient()
-	if err != nil {
-		return common.Address{}, nil, nil, err
+func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error) {
+	if w.provider == nil {
+		return common.Address{}, constant.ErrWalletIsNotConnected
 	}
-	defer client.Close()
 
 	chainID, err := w.provider.Eth().ChainID()
 	if err != nil {
-		return common.Address{}, nil, nil, err
+		return common.Address{}, err
 	}
 
-	auth, err := bind.NewKeyedTransactorWithChainID(w.privateKey, chainID)
+	auth := bind.NewKeyedTransactor(w.privateKey, chainID)
+	address, err := w.provider.Eth().DeployContract(auth, metaData)
 	if err != nil {
-		return common.Address{}, nil, nil, err
+		return common.Address{}, err
 	}
-
-	nonce, err := w.PendingNonceAt()
-	if err != nil {
-		return common.Address{}, nil, nil, err
-	}
-	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)
-	auth.GasLimit = uint64(0)
-
-	gasPrice, err := w.provider.Eth().SuggestGasPrice()
-	if err != nil {
-		return common.Address{}, nil, nil, err
-	}
-	auth.GasPrice = gasPrice
-
-	address, tx, instance, err := bind.DeployContract(auth, abi, bytecode, client, nil)
-	if err != nil {
-		return common.Address{}, nil, nil, err
-	}
-	return address, tx, instance, nil
+	return address, nil
 }
