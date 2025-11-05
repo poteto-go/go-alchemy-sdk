@@ -79,7 +79,12 @@ func (w *wallet) GetAddress() string {
 
 func (w *wallet) Connect(provider types.IAlchemyProvider) {
 	w.mu.Lock()
-	defer w.mu.Unlock()
+	defer func() {
+		w.mu.Unlock()
+		fmt.Println("unlock")
+	}()
+
+	fmt.Println("connect")
 
 	w.provider = provider
 }
@@ -98,9 +103,6 @@ func (w *wallet) PendingNonceAt() (uint64, error) {
 
 // sign Transaction by wallet's p8 key
 func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transaction, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	nonce, err := w.PendingNonceAt()
 	if err != nil {
 		return nil, err
@@ -137,9 +139,6 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 }
 
 func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	signedTx, err := w.SignTx(txRequest)
 	if err != nil {
 		return err
@@ -153,9 +152,6 @@ func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
 }
 
 func (w *wallet) DeployContract(abi abi.ABI, bytecode []byte) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	client, err := w.provider.Eth().GetEthClient()
 	if err != nil {
 		return common.Address{}, nil, nil, err
