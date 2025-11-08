@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -502,8 +501,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 }
 
 func TestWallet_DeployContract(t *testing.T) {
-	bytecode := []byte("binary")
-	parsed, _ := artifacts.StorageMetaData.GetAbi()
+	metaData := artifacts.StorageMetaData
 
 	t.Run("can deploy contract", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
@@ -512,7 +510,6 @@ func TestWallet_DeployContract(t *testing.T) {
 		// Arrange
 		w := createConnectedWallet()
 		expectedAddr := common.HexToAddress("0x123")
-		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
 
 		// Mock
 		patches.ApplyMethod(
@@ -523,47 +520,28 @@ func TestWallet_DeployContract(t *testing.T) {
 			},
 		)
 		patches.ApplyMethod(
-			reflect.TypeOf(w),
-			"PendingNonceAt",
-			func(_ *wallet) (uint64, error) {
-				return uint64(100), nil
-			},
-		)
-		patches.ApplyMethod(
-			reflect.TypeOf(w.provider.Eth()),
-			"SuggestGasPrice",
-			func(_ *ether.Ether) (*big.Int, error) {
-				return big.NewInt(100), nil
-			},
-		)
-		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"DeployContract",
 			func(
 				_ *ether.Ether,
-				opts *bind.TransactOpts,
-				abi abi.ABI,
-				bytecode []byte,
-				params ...any,
-			) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error) {
-				return expectedAddr, expectedTx, nil, nil
+				auth *bind.TransactOpts, metaData *bind.MetaData) (common.Address, error) {
+				return expectedAddr, nil
 			},
 		)
 
 		// Act
-		addr, tx, _, err := w.DeployContract(*parsed, bytecode)
+		addr, err := w.DeployContract(&metaData)
 
 		// Assert
 		assert.Nil(t, err)
 		assert.Equal(t, expectedAddr, addr)
-		assert.Equal(t, expectedTx, tx)
 	})
 
 	t.Run("if wallet is not connected, return error", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
+		_, err := w.DeployContract(&metaData)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -586,74 +564,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		)
 
 		// Act
-		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
-
-		// Assert
-		assert.Error(t, err)
-	})
-
-	t.Run("if failed get pending nonce, return error", func(t *testing.T) {
-		patches := gomonkey.NewPatches()
-		defer patches.Reset()
-
-		// Arrange
-		w := createConnectedWallet()
-
-		// Mock
-		patches.ApplyMethod(
-			reflect.TypeOf(w.provider.Eth()),
-			"ChainID",
-			func(_ *ether.Ether) (*big.Int, error) {
-				return big.NewInt(1), nil
-			},
-		)
-		patches.ApplyMethod(
-			reflect.TypeOf(w),
-			"PendingNonceAt",
-			func(_ *wallet) (uint64, error) {
-				return 0, errors.New("error")
-			},
-		)
-
-		// Act
-		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
-
-		// Assert
-		assert.Error(t, err)
-	})
-
-	t.Run("if failed get suggest gas price, return error", func(t *testing.T) {
-		patches := gomonkey.NewPatches()
-		defer patches.Reset()
-
-		// Arrange
-		w := createConnectedWallet()
-
-		// Mock
-		patches.ApplyMethod(
-			reflect.TypeOf(w.provider.Eth()),
-			"ChainID",
-			func(_ *ether.Ether) (*big.Int, error) {
-				return big.NewInt(1), nil
-			},
-		)
-		patches.ApplyMethod(
-			reflect.TypeOf(w),
-			"PendingNonceAt",
-			func(_ *wallet) (uint64, error) {
-				return uint64(100), nil
-			},
-		)
-		patches.ApplyMethod(
-			reflect.TypeOf(w.provider.Eth()),
-			"SuggestGasPrice",
-			func(_ *ether.Ether) (*big.Int, error) {
-				return big.NewInt(0), errors.New("error")
-			},
-		)
-
-		// Act
-		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
+		_, err := w.DeployContract(&metaData)
 
 		// Assert
 		assert.Error(t, err)
@@ -675,35 +586,17 @@ func TestWallet_DeployContract(t *testing.T) {
 			},
 		)
 		patches.ApplyMethod(
-			reflect.TypeOf(w),
-			"PendingNonceAt",
-			func(_ *wallet) (uint64, error) {
-				return uint64(100), nil
-			},
-		)
-		patches.ApplyMethod(
-			reflect.TypeOf(w.provider.Eth()),
-			"SuggestGasPrice",
-			func(_ *ether.Ether) (*big.Int, error) {
-				return big.NewInt(100), nil
-			},
-		)
-		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"DeployContract",
 			func(
 				_ *ether.Ether,
-				opts *bind.TransactOpts,
-				abi abi.ABI,
-				bytecode []byte,
-				params ...any,
-			) (common.Address, *gethTypes.Transaction, *bind.BoundContract, error) {
-				return common.Address{}, nil, nil, errors.New("error")
+				auth *bind.TransactOpts, metaData *bind.MetaData) (common.Address, error) {
+				return common.Address{}, errors.New("error")
 			},
 		)
 
 		// Act
-		_, _, _, err := w.DeployContract(abi.ABI{}, []byte{})
+		_, err := w.DeployContract(&metaData)
 
 		// Assert
 		assert.Error(t, err)
