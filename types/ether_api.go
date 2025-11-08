@@ -3,6 +3,8 @@ package types
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
+	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -72,6 +74,12 @@ type EtherApi interface {
 	EstimateGas(tx TransactionRequest) (*big.Int, error)
 
 	/*
+		SuggestGasPrice retrieves the currently suggested gas price to allow a timely
+		execution of a transaction.
+	*/
+	SuggestGasPrice() (*big.Int, error)
+
+	/*
 		Returns the result of executing the transaction, using call.
 		A call does not require any ether, but cannot change any state.
 		This is useful for calling getters on Contracts.
@@ -113,4 +121,23 @@ type EtherApi interface {
 
 	// send signed tx into the pending pool for execution w/geth
 	SendRawTransaction(signedTx *gethTypes.Transaction) error
+
+	/*
+		ChainID retrieves the current chain ID for transaction replay protection.
+
+		internal call geth
+	*/
+	ChainID() (*big.Int, error)
+
+	/*
+		WaitDeployed waits for a contract deployment transaction with the provided hash and
+		returns the on-chain contract address when it is mined.
+		It stops waiting when ctx is canceled.
+
+		internal call geth
+	*/
+	DeployContract(
+		auth *bind.TransactOpts,
+		metaData *bind.MetaData,
+	) (common.Address, error)
 }

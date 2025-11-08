@@ -1,11 +1,13 @@
 package ether
 
 import (
+	"context"
 	"errors"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -305,6 +307,25 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	return big.NewInt(int64(res)), nil
 }
 
+func (ether *Ether) SuggestGasPrice() (*big.Int, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return big.NewInt(0), err
+	}
+	defer client.Close()
+
+	res, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.SuggestGasPrice,
+	)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return res, nil
+}
+
 func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, error) {
 	if err := utils.ValidateBlockTag(blockTag); err != nil {
 		return "", err
@@ -463,4 +484,55 @@ func (ether *Ether) SendRawTransaction(signedTx *gethTypes.Transaction) error {
 	}
 
 	return nil
+}
+
+func (ether *Ether) ChainID() (*big.Int, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return big.NewInt(0), err
+	}
+	defer client.Close()
+
+	res, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.ChainID,
+	)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return res, nil
+}
+
+// TODO: backoff
+func (ether *Ether) DeployContract(
+	auth *bind.TransactOpts,
+	metaData *bind.MetaData,
+) (common.Address, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return common.Address{}, err
+	}
+	defer client.Close()
+
+	// set up params to deploy an instance of the metadata
+	deployParams := bind.DeploymentParams{
+		Contracts: []*bind.MetaData{metaData},
+	}
+	deployer := bind.DefaultDeployer(auth, client)
+
+	// create and submit the contract deployment
+	deployRes, err := bind.LinkAndDeploy(&deployParams, deployer)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	tx := deployRes.Txs[metaData.ID]
+	// wait for deployment on chain
+	address, err := bind.WaitDeployed(context.Background(), client, tx.Hash())
+	if err != nil {
+		return common.Address{}, err
+	}
+	return address, nil
 }

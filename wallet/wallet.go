@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
@@ -38,6 +40,16 @@ type Wallet interface {
 
 	// Signs tx and sends it to the pending pool for execution
 	SendTransaction(txRequest types.TransactionRequest) (err error)
+
+	/*
+		DeployContract creates and submits a deployment transaction based on the
+		deployer bytecode.
+		It returns the address and creation transaction of the pending contract,
+		or an error if the creation failed.
+
+		It does not work on non-Ethernet compatible networks.
+	*/
+	DeployContract(metaData *bind.MetaData) (common.Address, error)
 }
 
 type wallet struct {
@@ -77,6 +89,10 @@ func (w *wallet) PendingNonceAt() (uint64, error) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
+	if w.provider == nil {
+		return 0, constant.ErrWalletIsNotConnected
+	}
+
 	nonce, err := w.provider.Eth().PendingNonceAt(w.GetAddress())
 	if err != nil {
 		return nonce, err
@@ -87,8 +103,9 @@ func (w *wallet) PendingNonceAt() (uint64, error) {
 
 // sign Transaction by wallet's p8 key
 func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transaction, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+	if w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
 
 	nonce, err := w.PendingNonceAt()
 	if err != nil {
@@ -126,8 +143,9 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 }
 
 func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+	if w.provider == nil {
+		return constant.ErrWalletIsNotConnected
+	}
 
 	signedTx, err := w.SignTx(txRequest)
 	if err != nil {
@@ -139,4 +157,21 @@ func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
 	}
 
 	return nil
+}
+
+func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error) {
+	if w.provider == nil {
+		return common.Address{}, constant.ErrWalletIsNotConnected
+	}
+
+	chainID, err := w.provider.Eth().ChainID()
+	if err != nil {
+		return common.Address{}, err
+	}
+	auth := bind.NewKeyedTransactor(w.privateKey, chainID)
+	address, err := w.provider.Eth().DeployContract(auth, metaData)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return address, nil
 }
