@@ -3,7 +3,6 @@ package ether
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -526,11 +525,10 @@ func (ether *Ether) DeployContract(
 	// create and submit the contract deployment
 	deployRes, err := bind.LinkAndDeploy(&deployParams, deployer)
 	if err != nil {
-		panic(fmt.Errorf("error submitting contract: %v", err))
+		return common.Address{}, err
 	}
 
-	_, tx := deployRes.Addresses[metaData.ID], deployRes.Txs[metaData.ID]
-
+	tx := deployRes.Txs[metaData.ID]
 	// wait for deployment on chain
 	address, err := bind.WaitDeployed(context.Background(), client, tx.Hash())
 	if err != nil {
