@@ -16,7 +16,7 @@ func main() {
 	}
 	alchemy := gas.NewAlchemy(setting)
 
-	w, _ := wallet.New("privateKey")
+	w, _ := wallet.New("<privateKey>")
 	w.Connect(alchemy.GetProvider())
 }
 ```

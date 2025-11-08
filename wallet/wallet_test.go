@@ -501,7 +501,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 }
 
 func TestWallet_DeployContract(t *testing.T) {
-	metaData := artifacts.StorageMetaData
+	metaData := artifacts.PotetoStorageMetaData
 
 	t.Run("can deploy contract", func(t *testing.T) {
 		patches := gomonkey.NewPatches()

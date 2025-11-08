@@ -46,6 +46,8 @@ type Wallet interface {
 		deployer bytecode.
 		It returns the address and creation transaction of the pending contract,
 		or an error if the creation failed.
+
+		It does not work on non-Ethernet compatible networks.
 	*/
 	DeployContract(metaData *bind.MetaData) (common.Address, error)
 }
@@ -166,7 +168,6 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 	if err != nil {
 		return common.Address{}, err
 	}
-
 	auth := bind.NewKeyedTransactor(w.privateKey, chainID)
 	address, err := w.provider.Eth().DeployContract(auth, metaData)
 	if err != nil {

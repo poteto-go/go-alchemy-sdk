@@ -6,7 +6,7 @@ pragma solidity >0.7.0 < 0.9.0;
 * @dev store or retrieve a variable value
 */
 
-contract Storage {
+contract PotetoStorage {
 
 	uint256 value;
 

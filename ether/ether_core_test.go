@@ -1452,7 +1452,7 @@ func TestEther_ChainID(t *testing.T) {
 }
 
 func Test_DeployContract(t *testing.T) {
-	metaData := &artifacts.StorageMetaData
+	metaData := &artifacts.PotetoStorageMetaData
 
 	t.Run("can deploy contract", func(t *testing.T) {
 		patches := gomonkey.NewPatches()

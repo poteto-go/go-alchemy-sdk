@@ -12,6 +12,6 @@ You can create Wallet w/ your privateKey string.
 
 ```go
 func main() {
-  w, _ := wallet.New("privateKey")
+  w, _ := wallet.New("<privateKey>")
 }
 ```
