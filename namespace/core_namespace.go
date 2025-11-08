@@ -141,15 +141,15 @@ func (c *Core) GetCode(address string, arg types.BlockTagOrHash) (string, error)
 		return "", constant.ErrInvalidArgs
 	}
 
-	var blockTag string
 	if arg.BlockHash != "" {
-		// TODO: not sure how to handle blockhash with CodeAt
-		blockTag = "latest"
-	} else {
-		blockTag = arg.BlockTag
+		code, err := c.ether.CodeAtHash(address, arg.BlockHash)
+		if err != nil {
+			return "", err
+		}
+		return code, nil
 	}
 
-	code, err := c.ether.CodeAt(address, blockTag)
+	code, err := c.ether.CodeAt(address, arg.BlockHash)
 	if err != nil {
 		return "", err
 	}
