@@ -58,6 +58,8 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 		assert.Equal(t, gethReceipt.Status, uint64(1))
 		assert.Equal(t, gethReceipt.CumulativeGasUsed, uint64(5208))
 		assert.Equal(t, gethReceipt.GasUsed, uint64(5208))
+		assert.Equal(t, gethReceipt.EffectiveGasPrice.Cmp(big.NewInt(1)), 0)
+		assert.Equal(t, gethReceipt.BlobGasUsed, uint64(5208))
 		assert.Equal(t, gethReceipt.BlockNumber.Cmp(big.NewInt(80)), 0)
 		assert.Equal(t, gethReceipt.TransactionIndex, uint(0))
 		assert.Equal(t, gethReceipt.BlockHash.Hex(), receipt.BlockHash)
