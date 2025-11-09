@@ -1,9 +1,8 @@
 # Go-Alchemy-Sdk
 
-golang sdk for alchemy, inspired by https://github.com/alchemyplatform/alchemy-sdk-js
+golang sdk for alchemy, inspired by https://github.com/alchemyplatform/alchemy-sdk-js.
 
-> [!Important]
-> The methods in `geth` are scheduled to undergo major changes with the goal of using `gethclient`.
+This project is aim to be **bridge between alchemy api and geth** objects.
 
 ## Documentation
 
@@ -32,3 +31,24 @@ func main() {
   fmt.Println(res)
 }
 ```
+
+## Caution
+
+> [!Caution]
+> This project will breaking-change till `geth` migration is done.
+
+## Major Milestone
+
+- [x] Deploy Contract to Eth: done for `v0.1.0`
+- [ ] Private Geth Support
+- [ ] Non-Ether Chain Support
+
+## Alchemy Sdk Namespace Support
+
+- [ ] `Core`: in-progress
+- [ ] `Nft`
+- [ ] `Debug`
+- [ ] `Notify`
+- [ ] `Portfolio`
+- [ ] `Prices`
+- [ ] `Transact`
