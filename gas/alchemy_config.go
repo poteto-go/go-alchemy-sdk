@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/ether"
-	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
@@ -15,7 +14,7 @@ type AlchemyConfig struct {
 	maxRetries     int
 	requestTimeout time.Duration
 	isRequestBatch bool
-	backoffConfig  *internal.BackoffConfig
+	backoffConfig  *types.BackoffConfig
 }
 
 func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
@@ -34,7 +33,7 @@ func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
 	}
 
 	if setting.BackoffConfig == nil {
-		config.backoffConfig = &internal.DefaultBackoffConfig
+		config.backoffConfig = &types.DefaultBackoffConfig
 	}
 
 	return config

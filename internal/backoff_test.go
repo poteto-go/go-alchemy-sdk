@@ -4,10 +4,11 @@ import (
 	"testing"
 
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
 
-var backoffConfigTest = BackoffConfig{
+var backoffConfigTest = types.BackoffConfig{
 	Mode:           "exponential",
 	MaxRetries:     3,
 	InitialDelayMs: 10,
@@ -16,7 +17,7 @@ var backoffConfigTest = BackoffConfig{
 
 func TestNewBackoffManager(t *testing.T) {
 	// Arrange
-	config := BackoffConfig{
+	config := types.BackoffConfig{
 		Mode:           "exponential",
 		MaxRetries:     1,
 		InitialDelayMs: 10,

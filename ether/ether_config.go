@@ -3,7 +3,7 @@ package ether
 import (
 	"time"
 
-	"github.com/poteto-go/go-alchemy-sdk/internal"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 // cf. gsk.AlchemyConfig
@@ -12,10 +12,10 @@ type EtherApiConfig struct {
 	url            string
 	maxRetries     int
 	requestTimeout time.Duration
-	backoffConfig  *internal.BackoffConfig
+	backoffConfig  *types.BackoffConfig
 }
 
-func NewEtherApiConfig(url string, maxRetries int, requestTimeout time.Duration, backoffConfig *internal.BackoffConfig) EtherApiConfig {
+func NewEtherApiConfig(url string, maxRetries int, requestTimeout time.Duration, backoffConfig *types.BackoffConfig) EtherApiConfig {
 	return EtherApiConfig{
 		url:            url,
 		maxRetries:     maxRetries,

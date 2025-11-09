@@ -18,7 +18,7 @@ func TestRequestWithBackoff(t *testing.T) {
 		}
 
 		// Act
-		result, err := requestWithBackoff(DefaultBackoffConfig, operation)
+		result, err := requestWithBackoff(types.DefaultBackoffConfig, operation)
 
 		// Assert
 		assert.NoError(t, err)
@@ -35,7 +35,7 @@ func TestRequestWithBackoff(t *testing.T) {
 			}
 			return 1, nil
 		}
-		config := BackoffConfig{
+		config := types.BackoffConfig{
 			MaxRetries: 3,
 		}
 
@@ -53,7 +53,7 @@ func TestRequestWithBackoff(t *testing.T) {
 		operation := func() (int, error) {
 			return 0, errors.New("test error")
 		}
-		config := BackoffConfig{
+		config := types.BackoffConfig{
 			MaxRetries: 3,
 		}
 
@@ -73,7 +73,7 @@ func TestRequestWithBackoffTuple(t *testing.T) {
 		}
 
 		// Act
-		result1, result2, err := requestWithBackoffTuple(DefaultBackoffConfig, operation)
+		result1, result2, err := requestWithBackoffTuple(types.DefaultBackoffConfig, operation)
 
 		// Assert
 		assert.NoError(t, err)
@@ -91,7 +91,7 @@ func TestRequestWithBackoffTuple(t *testing.T) {
 			}
 			return 1, 2, nil
 		}
-		config := BackoffConfig{
+		config := types.BackoffConfig{
 			MaxRetries: 3,
 		}
 
@@ -110,7 +110,7 @@ func TestRequestWithBackoffTuple(t *testing.T) {
 		operation := func() (int, int, error) {
 			return 0, 0, errors.New("test error")
 		}
-		config := BackoffConfig{
+		config := types.BackoffConfig{
 			MaxRetries: 3,
 		}
 
@@ -125,7 +125,7 @@ func TestRequestWithBackoffTuple(t *testing.T) {
 func TestRequestHttpWithBackoff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := BackoffConfig{
+		backoffConfig := types.BackoffConfig{
 			MaxRetries: 1,
 		}
 		requestConfig := types.RequestConfig{}
@@ -147,7 +147,7 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 func TestGethRequestArgWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := &BackoffConfig{
+		backoffConfig := &types.BackoffConfig{
 			MaxRetries: 1,
 		}
 		mockHandler := func(ctx context.Context, a int) (int, error) {
@@ -180,7 +180,7 @@ func TestGethRequestArgWithBackOff(t *testing.T) {
 func TestGethRequestTwoArgWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := &BackoffConfig{
+		backoffConfig := &types.BackoffConfig{
 			MaxRetries: 1,
 		}
 		mockHandler := func(ctx context.Context, a, b int) (int, error) {
@@ -213,7 +213,7 @@ func TestGethRequestTwoArgWithBackOff(t *testing.T) {
 func TestGethRequestThreeArgWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := &BackoffConfig{
+		backoffConfig := &types.BackoffConfig{
 			MaxRetries: 1,
 		}
 		mockHandler := func(ctx context.Context, a, b, c int) (int, error) {
@@ -246,7 +246,7 @@ func TestGethRequestThreeArgWithBackOff(t *testing.T) {
 func TestGethRequestArgWithBackOffTuple(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := &BackoffConfig{
+		backoffConfig := &types.BackoffConfig{
 			MaxRetries: 1,
 		}
 		mockHandler := func(ctx context.Context, a int) (int, int, error) {
@@ -281,7 +281,7 @@ func TestGethRequestArgWithBackOffTuple(t *testing.T) {
 func TestGethRequestWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := &BackoffConfig{
+		backoffConfig := &types.BackoffConfig{
 			MaxRetries: 1,
 		}
 		mockHandler := func(ctx context.Context) (int, error) {
@@ -314,7 +314,7 @@ func TestGethRequestWithBackOff(t *testing.T) {
 func TestGethRequestSingleErrorWithBackOff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Arrange
-		backoffConfig := &BackoffConfig{
+		backoffConfig := &types.BackoffConfig{
 			MaxRetries: 1,
 		}
 		mockHandler := func(ctx context.Context, a int) error {
@@ -331,7 +331,7 @@ func TestGethRequestSingleErrorWithBackOff(t *testing.T) {
 	t.Run("backoff", func(t *testing.T) {
 		// Arrange
 		callCount := 0
-		backoffConfig := &BackoffConfig{
+		backoffConfig := &types.BackoffConfig{
 			MaxRetries: 3,
 		}
 		mockHandler := func(ctx context.Context, a int) error {
@@ -352,7 +352,7 @@ func TestGethRequestSingleErrorWithBackOff(t *testing.T) {
 
 	t.Run("max retries exceeded", func(t *testing.T) {
 		// Arrange
-		backoffConfig := &BackoffConfig{
+		backoffConfig := &types.BackoffConfig{
 			MaxRetries: 3,
 		}
 		mockHandler := func(ctx context.Context, a int) error {
@@ -388,7 +388,7 @@ func TestRequestWithBackoffError(t *testing.T) {
 		}
 
 		// Act
-		err := requestWithBackoffError(DefaultBackoffConfig, operation)
+		err := requestWithBackoffError(types.DefaultBackoffConfig, operation)
 
 		// Assert
 		assert.NoError(t, err)
@@ -404,7 +404,7 @@ func TestRequestWithBackoffError(t *testing.T) {
 			}
 			return nil
 		}
-		config := BackoffConfig{
+		config := types.BackoffConfig{
 			MaxRetries: 3,
 		}
 
@@ -421,7 +421,7 @@ func TestRequestWithBackoffError(t *testing.T) {
 		operation := func() error {
 			return errors.New("test error")
 		}
-		config := BackoffConfig{
+		config := types.BackoffConfig{
 			MaxRetries: 3,
 		}
 

@@ -6,31 +6,18 @@ import (
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
 
-type BackoffConfig struct {
-	Mode           string  `yaml:"mode"`
-	MaxRetries     int     `yaml:"max_retries"`
-	InitialDelayMs float64 `yaml:"initial_delay_ms"`
-	MaxDelayMs     float64 `yaml:"max_delay_ms"`
-}
-
-var DefaultBackoffConfig = BackoffConfig{
-	Mode:           "exponential",
-	MaxRetries:     1,
-	InitialDelayMs: 1000,
-	MaxDelayMs:     30000,
-}
-
 type BackoffManager struct {
-	config    BackoffConfig
+	config    types.BackoffConfig
 	retries   int
 	lastDelay float64
 	lock      sync.Mutex
 }
 
-func NewBackoffManager(config BackoffConfig) *BackoffManager {
+func NewBackoffManager(config types.BackoffConfig) *BackoffManager {
 	return &BackoffManager{
 		config:    config,
 		retries:   0,
