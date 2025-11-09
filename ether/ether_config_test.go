@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/poteto-go/go-alchemy-sdk/internal"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +13,7 @@ func TestNewEtherApiConfig(t *testing.T) {
 	url := "url"
 	maxRetries := 1
 	requestTimeout := time.Duration(1)
-	backoffConfig := internal.BackoffConfig{
+	backoffConfig := types.BackoffConfig{
 		MaxRetries: 1,
 	}
 

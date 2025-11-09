@@ -13,7 +13,6 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
-	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -24,7 +23,7 @@ func newEtherApi() *ether.Ether {
 	setting := gas.AlchemySetting{
 		ApiKey:  "hoge",
 		Network: "fuga",
-		BackoffConfig: &internal.BackoffConfig{
+		BackoffConfig: &types.BackoffConfig{
 			MaxRetries: 0,
 		},
 	}

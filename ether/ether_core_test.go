@@ -21,7 +21,6 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
-	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -57,7 +56,7 @@ func newProviderForTest() *gas.AlchemyProvider {
 		gas.AlchemySetting{
 			ApiKey:  "hoge",
 			Network: "fuga",
-			BackoffConfig: &internal.BackoffConfig{
+			BackoffConfig: &types.BackoffConfig{
 				MaxRetries: 0,
 			},
 		},

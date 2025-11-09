@@ -8,7 +8,7 @@ import (
 )
 
 func requestWithBackoffError(
-	backoffConfig BackoffConfig,
+	backoffConfig types.BackoffConfig,
 	operation func() error,
 ) error {
 	var lastHttpError error
@@ -27,7 +27,7 @@ func requestWithBackoffError(
 }
 
 func requestWithBackoff[T any](
-	backoffConfig BackoffConfig,
+	backoffConfig types.BackoffConfig,
 	operation func() (T, error),
 ) (T, error) {
 	var lastHttpError error
@@ -47,7 +47,7 @@ func requestWithBackoff[T any](
 }
 
 func requestWithBackoffTuple[T any, O any](
-	backoffConfig BackoffConfig,
+	backoffConfig types.BackoffConfig,
 	operation func() (T, O, error),
 ) (T, O, error) {
 	var lastHttpError error
@@ -68,7 +68,7 @@ func requestWithBackoffTuple[T any, O any](
 }
 
 func RequestHttpWithBackoff(
-	backoffConfig BackoffConfig,
+	backoffConfig types.BackoffConfig,
 	requestConfig types.RequestConfig,
 	handler types.AlchemyFetchHandler,
 	request types.AlchemyRequest,
@@ -81,7 +81,7 @@ func RequestHttpWithBackoff(
 }
 
 func GethRequestArgWithBackOff[T any, A any](
-	backoffConfig *BackoffConfig,
+	backoffConfig *types.BackoffConfig,
 	timeout time.Duration,
 	handler func(
 		context.Context, A,
@@ -89,7 +89,7 @@ func GethRequestArgWithBackOff[T any, A any](
 	arg A,
 ) (T, error) {
 	if backoffConfig == nil {
-		backoffConfig = &DefaultBackoffConfig
+		backoffConfig = &types.DefaultBackoffConfig
 	}
 	operation := func() (T, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -100,7 +100,7 @@ func GethRequestArgWithBackOff[T any, A any](
 }
 
 func GethRequestTwoArgWithBackOff[T any, A any, B any](
-	backoffConfig *BackoffConfig,
+	backoffConfig *types.BackoffConfig,
 	timeout time.Duration,
 	handler func(
 		context.Context, A, B,
@@ -109,7 +109,7 @@ func GethRequestTwoArgWithBackOff[T any, A any, B any](
 	arg2 B,
 ) (T, error) {
 	if backoffConfig == nil {
-		backoffConfig = &DefaultBackoffConfig
+		backoffConfig = &types.DefaultBackoffConfig
 	}
 	operation := func() (T, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -120,7 +120,7 @@ func GethRequestTwoArgWithBackOff[T any, A any, B any](
 }
 
 func GethRequestThreeArgWithBackOff[T any, A any, B any, C any](
-	backoffConfig *BackoffConfig,
+	backoffConfig *types.BackoffConfig,
 	timeout time.Duration,
 	handler func(
 		context.Context, A, B, C,
@@ -130,7 +130,7 @@ func GethRequestThreeArgWithBackOff[T any, A any, B any, C any](
 	arg3 C,
 ) (T, error) {
 	if backoffConfig == nil {
-		backoffConfig = &DefaultBackoffConfig
+		backoffConfig = &types.DefaultBackoffConfig
 	}
 	operation := func() (T, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -141,7 +141,7 @@ func GethRequestThreeArgWithBackOff[T any, A any, B any, C any](
 }
 
 func GethRequestArgWithBackOffTuple[T any, A any, O any](
-	backoffConfig *BackoffConfig,
+	backoffConfig *types.BackoffConfig,
 	timeout time.Duration,
 	handler func(
 		context.Context, A,
@@ -149,7 +149,7 @@ func GethRequestArgWithBackOffTuple[T any, A any, O any](
 	arg A,
 ) (T, O, error) {
 	if backoffConfig == nil {
-		backoffConfig = &DefaultBackoffConfig
+		backoffConfig = &types.DefaultBackoffConfig
 	}
 	operation := func() (T, O, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -160,14 +160,14 @@ func GethRequestArgWithBackOffTuple[T any, A any, O any](
 }
 
 func GethRequestWithBackOff[T any](
-	backoffConfig *BackoffConfig,
+	backoffConfig *types.BackoffConfig,
 	timeout time.Duration,
 	handler func(
 		context.Context,
 	) (T, error),
 ) (T, error) {
 	if backoffConfig == nil {
-		backoffConfig = &DefaultBackoffConfig
+		backoffConfig = &types.DefaultBackoffConfig
 	}
 	operation := func() (T, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -178,7 +178,7 @@ func GethRequestWithBackOff[T any](
 }
 
 func GethRequestSingleErrorWithBackOff[A any](
-	backoffConfig *BackoffConfig,
+	backoffConfig *types.BackoffConfig,
 	timeout time.Duration,
 	handler func(
 		context.Context, A,
@@ -186,7 +186,7 @@ func GethRequestSingleErrorWithBackOff[A any](
 	arg A,
 ) error {
 	if backoffConfig == nil {
-		backoffConfig = &DefaultBackoffConfig
+		backoffConfig = &types.DefaultBackoffConfig
 	}
 	operation := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
