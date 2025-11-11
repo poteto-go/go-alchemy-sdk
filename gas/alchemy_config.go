@@ -16,7 +16,6 @@ type AlchemyConfig struct {
 	requestTimeout       time.Duration
 	isRequestBatch       bool
 	backoffConfig        *types.BackoffConfig
-	isPrivateMode        bool
 	privateNetworkConfig PrivateNetworkConfig
 }
 

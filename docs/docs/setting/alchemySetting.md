@@ -46,7 +46,7 @@ func main() {
 	setting := gas.AlchemySetting{
 		ApiKey:  "<alchemy-api-key>",
 		Network: types.EthSepolia,
-		BackOffConfig: *types.BackOffConfig{
+		BackoffConfig: *types.BackoffConfig{
 			Mode:           "exponential",
 			MaxRetries:     1,
 			InitialDelayMs: 1000,
