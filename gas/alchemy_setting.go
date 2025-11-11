@@ -6,11 +6,19 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
+// If you want to run p8 mode,
+// you should define host & port
+type PrivateNetworkConfig struct {
+	Port int    `yaml:"port"`
+	Host string `yaml:"host"`
+}
+
 type AlchemySetting struct {
-	ApiKey         string                `yaml:"api_key"`
-	Network        types.Network         `yaml:"network"`
-	MaxRetries     int                   `yaml:"max_retries"`
-	IsRequestBatch bool                  `yaml:"is_request_batch"`
-	BackoffConfig  *types.BackoffConfig  `yaml:"backoff_config"`
-	RequestTimeout time.Duration         `yaml:"request_timeout"`
+	ApiKey               string               `yaml:"api_key"`
+	Network              types.Network        `yaml:"network"`
+	MaxRetries           int                  `yaml:"max_retries"`
+	IsRequestBatch       bool                 `yaml:"is_request_batch"`
+	BackoffConfig        *types.BackoffConfig `yaml:"backoff_config"`
+	RequestTimeout       time.Duration        `yaml:"request_timeout"`
+	PrivateNetworkConfig PrivateNetworkConfig `yaml:"private_network_config"`
 }

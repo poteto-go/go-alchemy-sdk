@@ -9,18 +9,35 @@ import (
 )
 
 func TestNewAlchemyConfig(t *testing.T) {
-	// Act
-	config := NewAlchemyConfig(
-		AlchemySetting{
-			ApiKey:  "api-key",
-			Network: types.MaticMainnet,
-		},
-	)
+	t.Run("public mode", func(t *testing.T) {
+		// Act
+		config := NewAlchemyConfig(
+			AlchemySetting{
+				ApiKey:  "api-key",
+				Network: types.MaticMainnet,
+			},
+		)
 
-	// Assert
-	assert.Equal(t, config.apiKey, "api-key")
-	assert.Equal(t, string(config.network), "matic-mainnet")
-	assert.Equal(t, config.url, "https://matic-mainnet.g.alchemy.com/v2/api-key")
+		// Assert
+		assert.Equal(t, config.apiKey, "api-key")
+		assert.Equal(t, string(config.network), "matic-mainnet")
+		assert.Equal(t, config.url, "https://matic-mainnet.g.alchemy.com/v2/api-key")
+	})
+
+	t.Run("p8 mode", func(t *testing.T) {
+		// Act
+		config := NewAlchemyConfig(
+			AlchemySetting{
+				PrivateNetworkConfig: PrivateNetworkConfig{
+					Host: "127.0.0.1",
+					Port: 8080,
+				},
+			},
+		)
+
+		// Assert
+		assert.Equal(t, config.url, "http://127.0.0.1:8080")
+	})
 }
 
 func TestAlchemyConfig_GetUrl(t *testing.T) {
