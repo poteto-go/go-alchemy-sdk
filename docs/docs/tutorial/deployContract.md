@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Tutorial: Deploy Contract
+# Deploy Contract
 
 ## Deploy Contract to EthSepolia
 
