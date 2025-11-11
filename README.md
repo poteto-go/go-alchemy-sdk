@@ -8,6 +8,10 @@ This project is aim to be **bridge between alchemy api and geth** objects.
 
 - https://go-alchemy-sdk.poteto-mahiro.com/
 
+## Features
+
+🚀 easily switch private network(`geth`) to Eth-Public Network
+
 ## QuickStart
 
 ```go
@@ -40,7 +44,7 @@ func main() {
 ## Major Milestone
 
 - [x] Deploy Contract to Eth: done for `v0.1.0`
-- [ ] Private Geth Support
+- [ ] Private Geth Support `in-progress`
 - [ ] Non-Ether Chain Support
 
 ## Alchemy Sdk Namespace Support
