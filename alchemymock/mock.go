@@ -20,7 +20,7 @@ type AlchemyHttpMock struct {
 //
 // Example:
 //
-//	mock := utils.NewAlchemyHttpMock(setting)
+//	mock := alchemymock.NewAlchemyHttpMock(setting)
 //	defer mock.DeactivateAndReset()
 //	alchemy := gas.NewAlchemy(setting)
 func NewAlchemyHttpMock(setting gas.AlchemySetting, t testing.TB) *AlchemyHttpMock {
