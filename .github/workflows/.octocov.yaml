@@ -3,6 +3,7 @@ coverage:
     - coverage.out
   badge:
     path: _fixture/coverage.svg
+  acceptable: 90%
 
 codeToTestRatio:
   code:
@@ -10,9 +11,6 @@ codeToTestRatio:
     - "!**/*_test.go"
   test:
     - "**/*_test.go"
-
-coverage:
-  acceptable: 90%
 
 testExecutionTime:
   if: true
