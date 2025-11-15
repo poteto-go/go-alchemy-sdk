@@ -1,17 +1,17 @@
 ---
-sidebar_position: 7
+sidebar_position: 4
 ---
 
 ![](https://img.shields.io/badge/go-geth-lightblue)
 
-Signs tx and sends it to the pending pool for execution.
+get balance of native token
 
 :::warning
 It requires connected wallet.
 :::
 
 ```go
-func SendTransaction(txRequest types.TransactionRequest) (err error)
+func GetBalance() (balance *big.Int, err error)
 ```
 
 ```go
@@ -25,13 +25,10 @@ func main() {
 	w, _ := wallet.New("<privateKey>")
 	w.Connect(alchemy.GetProvider())
 
-	txRequest := types.TransactionRequest{
-		To:       "0x123",
-		ChainID:  big.NewInt(1),
-		GasLimit: 1000,
-		Data:     "0x123",
+	balance, err := w.GetBalance()
+	if err != nil {
+		panic(err)
 	}
-
-	w.SendTransaction(txRequest)
+	fmt.Println(balance)
 }
 ```

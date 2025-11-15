@@ -21,7 +21,7 @@ type Wallet interface {
 	// get address of wallet
 	GetAddress() string
 
-	// get balance of wallet
+	// get balance of native token
 	GetBalance() (balance *big.Int, err error)
 
 	// connect provider to wallet
