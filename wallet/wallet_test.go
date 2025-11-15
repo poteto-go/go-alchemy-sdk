@@ -75,6 +75,70 @@ func TestWallet_GetAddress(t *testing.T) {
 	assert.Equal(t, expected, addr)
 }
 
+func TestWallet_GetBalance(t *testing.T) {
+	t.Run("can get balance", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"GetBalance",
+			func(_ *ether.Ether, address string, blockTag string) (*big.Int, error) {
+				assert.Equal(t, address, w.GetAddress())
+				assert.Equal(t, blockTag, "latest")
+				return big.NewInt(100), nil
+			},
+		)
+
+		// Act
+		balance, err := w.GetBalance()
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, balance.Cmp(big.NewInt(100)), 0)
+	})
+
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		// Arrange
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.GetBalance()
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("if failed get balance, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock & Assert
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"GetBalance",
+			func(_ *ether.Ether, address string, blockTag string) (*big.Int, error) {
+				assert.Equal(t, address, w.GetAddress())
+				assert.Equal(t, blockTag, "latest")
+				return big.NewInt(0), errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.GetBalance()
+
+		// Assert
+		assert.Error(t, err)
+	})
+}
+
 func TestWallet_Connect(t *testing.T) {
 	t.Run("can set the provider to wallet", func(t *testing.T) {
 		// Arrange
