@@ -1,6 +1,7 @@
 name: Test
 
-on: [push]
+on:
+  pull_request:
 
 jobs:
   test:
@@ -22,7 +23,9 @@ jobs:
       - name: set env
         run: go env -w GOTOOLCHAIN=go1.25.1+auto
       - name: test coverage
-        run: go test ./... -cover -gcflags=all=-l
+        run: go test ./... -cover -gcflags=all=-l -coverprofile=coverage.out
         env:
           API_KEY: ${{ secrets.API_KEY }}
           ADDRESS: ${{ secrets.ADDRESS }}
+      - name: coverage report
+        uses: k1LoW/octocov-action@v1

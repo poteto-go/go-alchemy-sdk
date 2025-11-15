@@ -1,0 +1,22 @@
+coverage:
+  paths:
+    - coverage.out
+  badge:
+    path: _fixture/coverage.svg
+
+codeToTestRatio:
+  code:
+    - "**/*.go"
+    - "!**/*_test.go"
+  test:
+    - "**/*_test.go"
+
+coverage:
+  acceptable: 90%
+
+testExecutionTime:
+  if: true
+
+comment:
+  if: is_pull_request
+  hideFooterLink: true

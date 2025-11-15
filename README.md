@@ -1,3 +1,5 @@
+![coverage](_fixture/coverage.svg)
+
 # Go-Alchemy-Sdk
 
 golang sdk for alchemy, inspired by https://github.com/alchemyplatform/alchemy-sdk-js.
