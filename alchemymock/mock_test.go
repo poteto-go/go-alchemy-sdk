@@ -3,10 +3,8 @@ package alchemymock_test
 import (
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/alchemymock"
-	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -41,22 +39,11 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		}
 		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
 		defer alchemyMock.DeactivateAndReset()
-
-		config := gas.NewAlchemyConfig(setting)
-		provider := gas.NewAlchemyProvider(config)
-		eth := ether.NewEtherApi(
-			provider,
-			ether.NewEtherApiConfig(
-				"https://fuga.g.alchemy.com/v2/hoge",
-				0,
-				time.Duration(0),
-				nil,
-			),
-		).(*ether.Ether)
+		alchemy := gas.NewAlchemy(setting)
 
 		// Act
 		alchemyMock.RegisterResponder("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
-		balance, err := eth.GetBalance("hoge", "latest")
+		balance, err := alchemy.Core.GetBalance("0x", "latest")
 
 		// Assert
 		assert.NotNil(t, alchemyMock)
@@ -75,22 +62,11 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		}
 		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
 		defer alchemyMock.DeactivateAndReset()
-
-		config := gas.NewAlchemyConfig(setting)
-		provider := gas.NewAlchemyProvider(config)
-		eth := ether.NewEtherApi(
-			provider,
-			ether.NewEtherApiConfig(
-				"https://fuga.g.alchemy.com/v2/hoge",
-				0,
-				time.Duration(0),
-				nil,
-			),
-		).(*ether.Ether)
+		alchemy := gas.NewAlchemy(setting)
 
 		// Act
 		alchemyMock.RegisterResponder("eth_unexpected", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
-		_, err := eth.GetBalance("hoge", "latest")
+		_, err := alchemy.Core.GetBalance("0x", "latest")
 
 		// Assert
 		assert.Error(t, err)
@@ -107,22 +83,11 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		}
 		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
 		alchemyMock.DeactivateAndReset()
-
-		config := gas.NewAlchemyConfig(setting)
-		provider := gas.NewAlchemyProvider(config)
-		eth := ether.NewEtherApi(
-			provider,
-			ether.NewEtherApiConfig(
-				"https://fuga.g.alchemy.com/v2/hoge",
-				0,
-				time.Duration(0),
-				nil,
-			),
-		).(*ether.Ether)
+		alchemy := gas.NewAlchemy(setting)
 
 		// Act
 		alchemyMock.RegisterResponder("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
-		_, err := eth.GetBalance("hoge", "latest")
+		_, err := alchemy.Core.GetBalance("0x", "latest")
 
 		// Assert
 		assert.Error(t, err)
