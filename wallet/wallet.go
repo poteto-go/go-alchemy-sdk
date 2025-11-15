@@ -85,7 +85,7 @@ func (w *wallet) GetAddress() string {
 
 func (w *wallet) GetBalance() (*big.Int, error) {
 	if w.provider == nil {
-		return big.NewInt(0), constant.ErrWalletIsNotConnected
+		return nil, constant.ErrWalletIsNotConnected
 	}
 
 	balance, err := w.provider.Eth().GetBalance(w.GetAddress(), "latest")

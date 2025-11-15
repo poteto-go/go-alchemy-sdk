@@ -163,34 +163,38 @@ func TestFromBigHex(t *testing.T) {
 	t.Run("error case:", func(t *testing.T) {
 		t.Run("one letter => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
-			_, err := utils.FromBigHex("0")
+			val, err := utils.FromBigHex("0")
 
 			// Assert
 			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
+			assert.Nil(t, val)
 		})
 
 		t.Run("invalid hex string => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
-			_, err := utils.FromBigHex("unexpected")
+			val, err := utils.FromBigHex("unexpected")
 
 			// Assert
 			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
+			assert.Nil(t, val)
 		})
 
 		t.Run("not a hex number => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
-			_, err := utils.FromBigHex("0xGHIJ")
+			val, err := utils.FromBigHex("0xGHIJ")
 
 			// Assert
 			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
+			assert.Nil(t, val)
 		})
 
 		t.Run("missing 0x prefix => constant.ErrInvalidHexString", func(t *testing.T) {
 			// Act
-			_, err := utils.FromBigHex("12345")
+			val, err := utils.FromBigHex("12345")
 
 			// Assert
 			assert.ErrorIs(t, err, constant.ErrInvalidHexString)
+			assert.Nil(t, val)
 		})
 	})
 }

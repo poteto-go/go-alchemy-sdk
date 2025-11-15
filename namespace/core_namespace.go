@@ -123,7 +123,7 @@ func (c *Core) GetBlockNumber() (uint64, error) {
 func (c *Core) GetGasPrice() (*big.Int, error) {
 	price, err := c.ether.GasPrice()
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 	return price, nil
 }
@@ -131,7 +131,7 @@ func (c *Core) GetGasPrice() (*big.Int, error) {
 func (c *Core) GetBalance(address string, blockTag string) (*big.Int, error) {
 	balance, err := c.ether.GetBalance(address, blockTag)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 	return balance, nil
 }
@@ -222,7 +222,7 @@ func (c *Core) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 func (c *Core) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	estimatedGas, err := c.ether.EstimateGas(tx)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 
 	return estimatedGas, nil
