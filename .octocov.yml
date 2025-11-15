@@ -1,0 +1,30 @@
+coverage:
+  paths:
+    - coverage.out
+  badge:
+    path: _fixture/coverage.svg
+  acceptable: 90%
+
+codeToTestRatio:
+  code:
+    - "**/*.go"
+    - "!**/*_test.go"
+  test:
+    - "**/*_test.go"
+
+testExecutionTime:
+  if: true
+
+comment:
+  if: is_pull_request
+  hideFooterLink: true
+
+diff:
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
+
+report:
+  if: is_default_branch
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
+  hideFooterLink: true

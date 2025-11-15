@@ -2,3 +2,4 @@
 playground/
 .gemini/
 gha-creds-*.json
+coverage.out
