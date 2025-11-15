@@ -3,6 +3,7 @@ package wallet
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
@@ -17,7 +18,11 @@ import (
 
 // Wallet class inherits Signer and can sign transactions and messages using
 type Wallet interface {
+	// get address of wallet
 	GetAddress() string
+
+	// get balance of wallet
+	GetBalance() (balance *big.Int, err error)
 
 	// connect provider to wallet
 	Connect(provider types.IAlchemyProvider)
@@ -76,6 +81,18 @@ func New(privateKeyStr string) (Wallet, error) {
 func (w *wallet) GetAddress() string {
 	address := crypto.PubkeyToAddress(*w.publicKey)
 	return common.HexToAddress(address.Hex()).String()
+}
+
+func (w *wallet) GetBalance() (*big.Int, error) {
+	if w.provider == nil {
+		return big.NewInt(0), constant.ErrWalletIsNotConnected
+	}
+
+	balance, err := w.provider.Eth().GetBalance(w.GetAddress(), "latest")
+	if err != nil {
+		return nil, err
+	}
+	return balance, nil
 }
 
 func (w *wallet) Connect(provider types.IAlchemyProvider) {
