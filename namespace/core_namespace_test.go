@@ -150,15 +150,16 @@ func TestCore_GetGasPrice(t *testing.T) {
 				reflect.TypeOf(api),
 				"GasPrice",
 				func(_ *ether.Ether) (*big.Int, error) {
-					return big.NewInt(0), errExpected
+					return nil, errExpected
 				},
 			)
 
 			// Act
-			_, err := core.GetGasPrice()
+			price, err := core.GetGasPrice()
 
 			// Assert
 			assert.ErrorIs(t, errExpected, err)
+			assert.Nil(t, price)
 		})
 	})
 }
@@ -215,7 +216,7 @@ func TestCore_GetBalance(t *testing.T) {
 				func(_ *ether.Ether, _address string, _blockTag string) (*big.Int, error) {
 					assert.Equal(t, address, _address)
 					assert.Equal(t, blockTag, _blockTag)
-					return big.NewInt(0), errExpected
+					return nil, errExpected
 				},
 			)
 
@@ -224,7 +225,7 @@ func TestCore_GetBalance(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, errExpected, err)
-			assert.Equal(t, big.NewInt(0), balance)
+			assert.Nil(t, balance)
 		})
 	})
 }
@@ -825,15 +826,16 @@ func TestCore_EstimateGas(t *testing.T) {
 			"EstimateGas",
 			func(_ *ether.Ether, tx types.TransactionRequest) (*big.Int, error) {
 				assert.Equal(t, transaction, tx)
-				return big.NewInt(0), expectedErr
+				return nil, expectedErr
 			},
 		)
 
 		// Act
-		_, err := core.EstimateGas(transaction)
+		gas, err := core.EstimateGas(transaction)
 
 		// Assert
 		assert.Equal(t, expectedErr, err)
+		assert.Nil(t, gas)
 	})
 }
 

@@ -59,18 +59,18 @@ func FromBigHex(hexString string) (*big.Int, error) {
 	}
 
 	if len(hexString) <= 1 {
-		return big.NewInt(0), constant.ErrInvalidHexString
+		return nil, constant.ErrInvalidHexString
 	}
 
 	if hexString[0:2] != "0x" {
-		return big.NewInt(0), constant.ErrInvalidHexString
+		return nil, constant.ErrInvalidHexString
 	}
 
 	// remove 0x
 	i := new(big.Int)
 	num, ok := i.SetString(hexString[2:], 16)
 	if !ok {
-		return big.NewInt(0), constant.ErrInvalidHexString
+		return nil, constant.ErrInvalidHexString
 	}
 
 	if num.Cmp(big.NewInt(0)) == 0 {

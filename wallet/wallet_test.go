@@ -107,10 +107,11 @@ func TestWallet_GetBalance(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.GetBalance()
+		balance, err := w.GetBalance()
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+		assert.Nil(t, balance)
 	})
 
 	t.Run("if failed get balance, return error", func(t *testing.T) {
@@ -127,15 +128,16 @@ func TestWallet_GetBalance(t *testing.T) {
 			func(_ *ether.Ether, address string, blockTag string) (*big.Int, error) {
 				assert.Equal(t, address, w.GetAddress())
 				assert.Equal(t, blockTag, "latest")
-				return big.NewInt(0), errors.New("error")
+				return nil, errors.New("error")
 			},
 		)
 
 		// Act
-		_, err := w.GetBalance()
+		balance, err := w.GetBalance()
 
 		// Assert
 		assert.Error(t, err)
+		assert.Nil(t, balance)
 	})
 }
 

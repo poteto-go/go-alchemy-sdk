@@ -64,7 +64,7 @@ func (ether *Ether) BlockNumber() (uint64, error) {
 func (ether *Ether) GasPrice() (*big.Int, error) {
 	client, err := ether.GetEthClient()
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 	defer client.Close()
 
@@ -74,7 +74,7 @@ func (ether *Ether) GasPrice() (*big.Int, error) {
 		client.SuggestGasPrice,
 	)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 
 	return res, nil
@@ -82,7 +82,7 @@ func (ether *Ether) GasPrice() (*big.Int, error) {
 
 func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error) {
 	if err := utils.ValidateBlockTag(blockTag); err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 
 	balanceHex, err := ether.provider.Send(
@@ -93,12 +93,12 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 		},
 	)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 
 	balance, err := utils.FromBigHex(balanceHex.(string))
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 	return balance, nil
 }
@@ -278,14 +278,14 @@ func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	client, err := ether.GetEthClient()
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 	defer client.Close()
 
 	toAddress := common.HexToAddress(tx.To)
 	value, err := utils.FromBigHex(tx.Value)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 
 	res, err := internal.GethRequestArgWithBackOff(
@@ -299,7 +299,7 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 		},
 	)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 
 	// NOTE: this is false positive
@@ -310,7 +310,7 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 func (ether *Ether) SuggestGasPrice() (*big.Int, error) {
 	client, err := ether.GetEthClient()
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 	defer client.Close()
 
@@ -320,7 +320,7 @@ func (ether *Ether) SuggestGasPrice() (*big.Int, error) {
 		client.SuggestGasPrice,
 	)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 
 	return res, nil
@@ -489,7 +489,7 @@ func (ether *Ether) SendRawTransaction(signedTx *gethTypes.Transaction) error {
 func (ether *Ether) ChainID() (*big.Int, error) {
 	client, err := ether.GetEthClient()
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 	defer client.Close()
 
@@ -499,7 +499,7 @@ func (ether *Ether) ChainID() (*big.Int, error) {
 		client.ChainID,
 	)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 
 	return res, nil
