@@ -5,7 +5,7 @@ on:
 
 jobs:
   setup-testnet:
-    uses: ./.github/workflows/kurtosis.yaml
+    uses: ./.github/workflows/_kurtosis.yaml
 
   test:
     needs: setup-testnet
@@ -18,12 +18,15 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
       - name: Use golang
         uses: actions/setup-go@v5
         with:
           go-version: "1.25.1"
+
       - name: install dependencies
         run: go mod download
+
       - name: set env
         run: go env -w GOTOOLCHAIN=go1.25.1+auto
 
@@ -33,6 +36,7 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           ADDRESS: ${{ secrets.ADDRESS }}
           RPC_PORT: ${{ needs.setup-testnet.outputs.port }}
+
       - name: coverage report
         uses: k1LoW/octocov-action@v1
 
