@@ -1,0 +1,27 @@
+name: Kurtosis Testnet Setup
+
+on:
+  workflow_call:
+    outputs:
+      port:
+        description: "The detected RPC port for the Kurtosis testnet"
+        value: ${{ jobs.kurtosis.outputs.port }}
+
+jobs:
+  kurtosis:
+    runs-on: ubuntu-latest
+    outputs:
+      port: ${{ steps.detect-port.outputs.port }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Kurtosis
+        run: bash _fixture/kurtosis/scripts/install-kurtosis.sh
+
+      - name: Run Kurtosis
+        run: bash _fixture/kurtosis/scripts/run.sh
+
+      - name: Detect RPC Port
+        id: detect-port
+        run: echo "port=$(bash _fixture/kurtosis/scripts/detect-rpc-port.sh)" >> $GITHUB_OUTPUT

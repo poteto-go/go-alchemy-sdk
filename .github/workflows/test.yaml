@@ -4,7 +4,11 @@ on:
   pull_request:
 
 jobs:
+  setup-testnet:
+    uses: ./.github/workflows/kurtosis.yaml
+
   test:
+    needs: setup-testnet
     runs-on: ubuntu-latest
 
     defaults:
@@ -22,10 +26,16 @@ jobs:
         run: go mod download
       - name: set env
         run: go env -w GOTOOLCHAIN=go1.25.1+auto
+
       - name: test coverage
         run: go test ./... -cover -gcflags=all=-l -coverprofile=coverage.out
         env:
           API_KEY: ${{ secrets.API_KEY }}
           ADDRESS: ${{ secrets.ADDRESS }}
+          RPC_PORT: ${{ needs.setup-testnet.outputs.port }}
       - name: coverage report
         uses: k1LoW/octocov-action@v1
+
+      - name: Cleanup Kurtosis
+        if: always()
+        run: bash _fixture/kurtosis/scripts/clean-up.sh

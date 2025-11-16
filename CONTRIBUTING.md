@@ -20,6 +20,6 @@ cp .example.env .env
 - Link issue into commit. `<your message> refs: #<issue-number>` to the commit message
 - Write UT as much as possible
 - PASS the UT (\*you need `-gcflags=all=-l`)
-  `go test ./... -cover -gcflags=all=-l`
+  `go list ./... | grep -v "e2e" | xargs go test -cover -gcflags=all=-l -coverprofile=coverage.out`
 - PASS the linter
 - Crate PR
