@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"math/big"
 	"os"
 	"strconv"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var initAddress = "0x8943545177806ED17B9F23F0a21ee5948eCaa776"
 var alchemy gas.Alchemy
 
 func TestMain(m *testing.M) {
@@ -37,9 +39,9 @@ func setup() {
 func teardown() {
 }
 
-func TestScenario_GetBlockNumber(t *testing.T) {
-	blockNumber, err := alchemy.Core.GetBlockNumber()
+func TestScenario_GetBalance(t *testing.T) {
+	balance, err := alchemy.Core.GetBalance(initAddress, "latest")
 
 	assert.Nil(t, err)
-	assert.NotEmpty(t, blockNumber)
+	assert.Equal(t, balance.Cmp(big.NewInt(0)), 1)
 }
