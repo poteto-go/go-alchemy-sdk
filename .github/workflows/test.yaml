@@ -39,8 +39,10 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           ADDRESS: ${{ secrets.ADDRESS }}
           RPC_PORT: ${{ steps.detect-port.outputs.port }}
+
       - name: coverage report
         uses: k1LoW/octocov-action@v1
+
       - name: Cleanup Kurtosis
         if: always()
         run: bash _fixture/kurtosis/scripts/clean-up.sh
