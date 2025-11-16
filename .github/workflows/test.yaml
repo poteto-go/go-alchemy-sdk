@@ -4,45 +4,66 @@ on:
   pull_request:
 
 jobs:
-  test:
+  setup:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: .
+    outputs:
+      port: ${{ steps.detect-port.outputs.port }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Use golang
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.25.1"
-      - name: install dependencies
-        run: go mod download
-      - name: set env
-        run: go env -w GOTOOLCHAIN=go1.25.1+auto
 
       - name: Install Kurtosis
         run: bash _fixture/kurtosis/scripts/install-kurtosis.sh
 
-      - name: Run Kurtosis
-        run: bash _fixture/kurtosis/scripts/run.sh
+      - name: Run Kurtosis enclave
+        run: kurtosis run --enclave gas-testnet github.com/ethpandaops/ethereum-package --args-file _fixture/kurtosis/network_params.yaml
 
       - name: Detect RPC Port
         id: detect-port
         run: echo "port=$(bash _fixture/kurtosis/scripts/detect-rpc-port.sh)" >> $GITHUB_OUTPUT
+
+  test:
+    needs: setup
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.1"
+
+      - name: install dependencies
+        run: go mod download
+
+      - name: set env
+        run: go env -w GOTOOLCHAIN=go1.25.1+auto
 
       - name: test coverage
         run: go test ./... -cover -gcflags=all=-l -coverprofile=coverage.out
         env:
           API_KEY: ${{ secrets.API_KEY }}
           ADDRESS: ${{ secrets.ADDRESS }}
-          RPC_PORT: ${{ steps.detect-port.outputs.port }}
-
+          RPC_PORT: ${{ needs.setup.outputs.port }}
       - name: coverage report
+
         uses: k1LoW/octocov-action@v1
 
+  cleanup:
+    needs: [setup, test]
+
+    if: always()
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Cleanup Kurtosis
-        if: always()
         run: bash _fixture/kurtosis/scripts/clean-up.sh
