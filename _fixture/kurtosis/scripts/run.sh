@@ -1,4 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-kurtosis run --enclave gas-testnet github.com/ethpandaops/ethereum-package --args-file network_params.yaml
+SCRIPT_DIR=$(dirname "$0")
+PARAMS_FILE_PATH="$SCRIPT_DIR/../network_params.yaml"
+
+kurtosis run --enclave gas-testnet github.com/ethpandaops/ethereum-package --args-file "$PARAMS_FILE_PATH"
