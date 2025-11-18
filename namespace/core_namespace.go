@@ -149,7 +149,7 @@ func (c *Core) GetCode(address string, arg types.BlockTagOrHash) (string, error)
 		return code, nil
 	}
 
-	code, err := c.ether.CodeAt(address, arg.BlockHash)
+	code, err := c.ether.CodeAt(address, arg.BlockTag)
 	if err != nil {
 		return "", err
 	}
