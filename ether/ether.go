@@ -394,7 +394,7 @@ func (ether *Ether) GetBlockByNumber(blockNumber string) (*gethTypes.Block, erro
 	}
 	defer client.Close()
 
-	bigBlockNumber, err := utils.FromBigHex(blockNumber)
+	bigBlockNumber, err := utils.ToBlockNumber(blockNumber)
 	if err != nil {
 		return nil, err
 	}
