@@ -130,23 +130,51 @@ func TransformAlchemyLogToGeth(log types.LogResponse) (*gethTypes.Log, error) {
 	}, nil
 }
 
-func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (*gethTypes.AccessListTx, error) {
+func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTypes.TxData, error) {
 	toAddress := common.HexToAddress(txRequest.To)
 	value, err := FromBigHex(txRequest.Value)
 	if err != nil {
 		return nil, err
 	}
 
-	txData := gethTypes.AccessListTx{
-		To:       &toAddress,
-		ChainID:  txRequest.ChainID,
+	data := common.FromHex(txRequest.Data)
+
+	// EIP-1559 (DynamicFeeTx)
+	if txRequest.MaxFeePerGas != nil || txRequest.MaxPriorityFeePerGas != nil {
+		return &gethTypes.DynamicFeeTx{
+			ChainID:    txRequest.ChainID,
+			Nonce:      txRequest.Nonce,
+			GasTipCap:  txRequest.MaxPriorityFeePerGas,
+			GasFeeCap:  txRequest.MaxFeePerGas,
+			Gas:        txRequest.GasLimit,
+			To:         &toAddress,
+			Value:      value,
+			Data:       data,
+			AccessList: gethTypes.AccessList{},
+		}, nil
+	}
+
+	// EIP-2930 (AccessListTx)
+	if txRequest.AccessList != nil {
+		return &gethTypes.AccessListTx{
+			ChainID:    txRequest.ChainID,
+			Nonce:      txRequest.Nonce,
+			GasPrice:   txRequest.GasPrice,
+			Gas:        txRequest.GasLimit,
+			To:         &toAddress,
+			Value:      value,
+			Data:       data,
+			AccessList: gethTypes.AccessList{},
+		}, nil
+	}
+
+	// LegacyTx (Type 0)
+	return &gethTypes.LegacyTx{
 		Nonce:    txRequest.Nonce,
 		GasPrice: txRequest.GasPrice,
 		Gas:      txRequest.GasLimit,
+		To:       &toAddress,
 		Value:    value,
-		Data:     common.FromHex(txRequest.Data),
-		// TODO: access list
-	}
-
-	return &txData, nil
+		Data:     data,
+	}, nil
 }

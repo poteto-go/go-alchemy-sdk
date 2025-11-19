@@ -104,6 +104,19 @@ func TestScenario_SendTransaction(t *testing.T) {
 		// on github workflows, pendingNonce=0
 		// assert.NotEqual(t, pendingNonce, uint64(0))
 	})
+
+	t.Run("can send transaciton", func(t *testing.T) {
+		txRequest := types.TransactionRequest{
+			From:     initAddress,
+			To:       otherAddress,
+			Value:    "0x123",
+			GasLimit: 300000,
+		}
+
+		err := w.SendTransaction(txRequest)
+
+		assert.Nil(t, err)
+	})
 }
 
 func TestSenario_DeployContract(t *testing.T) {
