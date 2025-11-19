@@ -246,19 +246,28 @@ func TestWallet_SignTx(t *testing.T) {
 			},
 		)
 
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+
 		// Act
 		signedTx, err := w.SignTx(txRequest)
 
 		// Assert
 		assert.Nil(t, err)
+		assert.Equal(t, txRequest.ChainID, signedTx.ChainId())
 		assert.Equal(t, txRequest.GasLimit, signedTx.Gas())
 		assert.Equal(t, estimatedGasPrice, signedTx.GasPrice())
 		assert.Equal(t, reservedNonce, signedTx.Nonce())
 		assert.Equal(t, "0x0000000000000000000000000000000000000123", signedTx.To().Hex())
 		v, r, s := signedTx.RawSignatureValues()
-		assert.Equal(t, v.Cmp(big.NewInt(1)), 0)
-		assert.Equal(t, common.BigToHash(r).Hex(), "0x30282c4886900c1309d12e53d1373fc675d905adc84d54e5a2b4afdda2490c07")
-		assert.Equal(t, common.BigToHash(s).Hex(), "0x75129dbf83fd1f473464bb1788ae136059d23c2786220da9d9f65ce8cfabb388")
+		assert.Equal(t, v.Cmp(big.NewInt(3)), 1)
+		assert.Equal(t, common.BigToHash(r).Hex(), "0x75ea94b2f16c4cd67f1a2cc8f35659a434ea7b6f7704dd062f6686d865547fab")
+		assert.Equal(t, common.BigToHash(s).Hex(), "0x2af447088ccf07c8742b3cd428d77580ab21e8e88340fbfb20ae7a747d86ca21")
 	})
 
 	t.Run("if wallet is not connected, return error", func(t *testing.T) {
@@ -315,6 +324,45 @@ func TestWallet_SignTx(t *testing.T) {
 			reflect.TypeOf(w.provider.Eth()),
 			"EstimateGas",
 			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(types.TransactionRequest{})
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if error occur on Eth.ChainId", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
+				return big.NewInt(100), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
 				return nil, errors.New("error")
 			},
 		)
@@ -383,9 +431,17 @@ func TestWallet_SignTx(t *testing.T) {
 			},
 		)
 
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+
 		patches.ApplyFunc(
 			utils.TransformTxRequestToGethTxData,
-			func(_ types.TransactionRequest) (*gethTypes.AccessListTx, error) {
+			func(_ types.TransactionRequest) (gethTypes.TxData, error) {
 				return nil, errors.New("error")
 			},
 		)

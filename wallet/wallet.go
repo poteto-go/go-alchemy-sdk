@@ -142,12 +142,7 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 			estimatedGas.Uint64(),
 		)
 	}
-
-	gasPrice, err := w.provider.Eth().SuggestGasPrice()
-	if err != nil {
-		return nil, err
-	}
-	txRequest.GasPrice = gasPrice
+	txRequest.GasPrice = estimatedGas
 
 	chainID, err := w.provider.Eth().ChainID()
 	if err != nil {
