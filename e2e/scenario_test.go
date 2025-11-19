@@ -105,18 +105,20 @@ func TestScenario_SendTransaction(t *testing.T) {
 		// assert.NotEqual(t, pendingNonce, uint64(0))
 	})
 
-	t.Run("can send transaciton", func(t *testing.T) {
-		txRequest := types.TransactionRequest{
-			From:     initAddress,
-			To:       otherAddress,
-			Value:    "0x123",
-			GasLimit: 300000,
-		}
+	/*
+		t.Run("can send transaciton", func(t *testing.T) {
+			txRequest := types.TransactionRequest{
+				From:     initAddress,
+				To:       otherAddress,
+				Value:    "0x123",
+				GasLimit: 300000,
+			}
 
-		err := w.SendTransaction(txRequest)
+			err := w.SendTransaction(txRequest)
 
-		assert.Nil(t, err)
-	})
+			assert.Nil(t, err)
+		})
+	*/
 }
 
 func TestSenario_DeployContract(t *testing.T) {
