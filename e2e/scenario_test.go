@@ -91,36 +91,6 @@ func TestScenario_GetBalance(t *testing.T) {
 	})
 }
 
-func TestScenario_SendTransaction(t *testing.T) {
-	w, err := wallet.New(initPrivateKey)
-
-	assert.Nil(t, err)
-	w.Connect(alchemy.GetProvider())
-
-	t.Run("can get pending nonce", func(t *testing.T) {
-		_, err := w.PendingNonceAt()
-
-		assert.Nil(t, err)
-		// on github workflows, pendingNonce=0
-		// assert.NotEqual(t, pendingNonce, uint64(0))
-	})
-
-	/*
-		t.Run("can send transaciton", func(t *testing.T) {
-			txRequest := types.TransactionRequest{
-				From:     initAddress,
-				To:       otherAddress,
-				Value:    "0x123",
-				GasLimit: 300000,
-			}
-
-			err := w.SendTransaction(txRequest)
-
-			assert.Nil(t, err)
-		})
-	*/
-}
-
 func TestSenario_DeployContract(t *testing.T) {
 	t.Run("1. can create wallet 2. connect wallet 3. can deploy contract", func(t *testing.T) {
 		w, err := wallet.New(initPrivateKey)
@@ -184,5 +154,33 @@ func TestSenario_DeployContract(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Greater(t, blockNumber, uint64(0))
 		})
+	})
+}
+
+func TestScenario_SendTransaction(t *testing.T) {
+	w, err := wallet.New(initPrivateKey)
+
+	assert.Nil(t, err)
+	w.Connect(alchemy.GetProvider())
+
+	t.Run("can get pending nonce", func(t *testing.T) {
+		_, err := w.PendingNonceAt()
+
+		assert.Nil(t, err)
+		// on github workflows, pendingNonce=0
+		// assert.NotEqual(t, pendingNonce, uint64(0))
+	})
+
+	t.Run("can send transaciton", func(t *testing.T) {
+		txRequest := types.TransactionRequest{
+			From:     initAddress,
+			To:       otherAddress,
+			Value:    "0x123",
+			GasLimit: 300000,
+		}
+
+		err := w.SendTransaction(txRequest)
+
+		assert.Nil(t, err)
 	})
 }
