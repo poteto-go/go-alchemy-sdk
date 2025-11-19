@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -397,27 +398,88 @@ func TestTransformAlchemyLogToGeth(t *testing.T) {
 }
 
 func TestTransformTxRequestToGethTxData(t *testing.T) {
-	t.Run("can transform txRequest to geth.AccessListTx", func(t *testing.T) {
+	t.Run("can transform txRequest to geth.LegacyTx", func(t *testing.T) {
 		txRequest := types.TransactionRequest{
 			To:       "0x123",
-			ChainID:  big.NewInt(0),
+			ChainID:  big.NewInt(1),
 			Nonce:    0,
-			GasPrice: big.NewInt(0),
-			GasLimit: 0,
+			GasPrice: big.NewInt(10),
+			GasLimit: 21000,
 			Value:    "0x123",
 			Data:     "0x123",
 		}
 
-		txData, _ := utils.TransformTxRequestToGethTxData(txRequest)
+		txData, err := utils.TransformTxRequestToGethTxData(txRequest)
+		assert.Nil(t, err)
 
-		assert.Equal(t, txData.To.Hex(), "0x0000000000000000000000000000000000000123")
-		assert.Equal(t, txData.ChainID, txRequest.ChainID)
-		assert.Equal(t, txData.Nonce, txRequest.Nonce)
-		assert.Equal(t, txData.GasPrice, txRequest.GasPrice)
-		assert.Equal(t, txData.Gas, txRequest.GasLimit)
+		legacyTx, ok := txData.(*gethTypes.LegacyTx)
+		assert.True(t, ok, "should return LegacyTx")
+
+		assert.Equal(t, legacyTx.To.Hex(), "0x0000000000000000000000000000000000000123")
+		assert.Equal(t, legacyTx.Nonce, txRequest.Nonce)
+		assert.Equal(t, legacyTx.GasPrice, txRequest.GasPrice)
+		assert.Equal(t, legacyTx.Gas, txRequest.GasLimit)
 		value, _ := utils.FromBigHex(txRequest.Value)
-		assert.Equal(t, txData.Value, value)
-		assert.Equal(t, string(txData.Data), string(common.FromHex(txRequest.Data)))
+		assert.Equal(t, legacyTx.Value, value)
+		assert.Equal(t, string(legacyTx.Data), string(common.FromHex(txRequest.Data)))
+	})
+
+	t.Run("can transform txRequest to geth.DynamicFeeTx", func(t *testing.T) {
+		txRequest := types.TransactionRequest{
+			To:                   "0x123",
+			ChainID:              big.NewInt(1),
+			Nonce:                0,
+			MaxFeePerGas:         big.NewInt(20),
+			MaxPriorityFeePerGas: big.NewInt(2),
+			GasLimit:             21000,
+			Value:                "0x123",
+			Data:                 "0x123",
+		}
+
+		txData, err := utils.TransformTxRequestToGethTxData(txRequest)
+		assert.Nil(t, err)
+
+		dynamicTx, ok := txData.(*gethTypes.DynamicFeeTx)
+		assert.True(t, ok, "should return DynamicFeeTx")
+
+		assert.Equal(t, dynamicTx.To.Hex(), "0x0000000000000000000000000000000000000123")
+		assert.Equal(t, dynamicTx.ChainID, txRequest.ChainID)
+		assert.Equal(t, dynamicTx.Nonce, txRequest.Nonce)
+		assert.Equal(t, dynamicTx.GasFeeCap, txRequest.MaxFeePerGas)
+		assert.Equal(t, dynamicTx.GasTipCap, txRequest.MaxPriorityFeePerGas)
+		assert.Equal(t, dynamicTx.Gas, txRequest.GasLimit)
+		value, _ := utils.FromBigHex(txRequest.Value)
+		assert.Equal(t, dynamicTx.Value, value)
+		assert.Equal(t, string(dynamicTx.Data), string(common.FromHex(txRequest.Data)))
+	})
+
+	t.Run("can transform txRequest to geth.AccessListTx", func(t *testing.T) {
+		accessList := []string{}
+		txRequest := types.TransactionRequest{
+			To:         "0x123",
+			ChainID:    big.NewInt(1),
+			Nonce:      0,
+			GasPrice:   big.NewInt(10),
+			GasLimit:   21000,
+			Value:      "0x123",
+			Data:       "0x123",
+			AccessList: &accessList,
+		}
+
+		txData, err := utils.TransformTxRequestToGethTxData(txRequest)
+		assert.Nil(t, err)
+
+		accessListTx, ok := txData.(*gethTypes.AccessListTx)
+		assert.True(t, ok, "should return AccessListTx")
+
+		assert.Equal(t, accessListTx.To.Hex(), "0x0000000000000000000000000000000000000123")
+		assert.Equal(t, accessListTx.ChainID, txRequest.ChainID)
+		assert.Equal(t, accessListTx.Nonce, txRequest.Nonce)
+		assert.Equal(t, accessListTx.GasPrice, txRequest.GasPrice)
+		assert.Equal(t, accessListTx.Gas, txRequest.GasLimit)
+		value, _ := utils.FromBigHex(txRequest.Value)
+		assert.Equal(t, accessListTx.Value, value)
+		assert.Equal(t, string(accessListTx.Data), string(common.FromHex(txRequest.Data)))
 	})
 
 	t.Run("if failed from big hex, return error", func(t *testing.T) {

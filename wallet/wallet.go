@@ -130,19 +130,25 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	}
 	txRequest.Nonce = nonce
 
-	gasPrice, err := w.provider.Eth().EstimateGas(txRequest)
+	// just use for check gas limit
+	estimatedGas, err := w.provider.Eth().EstimateGas(txRequest)
 	if err != nil {
 		return nil, err
 	}
-	txRequest.GasPrice = gasPrice
-
-	if txRequest.GasLimit <= txRequest.GasPrice.Uint64() {
+	if txRequest.GasLimit < estimatedGas.Uint64() {
 		return nil, fmt.Errorf(
-			"gasLimit(%d) is expected over estimated gasPrice %d",
+			"gasLimit(%d) is less than estimated gas %d",
 			txRequest.GasLimit,
-			txRequest.GasPrice.Uint64(),
+			estimatedGas.Uint64(),
 		)
 	}
+	txRequest.GasPrice = estimatedGas
+
+	chainID, err := w.provider.Eth().ChainID()
+	if err != nil {
+		return nil, err
+	}
+	txRequest.ChainID = chainID
 
 	txData, err := utils.TransformTxRequestToGethTxData(txRequest)
 	if err != nil {
@@ -150,7 +156,7 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	}
 	tx := gethTypes.NewTx(txData)
 
-	latestEIP155Signer := gethTypes.LatestSignerForChainID(txData.ChainID)
+	latestEIP155Signer := gethTypes.LatestSignerForChainID(txRequest.ChainID)
 	signedTx, err := gethTypes.SignTx(tx, latestEIP155Signer, w.privateKey)
 	if err != nil {
 		return nil, err
