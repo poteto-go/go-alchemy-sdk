@@ -164,14 +164,17 @@ func TestScenario_SendTransaction(t *testing.T) {
 	w.Connect(alchemy.GetProvider())
 
 	t.Run("can get pending nonce", func(t *testing.T) {
-		_, err := w.PendingNonceAt()
+		pendingNonce, err := w.PendingNonceAt()
 
 		assert.Nil(t, err)
-		// on github workflows, pendingNonce=0
-		// assert.NotEqual(t, pendingNonce, uint64(0))
+		assert.Equal(t, pendingNonce, uint64(0)) // first transaction
 	})
 
 	t.Run("can send transaciton", func(t *testing.T) {
+		balance, err := w.GetBalance()
+
+		assert.Nil(t, err)
+
 		txRequest := types.TransactionRequest{
 			From:     initAddress,
 			To:       otherAddress,
@@ -179,8 +182,13 @@ func TestScenario_SendTransaction(t *testing.T) {
 			GasLimit: 300000,
 		}
 
-		err := w.SendTransaction(txRequest)
+		err = w.SendTransaction(txRequest)
 
 		assert.Nil(t, err)
+
+		afterBalance, err := w.GetBalance()
+
+		assert.Nil(t, err)
+		assert.Equal(t, balance.Cmp(afterBalance), 1)
 	})
 }
