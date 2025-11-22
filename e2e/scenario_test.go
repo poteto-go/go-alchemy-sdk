@@ -19,7 +19,6 @@ import (
 var initPrivateKey = "bcdf20249abf0ed6d944c0288fad489e33f66b3960d9e6229c1cd214ed3bbe31"
 var initAddress = "0x8943545177806ED17B9F23F0a21ee5948eCaa776"
 var otherAddress = "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
-var otherInitAddress = "39725efee3fb28614de3bacaffe4cc4bd8c436257e2c8bb887c4b5c4be45e76d"
 var deployedContractAddress common.Address
 var alchemy gas.Alchemy
 
@@ -172,6 +171,10 @@ func TestScenario_SendTransaction(t *testing.T) {
 	})
 
 	t.Run("can send transaciton", func(t *testing.T) {
+		balance, err := w.GetBalance()
+
+		assert.Nil(t, err)
+
 		txRequest := types.TransactionRequest{
 			From:     initAddress,
 			To:       otherAddress,
@@ -179,8 +182,14 @@ func TestScenario_SendTransaction(t *testing.T) {
 			GasLimit: 300000,
 		}
 
-		err := w.SendTransaction(txRequest)
+		err = w.SendTransaction(txRequest)
 
 		assert.Nil(t, err)
+
+		// check ether is moved
+		afterBalance, err := w.GetBalance()
+
+		assert.Nil(t, err)
+		assert.Equal(t, afterBalance.Cmp(balance), -1)
 	})
 }
