@@ -4,7 +4,8 @@ on:
   pull_request:
 
 jobs:
-  test:
+  unit-test:
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     defaults:
@@ -20,10 +21,46 @@ jobs:
         with:
           go-version: "1.25.1"
 
-      - name: install dependencies
+      - name: Install dependencies
         run: go mod download
 
-      - name: set env
+      - name: Set env
+        run: go env -w GOTOOLCHAIN=go1.25.1+auto
+
+      - name: Run Unit Tests
+        run: go test $(go list ./... | grep -v /e2e) -cover -gcflags=all=-l -coverprofile=coverage_unit.out
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          ADDRESS: ${{ secrets.ADDRESS }}
+
+      - name: Upload Unit Test Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage_unit.out
+          retention-days: 1
+
+  e2e-test:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.1"
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Set env
         run: go env -w GOTOOLCHAIN=go1.25.1+auto
 
       - name: Install Kurtosis
@@ -32,20 +69,75 @@ jobs:
       - name: Run Kurtosis
         run: bash _fixture/kurtosis/scripts/run.sh
 
+      - name: Wait for EL/CL Sync
+        run: |
+          echo "Waiting for EL and CL synchronization..."
+          timeout 300 bash -c 'until kurtosis service logs gas-testnet cl-1-lighthouse-geth --match Synced 2>/dev/null | grep -q "Synced"; do echo "Still syncing..."; sleep 5; done' || (echo "Sync timeout after 5 minutes" && exit 1)
+          echo "Synchronization completed!"
+
       - name: Detect RPC Port
         id: detect-port
         run: echo "port=$(bash _fixture/kurtosis/scripts/detect-rpc-port.sh)" >> $GITHUB_OUTPUT
 
-      - name: test coverage
-        run: go test ./... -cover -gcflags=all=-l -coverprofile=coverage.out
+      - name: Verify Kurtosis Network Connection
+        run: |
+          echo "Verifying connection to Kurtosis network on localhost:${{ steps.detect-port.outputs.port }}"
+          curl -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:${{ steps.detect-port.outputs.port }} || (echo "Failed to connect to Kurtosis network" && exit 1)
+          echo "Successfully connected to Kurtosis network!"
+
+      - name: Run E2E Tests
+        run: go test ./e2e/... -cover -gcflags=all=-l -coverprofile=coverage_e2e.out
         env:
           API_KEY: ${{ secrets.API_KEY }}
           ADDRESS: ${{ secrets.ADDRESS }}
           RPC_PORT: ${{ steps.detect-port.outputs.port }}
 
-      - name: coverage report
-        uses: k1LoW/octocov-action@v1
+      - name: Upload E2E Test Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-e2e
+          path: coverage_e2e.out
+          retention-days: 1
 
       - name: Cleanup Kurtosis
         if: always()
         run: bash _fixture/kurtosis/scripts/clean-up.sh
+
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: [unit-test, e2e-test]
+    if: always()
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download Unit Test Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit
+        continue-on-error: true
+
+      - name: Download E2E Test Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-e2e
+        continue-on-error: true
+
+      - name: Merge Coverage Reports
+        run: |
+          echo "mode: set" > coverage.out
+          if [ -f coverage_unit.out ]; then
+            grep -h -v "^mode:" coverage_unit.out >> coverage.out
+          fi
+          if [ -f coverage_e2e.out ]; then
+            grep -h -v "^mode:" coverage_e2e.out >> coverage.out
+          fi
+
+      - name: Coverage Report
+        uses: k1LoW/octocov-action@v1
