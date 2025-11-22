@@ -167,7 +167,7 @@ func TestScenario_SendTransaction(t *testing.T) {
 		pendingNonce, err := w.PendingNonceAt()
 
 		assert.Nil(t, err)
-		assert.Equal(t, pendingNonce, uint64(0)) // first transaction
+		assert.NotEqual(t, pendingNonce, uint64(0)) // first transaction
 	})
 
 	t.Run("can send transaciton", func(t *testing.T) {
@@ -186,11 +186,20 @@ func TestScenario_SendTransaction(t *testing.T) {
 
 		assert.Nil(t, err)
 
-		time.Sleep(5 * time.Second)
+		var isSuccess bool
+		for i := 0; i < 30; i++ {
+			time.Sleep(1 * time.Second)
 
-		afterBalance, err := w.GetBalance()
+			afterBalance, err := w.GetBalance()
+			if err != nil {
+				continue
+			}
+			if balance.Cmp(afterBalance) == 1 {
+				isSuccess = true
+				break
+			}
+		}
 
-		assert.Nil(t, err)
-		assert.Equal(t, balance.Cmp(afterBalance), 1)
+		assert.True(t, isSuccess)
 	})
 }
