@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
@@ -185,6 +186,8 @@ func TestScenario_SendTransaction(t *testing.T) {
 		err = w.SendTransaction(txRequest)
 
 		assert.Nil(t, err)
+
+		time.Sleep(5 * time.Second)
 
 		afterBalance, err := w.GetBalance()
 
