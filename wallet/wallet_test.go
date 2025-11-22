@@ -551,10 +551,11 @@ func TestWallet_SendTransaction(t *testing.T) {
 		)
 
 		// Act
-		err := w.SendTransaction(txRequest)
+		txHash, err := w.SendTransaction(txRequest)
 
 		// Assert
 		assert.Nil(t, err)
+		assert.Equal(t, signedTx.Hash(), txHash)
 	})
 
 	t.Run("if wallet is not connected, return error", func(t *testing.T) {
@@ -562,7 +563,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		err := w.SendTransaction(txRequest)
+		_, err := w.SendTransaction(txRequest)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -585,7 +586,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		)
 
 		// Act
-		err := w.SendTransaction(txRequest)
+		_, err := w.SendTransaction(txRequest)
 
 		// Assert
 		assert.Error(t, err)
@@ -615,7 +616,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		)
 
 		// Act
-		err := w.SendTransaction(types.TransactionRequest{})
+		_, err := w.SendTransaction(types.TransactionRequest{})
 
 		// Assert
 		assert.Error(t, err)

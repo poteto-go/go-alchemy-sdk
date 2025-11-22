@@ -86,18 +86,11 @@ jobs:
           echo "Successfully connected to Kurtosis network!"
 
       - name: Run E2E Tests
-        run: go test ./e2e/... -cover -gcflags=all=-l -coverprofile=coverage_e2e.out
+        run: go test ./e2e/
         env:
           API_KEY: ${{ secrets.API_KEY }}
           ADDRESS: ${{ secrets.ADDRESS }}
           RPC_PORT: ${{ steps.detect-port.outputs.port }}
-
-      - name: Upload E2E Test Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-e2e
-          path: coverage_e2e.out
-          retention-days: 1
 
       - name: Cleanup Kurtosis
         if: always()
@@ -106,12 +99,8 @@ jobs:
   coverage-report:
     name: Coverage Report
     runs-on: ubuntu-latest
-    needs: [unit-test, e2e-test]
+    needs: [unit-test]
     if: always()
-
-    defaults:
-      run:
-        working-directory: .
 
     steps:
       - name: Checkout repo
@@ -121,23 +110,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-unit
-        continue-on-error: true
 
-      - name: Download E2E Test Coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-e2e
-        continue-on-error: true
-
-      - name: Merge Coverage Reports
-        run: |
-          echo "mode: set" > coverage.out
-          if [ -f coverage_unit.out ]; then
-            grep -h -v "^mode:" coverage_unit.out >> coverage.out
-          fi
-          if [ -f coverage_e2e.out ]; then
-            grep -h -v "^mode:" coverage_e2e.out >> coverage.out
-          fi
+      - name: Rename Coverage File
+        run: mv coverage_unit.out coverage.out
 
       - name: Coverage Report
         uses: k1LoW/octocov-action@v1

@@ -44,7 +44,8 @@ type Wallet interface {
 	SignTx(txRequest types.TransactionRequest) (signedTx *gethTypes.Transaction, err error)
 
 	// Signs tx and sends it to the pending pool for execution
-	SendTransaction(txRequest types.TransactionRequest) (err error)
+	// Returns the transaction hash of the submitted transaction
+	SendTransaction(txRequest types.TransactionRequest) (txHash common.Hash, err error)
 
 	/*
 		DeployContract creates and submits a deployment transaction based on the
@@ -165,21 +166,21 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	return signedTx, nil
 }
 
-func (w *wallet) SendTransaction(txRequest types.TransactionRequest) error {
+func (w *wallet) SendTransaction(txRequest types.TransactionRequest) (common.Hash, error) {
 	if w.provider == nil {
-		return constant.ErrWalletIsNotConnected
+		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}
 
 	signedTx, err := w.SignTx(txRequest)
 	if err != nil {
-		return err
+		return common.Hash{}, err
 	}
 
 	if err := w.provider.Eth().SendRawTransaction(signedTx); err != nil {
-		return err
+		return common.Hash{}, err
 	}
 
-	return nil
+	return signedTx.Hash(), nil
 }
 
 func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error) {
