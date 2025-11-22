@@ -170,10 +170,6 @@ func TestScenario_SendTransaction(t *testing.T) {
 	})
 
 	t.Run("can send transaciton", func(t *testing.T) {
-		balance, err := w.GetBalance()
-
-		assert.Nil(t, err)
-
 		txRequest := types.TransactionRequest{
 			From:     initAddress,
 			To:       otherAddress,
@@ -181,32 +177,15 @@ func TestScenario_SendTransaction(t *testing.T) {
 			GasLimit: 300000,
 		}
 
-		err = w.SendTransaction(txRequest)
+		txHash, err := w.SendTransaction(txRequest)
 
 		assert.Nil(t, err)
+		assert.NotEqual(t, txHash.Hex(), "0x0000000000000000000000000000000000000000000000000000000000000000")
 
-		// stop for now
-		/*
-			ticker := time.NewTicker(1 * time.Second)
-			defer ticker.Stop()
-			timeout := time.After(30 * time.Second)
-
-			for {
-				select {
-				case <-ticker.C:
-					afterBalance, err := w.GetBalance()
-					if err != nil {
-						assert.Fail(t, "error")
-					}
-					if balance.Cmp(afterBalance) == 1 {
-						assert.True(t, true)
-						return
-					}
-				case <-timeout:
-					assert.Fail(t, "timeout")
-					return
-				}
-			}
-		*/
+		// Verify transaction is pending
+		tx, isPending, err := alchemy.Core.GetTransaction(txHash.Hex())
+		assert.Nil(t, err)
+		assert.True(t, isPending, "transaction should be pending immediately after sending")
+		assert.Equal(t, txHash, tx.Hash())
 	})
 }
