@@ -131,13 +131,32 @@ jobs:
 
       - name: Merge Coverage Reports
         run: |
-          echo "mode: set" > coverage.out
-          if [ -f coverage_unit.out ]; then
-            grep -h -v "^mode:" coverage_unit.out >> coverage.out
+          # Check which files exist
+          ls -la coverage*.out || true
+          
+          # Start with empty coverage file
+          > coverage.out
+          
+          # Merge coverage files
+          if [ -f coverage_unit.out ] && [ -f coverage_e2e.out ]; then
+            # Both files exist - merge them
+            head -n 1 coverage_unit.out > coverage.out
+            tail -n +2 coverage_unit.out >> coverage.out
+            tail -n +2 coverage_e2e.out >> coverage.out
+          elif [ -f coverage_unit.out ]; then
+            # Only unit test coverage exists
+            cat coverage_unit.out > coverage.out
+          elif [ -f coverage_e2e.out ]; then
+            # Only e2e test coverage exists
+            cat coverage_e2e.out > coverage.out
+          else
+            # No coverage files found
+            echo "mode: set" > coverage.out
           fi
-          if [ -f coverage_e2e.out ]; then
-            grep -h -v "^mode:" coverage_e2e.out >> coverage.out
-          fi
+          
+          # Show result
+          echo "Merged coverage file:"
+          head -n 5 coverage.out
 
       - name: Coverage Report
         uses: k1LoW/octocov-action@v1
