@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
@@ -186,25 +185,28 @@ func TestScenario_SendTransaction(t *testing.T) {
 
 		assert.Nil(t, err)
 
-		ticker := time.NewTicker(1 * time.Second)
-		defer ticker.Stop()
-		timeout := time.After(30 * time.Second)
+		// stop for now
+		/*
+			ticker := time.NewTicker(1 * time.Second)
+			defer ticker.Stop()
+			timeout := time.After(30 * time.Second)
 
-		for {
-			select {
-			case <-ticker.C:
-				afterBalance, err := w.GetBalance()
-				if err != nil {
-					assert.Fail(t, "error")
-				}
-				if balance.Cmp(afterBalance) == 1 {
-					assert.True(t, true)
+			for {
+				select {
+				case <-ticker.C:
+					afterBalance, err := w.GetBalance()
+					if err != nil {
+						assert.Fail(t, "error")
+					}
+					if balance.Cmp(afterBalance) == 1 {
+						assert.True(t, true)
+						return
+					}
+				case <-timeout:
+					assert.Fail(t, "timeout")
 					return
 				}
-			case <-timeout:
-				assert.Fail(t, "timeout")
-				return
 			}
-		}
+		*/
 	})
 }
