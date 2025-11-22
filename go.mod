@@ -7,7 +7,6 @@ require (
 	github.com/ethereum/go-ethereum v1.16.7
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/jarcoal/httpmock v1.4.0
-	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -34,8 +33,8 @@ require (
 	github.com/supranational/blst v0.3.16-0.20250831170142-f48500c1fdbe // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
