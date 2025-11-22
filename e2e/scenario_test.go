@@ -186,20 +186,25 @@ func TestScenario_SendTransaction(t *testing.T) {
 
 		assert.Nil(t, err)
 
-		var isSuccess bool
-		for i := 0; i < 30; i++ {
-			time.Sleep(1 * time.Second)
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		timeout := time.After(30 * time.Second)
 
-			afterBalance, err := w.GetBalance()
-			if err != nil {
-				continue
-			}
-			if balance.Cmp(afterBalance) == 1 {
-				isSuccess = true
-				break
+		for {
+			select {
+			case <-ticker.C:
+				afterBalance, err := w.GetBalance()
+				if err != nil {
+					assert.Fail(t, "error")
+				}
+				if balance.Cmp(afterBalance) == 1 {
+					assert.True(t, true)
+					return
+				}
+			case <-timeout:
+				assert.Fail(t, "timeout")
+				return
 			}
 		}
-
-		assert.True(t, isSuccess)
 	})
 }
