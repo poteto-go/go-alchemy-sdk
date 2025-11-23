@@ -4,7 +4,7 @@
 
 golang sdk for alchemy, inspired by https://github.com/alchemyplatform/alchemy-sdk-js.
 
-This project is aim to be **bridge between alchemy api and geth** objects.
+This project aims to be a **bridge between alchemy api and geth** objects.
 
 ## Documentation
 
@@ -12,7 +12,8 @@ This project is aim to be **bridge between alchemy api and geth** objects.
 
 ## Features
 
-🚀 easily switch private network(`geth`) to Eth-Public Network
+🚀 easily switch private network(`geth`) to Eth-Public Network  
+🧪 easily mock rpc responses w/ `alchemymock`
 
 ## QuickStart
 
@@ -41,12 +42,13 @@ func main() {
 ## Caution
 
 > [!Caution]
-> This project will breaking-change till `geth` migration is done.
+> This project will have breaking changes until `geth` migration is done.
 
 ## Major Milestone
 
 - [x] Deploy Contract to Eth: done for `v0.1.0`
-- [ ] Private Geth Support `in-progress`
+- [x] Private Geth Support `v0.1.4`
+- [ ] geth migration `in-progress`
 - [ ] Non-Ether Chain Support
 
 ## Alchemy Sdk Namespace Support
