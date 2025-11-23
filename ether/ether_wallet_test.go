@@ -12,6 +12,25 @@ import (
 )
 
 func TestEther_PendingNonceAt(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponder("eth_getTransactionCount", `{"jsonrpc":"2.0","id":1,"result":"0x10"}`)
+
+			// Act
+			result, err := ether.PendingNonceAt("0xa7d9ddbe1f17865597fbd27ec712455208b6b76d")
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, uint64(0x10), result)
+		})
+	})
+
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()

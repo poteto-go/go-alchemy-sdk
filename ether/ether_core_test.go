@@ -17,6 +17,7 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
+	"github.com/poteto-go/go-alchemy-sdk/alchemymock"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
@@ -26,14 +27,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var utAlchemySetting = gas.AlchemySetting{
+	ApiKey:  "hoge",
+	Network: "fuga",
+	BackoffConfig: &types.BackoffConfig{
+		MaxRetries: 0,
+	},
+}
+
 func newEtherApiForTest() *eth.Ether {
 	provider := newProviderForTest()
+	config := gas.NewAlchemyConfig(utAlchemySetting)
 	return ether.NewEtherApi(
 		provider,
 		eth.NewEtherApiConfig(
-			"https://mainnet.infura.io/v3/",
+			config.GetUrl(),
 			0,
-			time.Duration(0),
+			time.Duration(1*time.Second),
 			nil,
 		),
 	).(*eth.Ether)
@@ -53,15 +63,13 @@ func newNilEtherApiForTest(provider *gas.AlchemyProvider) *eth.Ether {
 
 func newProviderForTest() *gas.AlchemyProvider {
 	config := gas.NewAlchemyConfig(
-		gas.AlchemySetting{
-			ApiKey:  "hoge",
-			Network: "fuga",
-			BackoffConfig: &types.BackoffConfig{
-				MaxRetries: 0,
-			},
-		},
+		utAlchemySetting,
 	)
 	return gas.NewAlchemyProvider(config).(*gas.AlchemyProvider)
+}
+
+func newAlchemyMockOnEtherTest(t *testing.T) *alchemymock.AlchemyHttpMock {
+	return alchemymock.NewAlchemyHttpMock(utAlchemySetting, t)
 }
 
 func TestEther_GetEthClient(t *testing.T) {
@@ -71,6 +79,9 @@ func TestEther_GetEthClient(t *testing.T) {
 
 		// Act
 		client, err := ether.GetEthClient()
+		if err != nil {
+			assert.Fail(t, "failed to create eth client")
+		}
 		defer client.Close()
 
 		// Assert
@@ -92,6 +103,25 @@ func TestEther_GetEthClient(t *testing.T) {
 }
 
 func TestEther_BlockNumber(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponder("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+
+			// Act
+			result, err := ether.BlockNumber()
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, result, uint64(0x1234))
+		})
+	})
+
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -130,6 +160,25 @@ func TestEther_BlockNumber(t *testing.T) {
 }
 
 func TestEther_GasPrice(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponder("eth_gasPrice", `{"jsonrpc":"2.0","id":1,"result":"0x5678"}`)
+
+			// Act
+			result, err := ether.GasPrice()
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, result, big.NewInt(0x5678))
+		})
+	})
+
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -256,6 +305,25 @@ func TestEther_GetBalance(t *testing.T) {
 }
 
 func TestEther_CodeAt(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponder("eth_getCode", `{"jsonrpc":"2.0","id":1,"result":"0x608060405234801561001057600080fd5b50"}`)
+
+			// Act
+			result, err := ether.CodeAt("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "latest")
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, "608060405234801561001057600080fd5b50", result)
+		})
+	})
+
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -311,6 +379,25 @@ func TestEther_CodeAt(t *testing.T) {
 }
 
 func TestEther_CodeAtHash(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponder("eth_getCode", `{"jsonrpc":"2.0","id":1,"result":"0x608060405234801561001057600080fd5b50"}`)
+
+			// Act
+			result, err := ether.CodeAtHash("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "0xbd05b61cc68595a7c30039b2b092ea293c9a2faee20158d578528e399f4d4244")
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, "608060405234801561001057600080fd5b50", result)
+		})
+	})
+
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -353,6 +440,46 @@ func TestEther_CodeAtHash(t *testing.T) {
 }
 
 func TestEther_GetTransaction(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock - minimal transaction response
+			alchemyMock.RegisterResponder("eth_getTransactionByHash", `{
+				"jsonrpc":"2.0",
+				"id":1,
+				"result":{
+					"blockHash":"0x1d59ff54b1eb26b013ce3cb5fc9dab3705b415a67127a003c3e61eb445bb8df2",
+					"blockNumber":"0x5daf3b",
+					"from":"0xa7d9ddbe1f17865597fbd27ec712455208b6b76d",
+					"gas":"0xc350",
+					"gasPrice":"0x4a817c800",
+					"hash":"0x88df016429689c079f3b2f6ad39fa052532c56795b733da78a91ebe6a713944b",
+					"input":"0x68656c6c6f21",
+					"nonce":"0x15",
+					"to":"0xf02c1c8e6114b1dbe8937a39260b5b0a374432bb",
+					"transactionIndex":"0x41",
+					"value":"0xf3dbb76162000",
+					"type":"0x0",
+					"v":"0x25",
+					"r":"0x1b5e176d927f8e9ab405058b2d2457392da3e20f328b16ddabcebc33eaac5fea",
+					"s":"0x4ba69724e8f69de52f0125ad8b3c5c2cef33019bac3249e2c0a2192766d1721c"
+				}
+			}`)
+
+			// Act
+			tx, isPending, err := ether.GetTransaction("0x88df016429689c079f3b2f6ad39fa052532c56795b733da78a91ebe6a713944b")
+
+			// Assert
+			assert.NoError(t, err)
+			assert.NotNil(t, tx)
+			assert.False(t, isPending)
+		})
+	})
+
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -393,6 +520,25 @@ func TestEther_GetTransaction(t *testing.T) {
 }
 
 func TestEther_StorageAt(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponder("eth_getStorageAt", `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000001"}`)
+
+			// Act
+			result, err := ether.StorageAt("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73", "0x0", "latest")
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000001", result)
+		})
+	})
+
 	t.Run("error case", func(t *testing.T) {
 		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -823,37 +969,6 @@ func TestEther_GetLogs(t *testing.T) {
 			// Assert
 			assert.ErrorIs(t, expectedErr, err)
 		})
-
-		// TODO: why this is not mocked
-		/*
-			t.Run("if failed mapstructure, return constant.ErrFailedToMapTokenResponse", func(t *testing.T) {
-				patches := gomonkey.NewPatches()
-				defer patches.Reset()
-
-				// Mock
-				patches.ApplyMethod(
-					reflect.TypeOf(provider),
-					"SendFilter",
-					func(_ *gas.AlchemyProvider, method string, params ...types.Filter) (any, error) {
-						assert.Equal(t, constant.Eth_GetLogs, method)
-						return expectedRes, nil
-					},
-				)
-
-				patches.ApplyFunc(
-					mapstructure.Decode,
-					func(_ any, _ any) error {
-						return errors.New("error")
-					},
-				)
-
-				// Act
-				_, err := ether.GetTokenMetadata("0x123")
-
-				// Assert
-				assert.ErrorIs(t, constant.ErrFailedToMapTokenResponse, err)
-			})
-		*/
 	})
 }
 
