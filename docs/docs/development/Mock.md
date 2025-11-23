@@ -33,5 +33,5 @@ func TestSomething(t *testing.T) {
 
 ## Detail
 
-`alchemymock` mock jsonrpc response from blockchain.
+If you want to test your code without making changes to a public chain, you can easily do so with mocks.
 If you want not to change on public chain, you can test w/ mock easily w/o change on public chain.
