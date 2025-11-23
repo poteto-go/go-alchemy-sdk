@@ -68,7 +68,7 @@ contract Storage {
 ### 3. Compile Contract
 
 ```bash
-solc --combined-json abi,bin contracts/Storage.sol > abi/Storage.abi
+solc --combined-json abi,bin contracts/Storage.sol > build/Storage.abi
 ```
 
 ### 4. Generate Abi
