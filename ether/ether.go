@@ -505,6 +505,25 @@ func (ether *Ether) ChainID() (*big.Int, error) {
 	return res, nil
 }
 
+func (ether *Ether) PeerCount() (uint64, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return 0, err
+	}
+	defer client.Close()
+
+	res, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		client.PeerCount,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return res, nil
+}
+
 // TODO: backoff
 func (ether *Ether) DeployContract(
 	auth *bind.TransactOpts,

@@ -164,6 +164,64 @@ func TestCore_GetGasPrice(t *testing.T) {
 	})
 }
 
+func TestCore_PeerCount(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("return peer count", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedCount := uint64(25)
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"PeerCount",
+				func(_ *ether.Ether) (uint64, error) {
+					return expectedCount, nil
+				},
+			)
+
+			// Act
+			count, err := core.PeerCount()
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("return 0 & provider error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			errExpected := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"PeerCount",
+				func(_ *ether.Ether) (uint64, error) {
+					return 0, errExpected
+				},
+			)
+
+			// Act
+			count, err := core.PeerCount()
+
+			// Assert
+			assert.ErrorIs(t, errExpected, err)
+			assert.Equal(t, uint64(0), count)
+		})
+	})
+}
+
 func TestCore_GetBalance(t *testing.T) {
 	// Arrange
 	api := newEtherApi()

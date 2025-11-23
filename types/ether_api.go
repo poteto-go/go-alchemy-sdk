@@ -130,6 +130,13 @@ type EtherApi interface {
 	ChainID() (*big.Int, error)
 
 	/*
+		PeerCount returns the number of p2p peers as reported by the net_peerCount method.
+
+		internal call geth
+	*/
+	PeerCount() (uint64, error)
+
+	/*
 		WaitDeployed waits for a contract deployment transaction with the provided hash and
 		returns the on-chain contract address when it is mined.
 		It stops waiting when ctx is canceled.
