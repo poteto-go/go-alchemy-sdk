@@ -15,6 +15,9 @@ type ICore interface {
 	/* Returns the best guess of the current gas price to use in a transaction. */
 	GetGasPrice() (*big.Int, error)
 
+	/* Returns the number of p2p peers as reported by the net_peerCount method. */
+	PeerCount() (uint64, error)
+
 	/* Returns the balance of a given address as of the provided block. */
 	GetBalance(address string, blockTag string) (*big.Int, error)
 
@@ -126,6 +129,14 @@ func (c *Core) GetGasPrice() (*big.Int, error) {
 		return nil, err
 	}
 	return price, nil
+}
+
+func (c *Core) PeerCount() (uint64, error) {
+	count, err := c.ether.PeerCount()
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (c *Core) GetBalance(address string, blockTag string) (*big.Int, error) {

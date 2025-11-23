@@ -66,6 +66,13 @@ func TestSenario_BaseMethod(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, gas.Cmp(big.NewInt(0)), 1)
 	})
+
+	t.Run("PeerCount", func(t *testing.T) {
+		peerCount, err := alchemy.Core.PeerCount()
+
+		assert.Nil(t, err)
+		assert.GreaterOrEqual(t, peerCount, uint64(0))
+	})
 }
 
 func TestScenario_GetBalance(t *testing.T) {
