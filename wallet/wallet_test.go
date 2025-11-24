@@ -725,3 +725,222 @@ func TestWallet_DeployContract(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestWallet_ContractTransact(t *testing.T) {
+	contract := artifacts.NewPotetoStorage()
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	data := []byte("test data")
+
+	t.Run("can transact with contract", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		expectedReceipt := &gethTypes.Receipt{
+			Status: 1,
+		}
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ContractTransact",
+			func(
+				_ *ether.Ether,
+				auth *bind.TransactOpts,
+				contract types.ContractInstance,
+				contractAddress string,
+				data []byte,
+			) (*gethTypes.Receipt, error) {
+				return expectedReceipt, nil
+			},
+		)
+
+		// Act
+		receipt, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, expectedReceipt, receipt)
+	})
+
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("if failed get chainId, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(0), errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if failed to transact with contract, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ContractTransact",
+			func(
+				_ *ether.Ether,
+				auth *bind.TransactOpts,
+				contract types.ContractInstance,
+				contractAddress string,
+				data []byte,
+			) (*gethTypes.Receipt, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}
+
+func TestWallet_ResetPool(t *testing.T) {
+	t.Run("can reset cached values", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		contract := artifacts.NewPotetoStorage()
+		contractAddress := "0x1234567890123456789012345678901234567890"
+		data := []byte("test data")
+		expectedReceipt := &gethTypes.Receipt{
+			Status: 1,
+		}
+
+		callCount := 0
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				callCount++
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ContractTransact",
+			func(
+				_ *ether.Ether,
+				auth *bind.TransactOpts,
+				contract types.ContractInstance,
+				contractAddress string,
+				data []byte,
+			) (*gethTypes.Receipt, error) {
+				return expectedReceipt, nil
+			},
+		)
+
+		// Act - First call should cache
+		_, err := w.ContractTransact(contract, contractAddress, data)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, callCount, "ChainID should be called once")
+
+		// Act - Second call should use cache
+		_, err = w.ContractTransact(contract, contractAddress, data)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, callCount, "ChainID should still be called only once (cached)")
+
+		// Act - Reset pool
+		w.ResetPool()
+
+		// Act - Third call should fetch ChainID again
+		_, err = w.ContractTransact(contract, contractAddress, data)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, callCount, "ChainID should be called again after reset")
+	})
+
+	t.Run("clears both chainID and auth", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		contract := artifacts.NewPotetoStorage()
+		contractAddress := "0x1234567890123456789012345678901234567890"
+		data := []byte("test data")
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ContractTransact",
+			func(
+				_ *ether.Ether,
+				auth *bind.TransactOpts,
+				contract types.ContractInstance,
+				contractAddress string,
+				data []byte,
+			) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{Status: 1}, nil
+			},
+		)
+
+		// Act - Create cache
+		_, _ = w.ContractTransact(contract, contractAddress, data)
+		assert.NotNil(t, w.cachedChainID, "ChainID should be cached")
+		assert.NotNil(t, w.cachedAuth, "Auth should be cached")
+
+		// Act - Reset
+		w.ResetPool()
+
+		// Assert
+		assert.Nil(t, w.cachedChainID, "ChainID should be cleared")
+		assert.Nil(t, w.cachedAuth, "Auth should be cleared")
+	})
+}

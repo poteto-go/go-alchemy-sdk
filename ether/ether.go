@@ -555,3 +555,36 @@ func (ether *Ether) DeployContract(
 	}
 	return address, nil
 }
+
+// TODO: backoff
+func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.ContractInstance, contractAddress string, data []byte) (*gethTypes.Receipt, error) {
+	if contract == nil {
+		return nil, constant.ErrContractInstanceIsNil
+	}
+
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	instance := contract.Instance(client, common.HexToAddress(contractAddress))
+
+	tx, err := bind.Transact(
+		instance, auth, data,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	txReceipt, err := bind.WaitMined(
+		context.Background(),
+		client,
+		tx.Hash(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return txReceipt, nil
+}

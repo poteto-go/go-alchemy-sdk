@@ -9,6 +9,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+type ContractInstance interface {
+	Instance(backend bind.ContractBackend, addr common.Address) *bind.BoundContract
+}
+
 type EtherApi interface {
 	GetEthClient() (*ethclient.Client, error)
 
@@ -147,4 +151,15 @@ type EtherApi interface {
 		auth *bind.TransactOpts,
 		metaData *bind.MetaData,
 	) (common.Address, error)
+
+	/*
+		ContractTransact transacts with a contract.
+		Wait for mined
+	*/
+	ContractTransact(
+		auth *bind.TransactOpts,
+		contract ContractInstance,
+		contractAddress string,
+		data []byte,
+	) (txReceipt *gethTypes.Receipt, err error)
 }

@@ -35,4 +35,5 @@ var (
 	ErrInvalidArgs                      = errors.New("invalid args")
 	ErrOverFlow                         = errors.New("overflow")
 	ErrWalletIsNotConnected             = errors.New("wallet is not connected")
+	ErrContractInstanceIsNil            = errors.New("contract instance is nil")
 )
