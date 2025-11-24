@@ -725,3 +725,118 @@ func TestWallet_DeployContract(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestWallet_ContractTransact(t *testing.T) {
+	contract := artifacts.NewPotetoStorage()
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	data := []byte("test data")
+
+	t.Run("can transact with contract", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		expectedReceipt := &gethTypes.Receipt{
+			Status: 1,
+		}
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ContractTransact",
+			func(
+				_ *ether.Ether,
+				auth *bind.TransactOpts,
+				contract types.ContractInstance,
+				contractAddress string,
+				data []byte,
+			) (*gethTypes.Receipt, error) {
+				return expectedReceipt, nil
+			},
+		)
+
+		// Act
+		receipt, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, expectedReceipt, receipt)
+	})
+
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("if failed get chainId, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(0), errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if failed to transact with contract, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ContractTransact",
+			func(
+				_ *ether.Ether,
+				auth *bind.TransactOpts,
+				contract types.ContractInstance,
+				contractAddress string,
+				data []byte,
+			) (*gethTypes.Receipt, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}

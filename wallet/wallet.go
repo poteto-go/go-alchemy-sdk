@@ -56,6 +56,16 @@ type Wallet interface {
 		It does not work on non-Ethernet compatible networks.
 	*/
 	DeployContract(metaData *bind.MetaData) (common.Address, error)
+
+	/*
+		ContractTransact executes a transaction on a deployed contract.
+		It waits for the transaction to be mined and returns the transaction receipt.
+	*/
+	ContractTransact(
+		contract types.ContractInstance,
+		contractAddress string,
+		data []byte,
+	) (*gethTypes.Receipt, error)
 }
 
 type wallet struct {
@@ -198,4 +208,25 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 		return common.Address{}, err
 	}
 	return address, nil
+}
+
+func (w *wallet) ContractTransact(
+	contract types.ContractInstance,
+	contractAddress string,
+	data []byte,
+) (*gethTypes.Receipt, error) {
+	if w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
+	chainID, err := w.provider.Eth().ChainID()
+	if err != nil {
+		return nil, err
+	}
+	auth := bind.NewKeyedTransactor(w.privateKey, chainID)
+	txReceipt, err := w.provider.Eth().ContractTransact(auth, contract, contractAddress, data)
+	if err != nil {
+		return nil, err
+	}
+	return txReceipt, nil
 }
