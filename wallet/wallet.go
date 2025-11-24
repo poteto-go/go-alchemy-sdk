@@ -66,6 +66,14 @@ type Wallet interface {
 		contractAddress string,
 		data []byte,
 	) (*gethTypes.Receipt, error)
+
+	/*
+		ResetPool clears the cached ChainID and TransactOpts.
+		Call this when you need to refresh the cached values.
+
+		If switch network, you need to call this.
+	*/
+	ResetPool()
 }
 
 type wallet struct {
@@ -73,6 +81,10 @@ type wallet struct {
 	publicKey  *ecdsa.PublicKey
 	provider   types.IAlchemyProvider
 	mu         sync.RWMutex
+
+	// Cache for performance
+	cachedChainID *big.Int
+	cachedAuth    *bind.TransactOpts
 }
 
 func New(privateKeyStr string) (Wallet, error) {
@@ -198,11 +210,10 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 		return common.Address{}, constant.ErrWalletIsNotConnected
 	}
 
-	chainID, err := w.provider.Eth().ChainID()
+	auth, err := w.getOrCreateAuth()
 	if err != nil {
 		return common.Address{}, err
 	}
-	auth := bind.NewKeyedTransactor(w.privateKey, chainID)
 	address, err := w.provider.Eth().DeployContract(auth, metaData)
 	if err != nil {
 		return common.Address{}, err
@@ -219,14 +230,38 @@ func (w *wallet) ContractTransact(
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
-	chainID, err := w.provider.Eth().ChainID()
+	auth, err := w.getOrCreateAuth()
 	if err != nil {
 		return nil, err
 	}
-	auth := bind.NewKeyedTransactor(w.privateKey, chainID)
 	txReceipt, err := w.provider.Eth().ContractTransact(auth, contract, contractAddress, data)
 	if err != nil {
 		return nil, err
 	}
 	return txReceipt, nil
+}
+
+func (w *wallet) getOrCreateAuth() (*bind.TransactOpts, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.cachedAuth != nil {
+		return w.cachedAuth, nil
+	}
+	chainID, err := w.provider.Eth().ChainID()
+	if err != nil {
+		return nil, err
+	}
+	w.cachedChainID = chainID
+
+	w.cachedAuth = bind.NewKeyedTransactor(w.privateKey, chainID)
+	return w.cachedAuth, nil
+}
+
+func (w *wallet) ResetPool() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.cachedChainID = nil
+	w.cachedAuth = nil
 }
