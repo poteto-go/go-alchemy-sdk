@@ -16,6 +16,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
+	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -481,6 +482,59 @@ func TestWallet_SignTx(t *testing.T) {
 				return reservedNonce, nil
 			},
 		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
+				return estimatedGasPrice, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyFunc(
+			gethTypes.SignTx,
+			func(tx *gethTypes.Transaction, s gethTypes.Signer, prv *ecdsa.PrivateKey) (*gethTypes.Transaction, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(txRequest)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if failed to sign, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		txRequest := types.TransactionRequest{
+			To:       "0x123",
+			ChainID:  big.NewInt(1),
+			Nonce:    0,
+			GasPrice: big.NewInt(0),
+			GasLimit: 1000,
+			Value:    "0x123",
+			Data:     "0x123",
+		}
+		estimatedGasPrice := big.NewInt(100)
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return 0, nil
+			},
+		)
 
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
@@ -658,6 +712,82 @@ func TestWallet_DeployContract(t *testing.T) {
 		// Assert
 		assert.Nil(t, err)
 		assert.Equal(t, expectedAddr, addr)
+	})
+
+	t.Run("if chain doesn't support EIP-1559, use call suggestGasPrice", func(t *testing.T) {
+		t.Run("can deploy contract", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			w := createConnectedWallet()
+			expectedAddr := common.HexToAddress("0x123")
+			isCalledSuggestedGasPrice := false
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(w.provider.Eth()),
+				"ChainID",
+				func(_ *ether.Ether) (*big.Int, error) {
+					return big.NewInt(internal.ChainListNotSupportEIP1559[0]), nil
+				},
+			)
+			patches.ApplyMethod(
+				reflect.TypeOf(w.provider.Eth()),
+				"SuggestGasPrice",
+				func(_ *ether.Ether) (*big.Int, error) {
+					isCalledSuggestedGasPrice = true
+					return big.NewInt(1), nil
+				},
+			)
+			patches.ApplyMethod(
+				reflect.TypeOf(w.provider.Eth()),
+				"DeployContract",
+				func(
+					_ *ether.Ether,
+					auth *bind.TransactOpts, metaData *bind.MetaData) (common.Address, error) {
+					return expectedAddr, nil
+				},
+			)
+
+			// Act
+			addr, err := w.DeployContract(&metaData)
+
+			// Assert
+			assert.Nil(t, err)
+			assert.Equal(t, expectedAddr, addr)
+			assert.True(t, isCalledSuggestedGasPrice)
+		})
+
+		t.Run("if failed on suggestedGasPrice", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			w := createConnectedWallet()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(w.provider.Eth()),
+				"ChainID",
+				func(_ *ether.Ether) (*big.Int, error) {
+					return big.NewInt(internal.ChainListNotSupportEIP1559[0]), nil
+				},
+			)
+			patches.ApplyMethod(
+				reflect.TypeOf(w.provider.Eth()),
+				"SuggestGasPrice",
+				func(_ *ether.Ether) (*big.Int, error) {
+					return nil, errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := w.DeployContract(&metaData)
+
+			// Assert
+			assert.Error(t, err)
+		})
 	})
 
 	t.Run("if wallet is not connected, return error", func(t *testing.T) {

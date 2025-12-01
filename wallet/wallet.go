@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"slices"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
@@ -214,6 +216,7 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 	if err != nil {
 		return common.Address{}, err
 	}
+
 	address, err := w.provider.Eth().DeployContract(auth, metaData)
 	if err != nil {
 		return common.Address{}, err
@@ -255,6 +258,16 @@ func (w *wallet) getOrCreateAuth() (*bind.TransactOpts, error) {
 	w.cachedChainID = chainID
 
 	w.cachedAuth = bind.NewKeyedTransactor(w.privateKey, chainID)
+
+	// for chain not support `EIP-1559`
+	if slices.Contains(internal.ChainListNotSupportEIP1559, chainID.Int64()) {
+		gasPrice, err := w.provider.Eth().SuggestGasPrice()
+		if err != nil {
+			return nil, err
+		}
+		w.cachedAuth.GasPrice = gasPrice
+		return w.cachedAuth, nil
+	}
 	return w.cachedAuth, nil
 }
 
