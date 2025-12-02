@@ -51,11 +51,7 @@ func isAlwaysReProduceRpcError(err rpc.Error) bool {
 	// nonce too low
 	// filter not found
 	if errorCode == -32000 {
-		if errorMsg == "execution timeout" {
-			return true
-		}
-
-		return false
+		return errorMsg == "execution timeout"
 	}
 
 	// resource not found
