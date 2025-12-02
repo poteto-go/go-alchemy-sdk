@@ -19,7 +19,7 @@ func requestWithBackoffError(
 			return nil
 		}
 
-		if !isAlwaysReProduceError(err) {
+		if isAlwaysReProduceError(err) {
 			return err
 		}
 
@@ -42,7 +42,7 @@ func requestWithBackoff[T any](
 			return result, nil
 		}
 
-		if !isAlwaysReProduceError(err) {
+		if isAlwaysReProduceError(err) {
 			return result, err
 		}
 
@@ -66,7 +66,7 @@ func requestWithBackoffTuple[T any, O any](
 			return result, other, nil
 		}
 
-		if !isAlwaysReProduceError(err) {
+		if isAlwaysReProduceError(err) {
 			return result, other, err
 		}
 

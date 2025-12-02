@@ -9,7 +9,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 )
 
-// Determine whether to back off based on the error.
+// Determine whether provided error always reproduce or not.
 // For cases where repeated transmission yields no change in result, do not back off.
 //
 // refs:
@@ -25,7 +25,7 @@ func isAlwaysReProduceError(err error) bool {
 	switch assertedErr := err.(type) {
 	// url error always re-produce
 	case *url.Error:
-		return false
+		return true
 
 	// rpc json error
 	case rpc.Error:
@@ -35,7 +35,7 @@ func isAlwaysReProduceError(err error) bool {
 		return isAlwaysReProduceHttpError(assertedErr)
 
 	default:
-		return true
+		return false
 	}
 }
 
@@ -51,90 +51,90 @@ func isAlwaysReProduceRpcError(err rpc.Error) bool {
 	// nonce too low
 	// filter not found
 	if errorCode == -32000 {
-		return errorMsg == "execution timeout"
+		return errorMsg != "execution timeout"
 	}
 
 	// resource not found
 	if errorCode == -32001 {
-		return false
+		return true
 	}
 
 	// resource unavailable
 	if errorCode == -32002 {
-		return false
+		return true
 	}
 
 	// transaction rejected
 	if errorCode == -32003 {
-		return false
+		return true
 	}
 
 	// method not supported
 	if errorCode == -32004 {
-		return false
+		return true
 	}
 
 	// limit exceeded
 	if errorCode == -32005 {
 		// tx pool limit exceeded
 		// if you wait backoff, it can work on next-try
-		return true
+		return false
 	}
 
 	// json rpc version not supported
 	if errorCode == -32006 {
-		return false
+		return true
 	}
 
 	// custom error
 	// Unable to complete request at this time.
 	if -32099 <= errorCode && errorCode <= -32007 {
-		return true
+		return false
 	}
 
 	// custom error
 	// any application error
 	if -32599 <= errorCode && errorCode <= -32100 {
-		return false
+		return true
 	}
 	if -32699 <= errorCode && errorCode <= -32604 {
-		return false
+		return true
 	}
 	if -32768 <= errorCode && errorCode <= -32701 {
-		return false
+		return true
 	}
 
 	// invalid request
 	if errorCode == -32600 {
-		return false
+		return true
 	}
 
 	// method not found
 	if errorCode == -32601 {
-		return false
+		return true
 	}
 
 	// invalid params
 	if errorCode == -32602 {
-		return false
+		return true
 	}
 
 	// internal error
 	if errorCode == -32603 {
-		return false
+		return true
 	}
 
 	// parse error
 	if errorCode == -32700 {
-		return false
+		return true
 	}
 
 	// StarkNet specific error
 	if 0 <= errorCode && errorCode <= 62 {
-		return false
+		return true
 	}
 
-	return false
+	return true
 }
 
 func isAlwaysReProduceHttpError(err rpc.HTTPError) bool {
@@ -143,14 +143,14 @@ func isAlwaysReProduceHttpError(err rpc.HTTPError) bool {
 	// this is alchemy rate limit
 	// if you wait backoff, it can work on next-try
 	if errorCode == http.StatusTooManyRequests {
-		return true
+		return false
 	}
 
 	// client error always re-produce
 	if slices.Contains(constant.HttpClientErrorCodeList, errorCode) {
-		return false
+		return true
 	}
 
 	// custom error
-	return true
+	return false
 }
