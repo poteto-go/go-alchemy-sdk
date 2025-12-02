@@ -1,0 +1,2 @@
+# whitelist for lizard
+./internal/errors.go: isAlwaysReProduceRpcError
