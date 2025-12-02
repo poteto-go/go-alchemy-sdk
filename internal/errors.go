@@ -22,7 +22,7 @@ func isAlwaysReProduceError(err error) bool {
 		return false
 	}
 
-	switch assertedErr := err.(any).(type) {
+	switch assertedErr := err.(type) {
 	// url error always re-produce
 	case *url.Error:
 		return false
