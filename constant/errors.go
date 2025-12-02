@@ -1,6 +1,9 @@
 package constant
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+)
 
 var (
 	ErrInvalidHexString                 = errors.New("invalid hex string")
@@ -37,3 +40,32 @@ var (
 	ErrWalletIsNotConnected             = errors.New("wallet is not connected")
 	ErrContractInstanceIsNil            = errors.New("contract instance is nil")
 )
+
+var HttpClientErrorCodeList = []int{
+	http.StatusBadRequest,
+	http.StatusUnauthorized,
+	http.StatusForbidden,
+	http.StatusPaymentRequired,
+	http.StatusNotFound,
+	http.StatusMethodNotAllowed,
+	http.StatusNotAcceptable,
+	http.StatusProxyAuthRequired,
+	http.StatusRequestTimeout,
+	http.StatusConflict,
+	http.StatusGone,
+	http.StatusLengthRequired,
+	http.StatusPreconditionFailed,
+	http.StatusRequestEntityTooLarge,
+	http.StatusRequestURITooLong,
+	http.StatusUnsupportedMediaType,
+	http.StatusRequestedRangeNotSatisfiable,
+	http.StatusExpectationFailed,
+	http.StatusTeapot,
+	http.StatusMisdirectedRequest,
+	http.StatusUnprocessableEntity,
+	http.StatusLocked,
+	http.StatusFailedDependency,
+	http.StatusTooEarly,
+	http.StatusUpgradeRequired,
+	http.StatusPreconditionRequired,
+}

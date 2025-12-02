@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,6 +47,27 @@ func TestRequestWithBackoff(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, result)
 		assert.Equal(t, 3, callCount)
+	})
+
+	t.Run("not backoff case", func(t *testing.T) {
+		// Arrange
+		callCount := 0
+		operation := func() (int, error) {
+			callCount++
+			if callCount < 3 {
+				return 0, &url.Error{}
+			}
+			return 1, nil
+		}
+		config := types.BackoffConfig{
+			MaxRetries: 3,
+		}
+
+		// Act
+		_, err := requestWithBackoff(config, operation)
+
+		// Assert
+		assert.Error(t, err)
 	})
 
 	t.Run("max retries exceeded", func(t *testing.T) {
@@ -103,6 +125,27 @@ func TestRequestWithBackoffTuple(t *testing.T) {
 		assert.Equal(t, 1, result1)
 		assert.Equal(t, 2, result2)
 		assert.Equal(t, 3, callCount)
+	})
+
+	t.Run("not backoff case", func(t *testing.T) {
+		// Arrange
+		callCount := 0
+		operation := func() (int, int, error) {
+			callCount++
+			if callCount < 3 {
+				return 0, 0, &url.Error{}
+			}
+			return 1, 2, nil
+		}
+		config := types.BackoffConfig{
+			MaxRetries: 3,
+		}
+
+		// Act
+		_, _, err := requestWithBackoffTuple(config, operation)
+
+		// Assert
+		assert.Error(t, err)
 	})
 
 	t.Run("max retries exceeded", func(t *testing.T) {
@@ -348,6 +391,27 @@ func TestGethRequestSingleErrorWithBackOff(t *testing.T) {
 		// Assert
 		assert.NoError(t, err)
 		assert.Equal(t, 3, callCount)
+	})
+
+	t.Run("not backoff case", func(t *testing.T) {
+		// Arrange
+		callCount := 0
+		backoffConfig := &types.BackoffConfig{
+			MaxRetries: 3,
+		}
+		mockHandler := func(ctx context.Context, a int) error {
+			callCount++
+			if callCount < 3 {
+				return &url.Error{}
+			}
+			return nil
+		}
+
+		// Act
+		err := GethRequestSingleErrorWithBackOff(backoffConfig, 0, mockHandler, 1)
+
+		// Assert
+		assert.Error(t, err)
 	})
 
 	t.Run("max retries exceeded", func(t *testing.T) {

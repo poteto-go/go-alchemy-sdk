@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: "3.10"
       - run: pip install lizard
-      - run: lizard -l go -o report.txt -x"*_test.go"
+      - run: lizard -l go -o report.txt -x"*_test.go" --whitelist ./whitelist.txt
       - run: gh pr review -F report.txt -r ${{ github.event.pull_request.html_url }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -19,6 +19,10 @@ func requestWithBackoffError(
 			return nil
 		}
 
+		if isAlwaysReProduceError(err) {
+			return err
+		}
+
 		lastHttpError = err
 		if err := backoffManager.Backoff(); err != nil {
 			return lastHttpError
@@ -36,6 +40,10 @@ func requestWithBackoff[T any](
 		result, err := operation()
 		if err == nil {
 			return result, nil
+		}
+
+		if isAlwaysReProduceError(err) {
+			return result, err
 		}
 
 		lastHttpError = err
@@ -56,6 +64,10 @@ func requestWithBackoffTuple[T any, O any](
 		result, other, err := operation()
 		if err == nil {
 			return result, other, nil
+		}
+
+		if isAlwaysReProduceError(err) {
+			return result, other, err
 		}
 
 		lastHttpError = err
@@ -91,6 +103,7 @@ func GethRequestArgWithBackOff[T any, A any](
 	if backoffConfig == nil {
 		backoffConfig = &types.DefaultBackoffConfig
 	}
+
 	operation := func() (T, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
