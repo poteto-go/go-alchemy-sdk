@@ -549,11 +549,7 @@ func (ether *Ether) DeployContract(
 
 	tx := deployRes.Txs[metaData.ID]
 	// wait for deployment on chain
-	address, err := bind.WaitDeployed(context.Background(), client, tx.Hash())
-	if err != nil {
-		return common.Address{}, err
-	}
-	return address, nil
+	return ether.WaitDeployed(tx.Hash())
 }
 
 // TODO: backoff
@@ -577,14 +573,35 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.Con
 		return nil, err
 	}
 
-	txReceipt, err := bind.WaitMined(
-		context.Background(),
-		client,
-		tx.Hash(),
-	)
+	return ether.WaitMined(tx.Hash())
+}
+
+// TODO: support backoff
+func (ether *Ether) WaitMined(txHash common.Hash) (*gethTypes.Receipt, error) {
+	client, err := ether.GetEthClient()
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close()
 
-	return txReceipt, nil
+	tx, err := bind.WaitMined(context.Background(), client, txHash)
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+// TODO: support backoff
+func (ether *Ether) WaitDeployed(txHash common.Hash) (common.Address, error) {
+	client, err := ether.GetEthClient()
+	if err != nil {
+		return common.Address{}, err
+	}
+	defer client.Close()
+
+	address, err := bind.WaitDeployed(context.Background(), client, txHash)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return address, nil
 }

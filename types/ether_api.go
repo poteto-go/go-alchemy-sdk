@@ -162,4 +162,18 @@ type EtherApi interface {
 		contractAddress string,
 		data []byte,
 	) (txReceipt *gethTypes.Receipt, err error)
+
+	/*
+		WaitMined waits for a transaction with the provided hash and
+		returns the transaction receipt when it is mined.
+		It stops waiting when ctx is canceled.
+	*/
+	WaitMined(hash common.Hash) (*gethTypes.Receipt, error)
+
+	/*
+		WaitDeployed waits for a contract deployment transaction with the provided hash and
+		returns the contract address
+		It stops waiting when ctx is canceled.
+	*/
+	WaitDeployed(hash common.Hash) (common.Address, error)
 }
