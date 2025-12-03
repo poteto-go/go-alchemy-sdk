@@ -194,5 +194,16 @@ func TestScenario_SendTransaction(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, isPending, "transaction should be pending immediately after sending")
 		assert.Equal(t, txHash, tx.Hash())
+
+		// wait for transact finish
+		txReceipt, err := alchemy.Transact.WaitMined(txHash.Hex())
+		assert.Nil(t, err)
+		assert.Equal(t, txReceipt.TxHash.Hex(), txHash.Hex())
+
+		// Verify transaction is not pending
+		tx, isPending, err = alchemy.Core.GetTransaction(txHash.Hex())
+		assert.Nil(t, err)
+		assert.False(t, isPending, "transaction should be finished after waitMined")
+		assert.Equal(t, txHash, tx.Hash())
 	})
 }

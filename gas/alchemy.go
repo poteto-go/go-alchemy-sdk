@@ -9,6 +9,7 @@ import (
 type Alchemy struct {
 	config   AlchemyConfig
 	Core     namespace.ICore
+	Transact namespace.ITransact
 	provider types.IAlchemyProvider
 }
 
@@ -21,10 +22,12 @@ func NewAlchemy(setting AlchemySetting) Alchemy {
 	)
 	alchemyProvider.SetEth(ether)
 	coreNamespace := namespace.NewCore(ether)
+	transactNamespace := namespace.NewTransactNamespace(ether)
 
 	return Alchemy{
 		config:   alchemyConfig,
 		Core:     coreNamespace,
+		Transact: transactNamespace,
 		provider: alchemyProvider,
 	}
 }
