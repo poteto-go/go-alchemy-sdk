@@ -12,6 +12,6 @@ func main() {
 	...
 	alchemy := gas.NewAlchemy(setting)
 	...
-	contractAddress, err := alchemy.Transact.WaitMined("<deployedHash>")
+	contractAddress, err := alchemy.Transact.WaitDeployed("<deployedHash>")
 }
 ```
