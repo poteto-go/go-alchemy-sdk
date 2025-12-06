@@ -11,7 +11,6 @@ import (
 	"github.com/agiledragon/gomonkey"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/alchemymock"
@@ -69,21 +68,37 @@ func newAlchemyMockOnEtherTest(t *testing.T) *alchemymock.AlchemyHttpMock {
 	return alchemymock.NewAlchemyHttpMock(utAlchemySetting, t)
 }
 
-func TestEther_GetEthClient(t *testing.T) {
+func TestEther_SetEthClientAndClose(t *testing.T) {
 	t.Run("can create eth client", func(t *testing.T) {
 		// Arrange
 		ether := newEtherApiForTest()
 
 		// Act
-		client, err := ether.GetEthClient()
+		err := ether.SetEthClient()
 		if err != nil {
 			assert.Fail(t, "failed to create eth client")
 		}
-		defer client.Close()
 
 		// Assert
-		assert.NotNil(t, client)
+		assert.NotNil(t, ether.Client())
 		assert.Nil(t, err)
+
+		t.Run("add count & set client nill if over Close call > connCount", func(t *testing.T) {
+			// Act1
+			ether.SetEthClient() // connCount = 2
+			ether.Close()        // conCount = 1
+
+			// Assert1
+			assert.NotNil(t, ether.Client())
+
+			// Act2
+			ether.Close() // conCount = 0
+
+			// Assert2
+			assert.Nil(t, ether.Client())
+			assert.Nil(t, err)
+		})
+
 	})
 
 	t.Run("cannot create eth client", func(t *testing.T) {
@@ -92,10 +107,22 @@ func TestEther_GetEthClient(t *testing.T) {
 		ether := newNilEtherApiForTest(provider)
 
 		// Act
-		_, err := ether.GetEthClient()
+		err := ether.SetEthClient()
 
 		// Assert
 		assert.Error(t, err)
+		assert.Nil(t, ether.Client())
+	})
+
+	t.Run("if client is nil, do nothing", func(t *testing.T) {
+		// Arrange
+		ether := newEtherApiForTest()
+
+		// Act
+		ether.Close()
+
+		// Assert
+		assert.Nil(t, ether.Client())
 	})
 }
 
@@ -130,9 +157,9 @@ func TestEther_BlockNumber(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -187,9 +214,9 @@ func TestEther_GasPrice(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -334,9 +361,9 @@ func TestEther_CodeAt(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -408,9 +435,9 @@ func TestEther_CodeAtHash(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -489,9 +516,9 @@ func TestEther_GetTransaction(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -550,9 +577,9 @@ func TestEther_StorageAt(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -1086,9 +1113,9 @@ func TestEther_GetTransactionReceipt(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -1285,9 +1312,9 @@ func TestEther_GetBlockByHash(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -1325,9 +1352,9 @@ func TestEther_GetBlockByNumber(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -1381,9 +1408,9 @@ func TestEther_EstimateGas(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -1448,9 +1475,9 @@ func TestEther_SuggestGasPrice(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -1498,9 +1525,9 @@ func TestEther_SendRawTransaction(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -1536,9 +1563,9 @@ func TestEther_ChainID(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 

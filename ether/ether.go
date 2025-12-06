@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/big"
 	"strings"
+	"sync"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
@@ -22,37 +23,70 @@ import (
 )
 
 type Ether struct {
-	provider types.IAlchemyProvider
-	config   EtherApiConfig
+	provider  types.IAlchemyProvider
+	config    EtherApiConfig
+	connCount int
+	client    *ethclient.Client
+	mu        *sync.Mutex
 }
 
 func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.EtherApi {
 	return &Ether{
-		provider: provider,
-		config:   config,
+		provider:  provider,
+		config:    config,
+		connCount: 0,
+		client:    nil,
+		mu:        &sync.Mutex{},
 	}
 }
 
-func (ether *Ether) GetEthClient() (*ethclient.Client, error) {
-	rpcClient, err := rpc.Dial(ether.config.url)
-	if err != nil {
-		return nil, err
+func (ether *Ether) SetEthClient() error {
+	ether.connCount += 1
+	if ether.client != nil {
+		return nil
 	}
 
-	return ethclient.NewClient(rpcClient), nil
+	ether.mu.Lock()
+	defer ether.mu.Unlock()
+
+	rpcClient, err := rpc.Dial(ether.config.url)
+	if err != nil {
+		return err
+	}
+
+	ether.client = ethclient.NewClient(rpcClient)
+	return nil
+}
+
+func (ether *Ether) Close() {
+	if ether.client == nil {
+		return
+	}
+
+	ether.connCount -= 1
+	if ether.connCount > 0 {
+		return
+	}
+
+	ether.client.Close()
+	ether.client = nil
+}
+
+func (ether *Ether) Client() *ethclient.Client {
+	return ether.client
 }
 
 func (ether *Ether) BlockNumber() (uint64, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return uint64(0), err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	res, err := internal.GethRequestWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.BlockNumber,
+		ether.client.BlockNumber,
 	)
 	if err != nil {
 		return uint64(0), err
@@ -62,16 +96,16 @@ func (ether *Ether) BlockNumber() (uint64, error) {
 }
 
 func (ether *Ether) GasPrice() (*big.Int, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	res, err := internal.GethRequestWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.SuggestGasPrice,
+		ether.client.SuggestGasPrice,
 	)
 	if err != nil {
 		return nil, err
@@ -104,11 +138,11 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 }
 
 func (ether *Ether) CodeAt(address string, blockTag string) (string, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return "", err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	blockNumber, err := utils.ToBlockNumber(blockTag)
 	if err != nil {
@@ -118,7 +152,7 @@ func (ether *Ether) CodeAt(address string, blockTag string) (string, error) {
 	code, err := internal.GethRequestTwoArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.CodeAt,
+		ether.client.CodeAt,
 		common.HexToAddress(address),
 		blockNumber,
 	)
@@ -130,16 +164,16 @@ func (ether *Ether) CodeAt(address string, blockTag string) (string, error) {
 }
 
 func (ether *Ether) CodeAtHash(address string, blockHash string) (string, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return "", err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	code, err := internal.GethRequestTwoArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.CodeAtHash,
+		ether.client.CodeAtHash,
 		common.HexToAddress(address),
 		common.HexToHash(blockHash),
 	)
@@ -151,16 +185,16 @@ func (ether *Ether) CodeAtHash(address string, blockHash string) (string, error)
 }
 
 func (ether *Ether) GetTransaction(hash string) (*gethTypes.Transaction, bool, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, false, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	tx, isPending, err := internal.GethRequestArgWithBackOffTuple(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.TransactionByHash,
+		ether.client.TransactionByHash,
 		common.HexToHash(hash),
 	)
 	if err != nil {
@@ -171,11 +205,11 @@ func (ether *Ether) GetTransaction(hash string) (*gethTypes.Transaction, bool, e
 }
 
 func (ether *Ether) StorageAt(address, position, blockTag string) (string, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return "", err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	account := common.HexToAddress(address)
 	key := common.HexToHash(position)
@@ -187,7 +221,7 @@ func (ether *Ether) StorageAt(address, position, blockTag string) (string, error
 	res, err := internal.GethRequestThreeArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.StorageAt,
+		ether.client.StorageAt,
 		account,
 		key,
 		blockNumber,
@@ -276,11 +310,11 @@ func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 }
 
 func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	toAddress := common.HexToAddress(tx.To)
 	value, err := utils.FromBigHex(tx.Value)
@@ -291,7 +325,7 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 	res, err := internal.GethRequestArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.EstimateGas,
+		ether.client.EstimateGas,
 		ethereum.CallMsg{
 			From:  common.HexToAddress(tx.From),
 			To:    (&toAddress),
@@ -308,16 +342,16 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 }
 
 func (ether *Ether) SuggestGasPrice() (*big.Int, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	res, err := internal.GethRequestWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.SuggestGasPrice,
+		ether.client.SuggestGasPrice,
 	)
 	if err != nil {
 		return nil, err
@@ -343,16 +377,16 @@ func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, 
 }
 
 func (ether *Ether) GetTransactionReceipt(hash string) (*gethTypes.Receipt, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	txReceipt, err := internal.GethRequestArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.TransactionReceipt,
+		ether.client.TransactionReceipt,
 		common.HexToHash(hash),
 	)
 	if err != nil {
@@ -388,11 +422,11 @@ func (ether *Ether) GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*geth
 }
 
 func (ether *Ether) GetBlockByNumber(blockNumber string) (*gethTypes.Block, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	bigBlockNumber, err := utils.ToBlockNumber(blockNumber)
 	if err != nil {
@@ -402,7 +436,7 @@ func (ether *Ether) GetBlockByNumber(blockNumber string) (*gethTypes.Block, erro
 	res, err := internal.GethRequestArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.BlockByNumber,
+		ether.client.BlockByNumber,
 		bigBlockNumber,
 	)
 	if err != nil {
@@ -417,16 +451,16 @@ func (ether *Ether) GetBlockByNumber(blockNumber string) (*gethTypes.Block, erro
 }
 
 func (ether *Ether) GetBlockByHash(blockHash string) (*gethTypes.Block, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	res, err := internal.GethRequestArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.BlockByHash,
+		ether.client.BlockByHash,
 		common.HexToHash(blockHash),
 	)
 	if err != nil {
@@ -446,16 +480,16 @@ This is the nonce that should be used for the next transaction.
 internal call geth
 */
 func (ether *Ether) PendingNonceAt(address string) (uint64, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return uint64(0), err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	nonce, err := internal.GethRequestArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.PendingNonceAt,
+		ether.client.PendingNonceAt,
 		common.HexToAddress(address),
 	)
 	if err != nil {
@@ -467,16 +501,16 @@ func (ether *Ether) PendingNonceAt(address string) (uint64, error) {
 
 // send signed tx into the pending pool for execution w/ geth
 func (ether *Ether) SendRawTransaction(signedTx *gethTypes.Transaction) error {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	err = internal.GethRequestSingleErrorWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.SendTransaction,
+		ether.client.SendTransaction,
 		signedTx,
 	)
 	if err != nil {
@@ -487,16 +521,16 @@ func (ether *Ether) SendRawTransaction(signedTx *gethTypes.Transaction) error {
 }
 
 func (ether *Ether) ChainID() (*big.Int, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	res, err := internal.GethRequestWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.ChainID,
+		ether.client.ChainID,
 	)
 	if err != nil {
 		return nil, err
@@ -506,16 +540,16 @@ func (ether *Ether) ChainID() (*big.Int, error) {
 }
 
 func (ether *Ether) PeerCount() (uint64, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return 0, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	res, err := internal.GethRequestWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
-		client.PeerCount,
+		ether.client.PeerCount,
 	)
 	if err != nil {
 		return 0, err
@@ -529,17 +563,17 @@ func (ether *Ether) DeployContract(
 	auth *bind.TransactOpts,
 	metaData *bind.MetaData,
 ) (common.Address, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return common.Address{}, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
 	// set up params to deploy an instance of the metadata
 	deployParams := bind.DeploymentParams{
 		Contracts: []*bind.MetaData{metaData},
 	}
-	deployer := bind.DefaultDeployer(auth, client)
+	deployer := bind.DefaultDeployer(auth, ether.client)
 
 	// create and submit the contract deployment
 	deployRes, err := bind.LinkAndDeploy(&deployParams, deployer)
@@ -549,7 +583,7 @@ func (ether *Ether) DeployContract(
 
 	tx := deployRes.Txs[metaData.ID]
 	// wait for deployment on chain
-	return ether.waitDeployed(client, tx.Hash())
+	return ether.waitDeployed(ether.client, tx.Hash())
 }
 
 // TODO: backoff
@@ -558,13 +592,13 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.Con
 		return nil, constant.ErrContractInstanceIsNil
 	}
 
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
-	instance := contract.Instance(client, common.HexToAddress(contractAddress))
+	instance := contract.Instance(ether.client, common.HexToAddress(contractAddress))
 
 	tx, err := bind.Transact(
 		instance, auth, data,
@@ -573,17 +607,17 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.Con
 		return nil, err
 	}
 
-	return ether.waitMined(client, tx.Hash())
+	return ether.waitMined(ether.client, tx.Hash())
 }
 
 func (ether *Ether) WaitMined(txHash common.Hash) (*gethTypes.Receipt, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
-	return ether.waitMined(client, txHash)
+	return ether.waitMined(ether.client, txHash)
 }
 
 // re-use func
@@ -597,13 +631,13 @@ func (ether *Ether) waitMined(client *ethclient.Client, txHash common.Hash) (*ge
 }
 
 func (ether *Ether) WaitDeployed(txHash common.Hash) (common.Address, error) {
-	client, err := ether.GetEthClient()
+	err := ether.SetEthClient()
 	if err != nil {
 		return common.Address{}, err
 	}
-	defer client.Close()
+	defer ether.Close()
 
-	return ether.waitDeployed(client, txHash)
+	return ether.waitDeployed(ether.client, txHash)
 }
 
 // re-use func
