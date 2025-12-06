@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/stretchr/testify/assert"
@@ -49,9 +48,9 @@ func TestEther_PendingNonceAt(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -125,9 +124,9 @@ func Test_DeployContract(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
@@ -264,9 +263,9 @@ func TestEther_ContractTransact(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 

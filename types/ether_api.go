@@ -14,7 +14,22 @@ type ContractInstance interface {
 }
 
 type EtherApi interface {
-	GetEthClient() (*ethclient.Client, error)
+	/*
+		set ether client if client is nil,
+		if client exists add connCount to re-use.
+	*/
+	SetEthClient() error
+
+	/*
+		decrement connCount.
+		if connCount <= 0, close client & set nil
+	*/
+	Close()
+
+	/*
+		get raw ethclient
+	*/
+	Client() *ethclient.Client
 
 	/* get  the number of the most recent block. */
 	BlockNumber() (uint64, error)

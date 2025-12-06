@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
-	"github.com/ethereum/go-ethereum/ethclient"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/stretchr/testify/assert"
 )
@@ -42,9 +41,9 @@ func TestEther_PeerCount(t *testing.T) {
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
-				"GetEthClient",
-				func(_ *eth.Ether) (*ethclient.Client, error) {
-					return nil, errors.New("error")
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
 				},
 			)
 
