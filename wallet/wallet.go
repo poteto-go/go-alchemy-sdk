@@ -283,6 +283,9 @@ func (w *wallet) ContractTransact(
 		contractAddress,
 		data,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	txReceipt, err := w.provider.Eth().WaitMined(tx.Hash())
 	if err != nil {

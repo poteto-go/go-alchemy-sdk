@@ -1077,6 +1077,41 @@ func TestWallet_ContractTransact(t *testing.T) {
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
 
+	t.Run("if failed to transact, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"ContractTransactNoWait",
+			func(
+				_ *wallet,
+				_ types.ContractInstance,
+				_ string,
+				_ []byte,
+			) (*gethTypes.Transaction, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		//Assert
+		assert.Error(t, err)
+	})
+
 	t.Run("if it failed to wait to be mined, return err", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
