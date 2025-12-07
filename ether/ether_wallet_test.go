@@ -84,33 +84,27 @@ func Test_DeployContract(t *testing.T) {
 
 		// Arrange
 		ether := newEtherApiForTest()
-		expectedAddr := common.HexToAddress("0x123")
 		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
+		expectedRes := &bind.DeploymentResult{
+			Txs: map[string]*gethTypes.Transaction{
+				metaData.ID: expectedTx,
+			},
+		}
 
 		// Mock
 		patches.ApplyFunc(
 			bind.LinkAndDeploy,
 			func(params *bind.DeploymentParams, deploy bind.DeployFn) (*bind.DeploymentResult, error) {
-				return &bind.DeploymentResult{
-					Txs: map[string]*gethTypes.Transaction{
-						metaData.ID: expectedTx,
-					},
-				}, nil
-			},
-		)
-		patches.ApplyFunc(
-			bind.WaitDeployed,
-			func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (common.Address, error) {
-				return expectedAddr, nil
+				return expectedRes, nil
 			},
 		)
 
 		// Act
-		addr, err := ether.DeployContract(nil, metaData)
+		deployRes, err := ether.DeployContract(nil, metaData)
 
 		// Assert
 		assert.Nil(t, err)
-		assert.Equal(t, expectedAddr, addr)
+		assert.Equal(t, expectedRes, deployRes)
 	})
 
 	t.Run("error case", func(t *testing.T) {
@@ -149,39 +143,6 @@ func Test_DeployContract(t *testing.T) {
 				bind.LinkAndDeploy,
 				func(params *bind.DeploymentParams, deploy bind.DeployFn) (*bind.DeploymentResult, error) {
 					return nil, errors.New("error")
-				},
-			)
-
-			// Act
-			_, err := ether.DeployContract(nil, metaData)
-
-			// Assert
-			assert.Error(t, err)
-		})
-
-		t.Run("if failed to wait for deployed, return error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			ether := newEtherApiForTest()
-			expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
-
-			// Mock
-			patches.ApplyFunc(
-				bind.LinkAndDeploy,
-				func(params *bind.DeploymentParams, deploy bind.DeployFn) (*bind.DeploymentResult, error) {
-					return &bind.DeploymentResult{
-						Txs: map[string]*gethTypes.Transaction{
-							metaData.ID: expectedTx,
-						},
-					}, nil
-				},
-			)
-			patches.ApplyFunc(
-				bind.WaitDeployed,
-				func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (common.Address, error) {
-					return common.Address{}, errors.New("error")
 				},
 			)
 

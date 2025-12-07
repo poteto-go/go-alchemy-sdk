@@ -156,16 +156,14 @@ type EtherApi interface {
 	PeerCount() (uint64, error)
 
 	/*
-		WaitDeployed waits for a contract deployment transaction with the provided hash and
-		returns the on-chain contract address when it is mined.
-		It stops waiting when ctx is canceled.
+		Deploy Contract to tx pool.
 
 		internal call geth
 	*/
 	DeployContract(
 		auth *bind.TransactOpts,
 		metaData *bind.MetaData,
-	) (common.Address, error)
+	) (*bind.DeploymentResult, error)
 
 	/*
 		ContractTransact transacts with a contract.

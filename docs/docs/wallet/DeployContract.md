@@ -9,6 +9,8 @@ deployer bytecode.
 It returns the address and creation transaction of the pending contract,
 or an error if the creation failed.
 
+cf.) [`wallet.DeployContractNoWait`](./DeployContractNoWait.md)
+
 :::warning
 
 - It requires connected wallet.
@@ -17,7 +19,7 @@ or an error if the creation failed.
 :::
 
 ```go
-func SignTx(txRequest types.TransactionRequest) (signedTx *gethTypes.Transaction, err error)
+func DeployContract(metaData *bind.MetaData) (deployedAddr common.Address, err error)
 ```
 
 ```go
