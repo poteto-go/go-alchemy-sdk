@@ -687,6 +687,12 @@ func TestWallet_DeployContract(t *testing.T) {
 		// Arrange
 		w := createConnectedWallet()
 		expectedAddr := common.HexToAddress("0x123")
+		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
+		expectedDeployRes := &bind.DeploymentResult{
+			Txs: map[string]*gethTypes.Transaction{
+				metaData.ID: expectedTx,
+			},
+		}
 
 		// Mock
 		patches.ApplyMethod(
@@ -701,7 +707,19 @@ func TestWallet_DeployContract(t *testing.T) {
 			"DeployContract",
 			func(
 				_ *ether.Ether,
-				auth *bind.TransactOpts, metaData *bind.MetaData) (common.Address, error) {
+				auth *bind.TransactOpts,
+				metaData *bind.MetaData,
+			) (*bind.DeploymentResult, error) {
+				return expectedDeployRes, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitDeployed",
+			func(
+				_ *ether.Ether,
+				_ common.Hash,
+			) (common.Address, error) {
 				return expectedAddr, nil
 			},
 		)
@@ -714,6 +732,197 @@ func TestWallet_DeployContract(t *testing.T) {
 		assert.Equal(t, expectedAddr, addr)
 	})
 
+	t.Run("if failed to wait deployed, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
+		expectedDeployRes := &bind.DeploymentResult{
+			Txs: map[string]*gethTypes.Transaction{
+				metaData.ID: expectedTx,
+			},
+		}
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"DeployContractNoWait",
+			func(_ *wallet, metaData *bind.MetaData) (*bind.DeploymentResult, error) {
+				return expectedDeployRes, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitDeployed",
+			func(
+				_ *ether.Ether,
+				_ common.Hash,
+			) (common.Address, error) {
+				return common.Address{}, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.DeployContract(&metaData)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.DeployContract(&metaData)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("if failed to deploy contract, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"DeployContractNoWait",
+			func(_ *wallet, metaData *bind.MetaData) (*bind.DeploymentResult, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.DeployContract(&metaData)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}
+
+func TestWallet_DeployContractNoWait(t *testing.T) {
+	metaData := artifacts.PotetoStorageMetaData
+
+	t.Run("can transact of deployment contract", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
+		expectedDeployRes := &bind.DeploymentResult{
+			Txs: map[string]*gethTypes.Transaction{
+				metaData.ID: expectedTx,
+			},
+		}
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"DeployContract",
+			func(
+				_ *ether.Ether,
+				auth *bind.TransactOpts,
+				metaData *bind.MetaData,
+			) (*bind.DeploymentResult, error) {
+				return expectedDeployRes, nil
+			},
+		)
+
+		// Act
+		res, err := w.DeployContractNoWait(&metaData)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, res, expectedDeployRes)
+	})
+
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.DeployContractNoWait(&metaData)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("if failed get chainId, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(0), errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.DeployContractNoWait(&metaData)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if failed to deploy contract, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"DeployContract",
+			func(
+				_ *ether.Ether,
+				auth *bind.TransactOpts,
+				metaData *bind.MetaData,
+			) (*bind.DeploymentResult, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.DeployContractNoWait(&metaData)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
 	t.Run("if chain doesn't support EIP-1559, use call suggestGasPrice", func(t *testing.T) {
 		t.Run("can deploy contract", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
@@ -721,8 +930,13 @@ func TestWallet_DeployContract(t *testing.T) {
 
 			// Arrange
 			w := createConnectedWallet()
-			expectedAddr := common.HexToAddress("0x123")
 			isCalledSuggestedGasPrice := false
+			expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
+			expectedDeployRes := &bind.DeploymentResult{
+				Txs: map[string]*gethTypes.Transaction{
+					metaData.ID: expectedTx,
+				},
+			}
 
 			// Mock
 			patches.ApplyMethod(
@@ -745,17 +959,19 @@ func TestWallet_DeployContract(t *testing.T) {
 				"DeployContract",
 				func(
 					_ *ether.Ether,
-					auth *bind.TransactOpts, metaData *bind.MetaData) (common.Address, error) {
-					return expectedAddr, nil
+					auth *bind.TransactOpts,
+					metaData *bind.MetaData,
+				) (*bind.DeploymentResult, error) {
+					return expectedDeployRes, nil
 				},
 			)
 
 			// Act
-			addr, err := w.DeployContract(&metaData)
+			res, err := w.DeployContractNoWait(&metaData)
 
 			// Assert
 			assert.Nil(t, err)
-			assert.Equal(t, expectedAddr, addr)
+			assert.Equal(t, res, expectedDeployRes)
 			assert.True(t, isCalledSuggestedGasPrice)
 		})
 
@@ -783,47 +999,85 @@ func TestWallet_DeployContract(t *testing.T) {
 			)
 
 			// Act
-			_, err := w.DeployContract(&metaData)
+			_, err := w.DeployContractNoWait(&metaData)
 
 			// Assert
 			assert.Error(t, err)
 		})
 	})
+}
 
-	t.Run("if wallet is not connected, return error", func(t *testing.T) {
-		w, _ := New(testPrivHex)
+func TestWallet_ContractTransact(t *testing.T) {
+	contract := artifacts.NewPotetoStorage()
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	data := []byte("test data")
 
-		// Act
-		_, err := w.DeployContract(&metaData)
-
-		// Assert
-		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
-	})
-
-	t.Run("if failed get chainId, return error", func(t *testing.T) {
+	t.Run("can transact with contract & wait to be mined", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
 		// Arrange
 		w := createConnectedWallet()
+		expectedReceipt := &gethTypes.Receipt{
+			Status: 1,
+		}
+		txData := &gethTypes.AccessListTx{
+			To:       &common.Address{},
+			ChainID:  big.NewInt(1),
+			Nonce:    0,
+			GasPrice: big.NewInt(1),
+			Gas:      0,
+			Data:     []byte("data"),
+		}
+		expectedTx := gethTypes.NewTx(txData)
 
 		// Mock
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"ChainID",
 			func(_ *ether.Ether) (*big.Int, error) {
-				return big.NewInt(0), errors.New("error")
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"ContractTransactNoWait",
+			func(
+				_ *wallet,
+				_ types.ContractInstance,
+				_ string,
+				_ []byte,
+			) (*gethTypes.Transaction, error) {
+				return expectedTx, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ common.Hash) (*gethTypes.Receipt, error) {
+				return expectedReceipt, nil
 			},
 		)
 
 		// Act
-		_, err := w.DeployContract(&metaData)
+		txReceipt, err := w.ContractTransact(contract, contractAddress, data)
 
-		// Assert
-		assert.Error(t, err)
+		//Assert
+		assert.Nil(t, err)
+		assert.Equal(t, txReceipt, expectedReceipt)
 	})
 
-	t.Run("if failed to deploy contract, return error", func(t *testing.T) {
+	t.Run("if the wallet isn't connected, return err", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("if failed to transact, return error", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
@@ -839,24 +1093,78 @@ func TestWallet_DeployContract(t *testing.T) {
 			},
 		)
 		patches.ApplyMethod(
-			reflect.TypeOf(w.provider.Eth()),
-			"DeployContract",
+			reflect.TypeOf(w),
+			"ContractTransactNoWait",
 			func(
-				_ *ether.Ether,
-				auth *bind.TransactOpts, metaData *bind.MetaData) (common.Address, error) {
-				return common.Address{}, errors.New("error")
+				_ *wallet,
+				_ types.ContractInstance,
+				_ string,
+				_ []byte,
+			) (*gethTypes.Transaction, error) {
+				return nil, errors.New("error")
 			},
 		)
 
 		// Act
-		_, err := w.DeployContract(&metaData)
+		_, err := w.ContractTransact(contract, contractAddress, data)
+
+		//Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("if it failed to wait to be mined, return err", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		txData := &gethTypes.AccessListTx{
+			To:       &common.Address{},
+			ChainID:  big.NewInt(1),
+			Nonce:    0,
+			GasPrice: big.NewInt(1),
+			Gas:      0,
+			Data:     []byte("data"),
+		}
+		expectedTx := gethTypes.NewTx(txData)
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"ContractTransactNoWait",
+			func(
+				_ *wallet,
+				_ types.ContractInstance,
+				_ string,
+				_ []byte,
+			) (*gethTypes.Transaction, error) {
+				return expectedTx, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ common.Hash) (*gethTypes.Receipt, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ContractTransact(contract, contractAddress, data)
 
 		// Assert
 		assert.Error(t, err)
 	})
 }
 
-func TestWallet_ContractTransact(t *testing.T) {
+func TestWallet_ContractTransactNoWait(t *testing.T) {
 	contract := artifacts.NewPotetoStorage()
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	data := []byte("test data")
@@ -867,9 +1175,15 @@ func TestWallet_ContractTransact(t *testing.T) {
 
 		// Arrange
 		w := createConnectedWallet()
-		expectedReceipt := &gethTypes.Receipt{
-			Status: 1,
+		txData := &gethTypes.AccessListTx{
+			To:       &common.Address{},
+			ChainID:  big.NewInt(1),
+			Nonce:    0,
+			GasPrice: big.NewInt(1),
+			Gas:      0,
+			Data:     []byte("data"),
 		}
+		expectedTx := gethTypes.NewTx(txData)
 
 		// Mock
 		patches.ApplyMethod(
@@ -888,24 +1202,24 @@ func TestWallet_ContractTransact(t *testing.T) {
 				contract types.ContractInstance,
 				contractAddress string,
 				data []byte,
-			) (*gethTypes.Receipt, error) {
-				return expectedReceipt, nil
+			) (*gethTypes.Transaction, error) {
+				return expectedTx, nil
 			},
 		)
 
 		// Act
-		receipt, err := w.ContractTransact(contract, contractAddress, data)
+		tx, err := w.ContractTransactNoWait(contract, contractAddress, data)
 
 		// Assert
 		assert.Nil(t, err)
-		assert.Equal(t, expectedReceipt, receipt)
+		assert.Equal(t, tx, expectedTx)
 	})
 
 	t.Run("if wallet is not connected, return error", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.ContractTransact(contract, contractAddress, data)
+		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -928,7 +1242,7 @@ func TestWallet_ContractTransact(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.ContractTransact(contract, contractAddress, data)
+		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
 
 		// Assert
 		assert.Error(t, err)
@@ -958,13 +1272,13 @@ func TestWallet_ContractTransact(t *testing.T) {
 				contract types.ContractInstance,
 				contractAddress string,
 				data []byte,
-			) (*gethTypes.Receipt, error) {
+			) (*gethTypes.Transaction, error) {
 				return nil, errors.New("error")
 			},
 		)
 
 		// Act
-		_, err := w.ContractTransact(contract, contractAddress, data)
+		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
 
 		// Assert
 		assert.Error(t, err)
@@ -972,6 +1286,16 @@ func TestWallet_ContractTransact(t *testing.T) {
 }
 
 func TestWallet_ResetPool(t *testing.T) {
+	txData := &gethTypes.AccessListTx{
+		To:       &common.Address{},
+		ChainID:  big.NewInt(1),
+		Nonce:    0,
+		GasPrice: big.NewInt(1),
+		Gas:      0,
+		Data:     []byte("data"),
+	}
+	expectedTx := gethTypes.NewTx(txData)
+
 	t.Run("can reset cached values", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
@@ -981,9 +1305,6 @@ func TestWallet_ResetPool(t *testing.T) {
 		contract := artifacts.NewPotetoStorage()
 		contractAddress := "0x1234567890123456789012345678901234567890"
 		data := []byte("test data")
-		expectedReceipt := &gethTypes.Receipt{
-			Status: 1,
-		}
 
 		callCount := 0
 
@@ -1005,18 +1326,18 @@ func TestWallet_ResetPool(t *testing.T) {
 				contract types.ContractInstance,
 				contractAddress string,
 				data []byte,
-			) (*gethTypes.Receipt, error) {
-				return expectedReceipt, nil
+			) (*gethTypes.Transaction, error) {
+				return expectedTx, nil
 			},
 		)
 
 		// Act - First call should cache
-		_, err := w.ContractTransact(contract, contractAddress, data)
+		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, callCount, "ChainID should be called once")
 
 		// Act - Second call should use cache
-		_, err = w.ContractTransact(contract, contractAddress, data)
+		_, err = w.ContractTransactNoWait(contract, contractAddress, data)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, callCount, "ChainID should still be called only once (cached)")
 
@@ -1024,7 +1345,7 @@ func TestWallet_ResetPool(t *testing.T) {
 		w.ResetPool()
 
 		// Act - Third call should fetch ChainID again
-		_, err = w.ContractTransact(contract, contractAddress, data)
+		_, err = w.ContractTransactNoWait(contract, contractAddress, data)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, callCount, "ChainID should be called again after reset")
 	})
@@ -1056,13 +1377,13 @@ func TestWallet_ResetPool(t *testing.T) {
 				contract types.ContractInstance,
 				contractAddress string,
 				data []byte,
-			) (*gethTypes.Receipt, error) {
-				return &gethTypes.Receipt{Status: 1}, nil
+			) (*gethTypes.Transaction, error) {
+				return expectedTx, nil
 			},
 		)
 
 		// Act - Create cache
-		_, _ = w.ContractTransact(contract, contractAddress, data)
+		_, _ = w.ContractTransactNoWait(contract, contractAddress, data)
 		assert.NotNil(t, w.cachedChainID, "ChainID should be cached")
 		assert.NotNil(t, w.cachedAuth, "Auth should be cached")
 

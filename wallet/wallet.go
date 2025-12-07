@@ -60,6 +60,17 @@ type Wallet interface {
 	DeployContract(metaData *bind.MetaData) (common.Address, error)
 
 	/*
+		transact of Deployment Contract to tx pool.
+
+		You can wait deployment using deployRes.
+
+			deployRes, err := wallet.DeployContractNoWait(&<your-metadata>)
+			tx := deployRes.Txs[metaData.ID]
+			addr, err := alchemy.Transact.WaitDeployed(tx.Hash().Hex())
+	*/
+	DeployContractNoWait(metaData *bind.MetaData) (*bind.DeploymentResult, error)
+
+	/*
 		ContractTransact executes a transaction on a deployed contract.
 		It waits for the transaction to be mined and returns the transaction receipt.
 	*/
@@ -68,6 +79,20 @@ type Wallet interface {
 		contractAddress string,
 		data []byte,
 	) (*gethTypes.Receipt, error)
+
+	/*
+		ContractTransact executes a transaction on a deployed contract.
+
+		You can wait deployment using deployRes.
+
+			tx, err := wallet.ContractTransactNoWait(contract, addr, data)
+			txReceipt, err := alchemy.Transact.WaitDeployed(tx.Hash().Hex())
+	*/
+	ContractTransactNoWait(
+		contract types.ContractInstance,
+		contractAddress string,
+		data []byte,
+	) (*gethTypes.Transaction, error)
 
 	/*
 		ResetPool clears the cached ChainID and TransactOpts.
@@ -212,16 +237,36 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 		return common.Address{}, constant.ErrWalletIsNotConnected
 	}
 
-	auth, err := w.getOrCreateAuth()
+	deployRes, err := w.DeployContractNoWait(metaData)
 	if err != nil {
 		return common.Address{}, err
 	}
 
-	address, err := w.provider.Eth().DeployContract(auth, metaData)
+	tx := deployRes.Txs[metaData.ID]
+	// wait for deployment on chain
+	address, err := w.provider.Eth().WaitDeployed(tx.Hash())
 	if err != nil {
 		return common.Address{}, err
 	}
 	return address, nil
+}
+
+func (w *wallet) DeployContractNoWait(metaData *bind.MetaData) (*bind.DeploymentResult, error) {
+	if w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
+	auth, err := w.getOrCreateAuth()
+	if err != nil {
+		return nil, err
+	}
+
+	deployRes, err := w.provider.Eth().DeployContract(auth, metaData)
+	if err != nil {
+		return nil, err
+	}
+
+	return deployRes, nil
 }
 
 func (w *wallet) ContractTransact(
@@ -233,15 +278,43 @@ func (w *wallet) ContractTransact(
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
+	tx, err := w.ContractTransactNoWait(
+		contract,
+		contractAddress,
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	txReceipt, err := w.provider.Eth().WaitMined(tx.Hash())
+	if err != nil {
+		return nil, err
+	}
+
+	return txReceipt, nil
+}
+
+func (w *wallet) ContractTransactNoWait(
+	contract types.ContractInstance,
+	contractAddress string,
+	data []byte,
+) (*gethTypes.Transaction, error) {
+	if w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
 	auth, err := w.getOrCreateAuth()
 	if err != nil {
 		return nil, err
 	}
-	txReceipt, err := w.provider.Eth().ContractTransact(auth, contract, contractAddress, data)
+
+	tx, err := w.provider.Eth().ContractTransact(auth, contract, contractAddress, data)
 	if err != nil {
 		return nil, err
 	}
-	return txReceipt, nil
+
+	return tx, nil
 }
 
 func (w *wallet) getOrCreateAuth() (*bind.TransactOpts, error) {

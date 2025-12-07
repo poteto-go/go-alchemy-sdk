@@ -1,7 +1,6 @@
 package ether_test
 
 import (
-	"context"
 	"errors"
 	"math/big"
 	"reflect"
@@ -84,33 +83,27 @@ func Test_DeployContract(t *testing.T) {
 
 		// Arrange
 		ether := newEtherApiForTest()
-		expectedAddr := common.HexToAddress("0x123")
 		expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
+		expectedRes := &bind.DeploymentResult{
+			Txs: map[string]*gethTypes.Transaction{
+				metaData.ID: expectedTx,
+			},
+		}
 
 		// Mock
 		patches.ApplyFunc(
 			bind.LinkAndDeploy,
 			func(params *bind.DeploymentParams, deploy bind.DeployFn) (*bind.DeploymentResult, error) {
-				return &bind.DeploymentResult{
-					Txs: map[string]*gethTypes.Transaction{
-						metaData.ID: expectedTx,
-					},
-				}, nil
-			},
-		)
-		patches.ApplyFunc(
-			bind.WaitDeployed,
-			func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (common.Address, error) {
-				return expectedAddr, nil
+				return expectedRes, nil
 			},
 		)
 
 		// Act
-		addr, err := ether.DeployContract(nil, metaData)
+		deployRes, err := ether.DeployContract(nil, metaData)
 
 		// Assert
 		assert.Nil(t, err)
-		assert.Equal(t, expectedAddr, addr)
+		assert.Equal(t, expectedRes, deployRes)
 	})
 
 	t.Run("error case", func(t *testing.T) {
@@ -158,39 +151,6 @@ func Test_DeployContract(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 		})
-
-		t.Run("if failed to wait for deployed, return error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			ether := newEtherApiForTest()
-			expectedTx := gethTypes.NewTx(&gethTypes.LegacyTx{})
-
-			// Mock
-			patches.ApplyFunc(
-				bind.LinkAndDeploy,
-				func(params *bind.DeploymentParams, deploy bind.DeployFn) (*bind.DeploymentResult, error) {
-					return &bind.DeploymentResult{
-						Txs: map[string]*gethTypes.Transaction{
-							metaData.ID: expectedTx,
-						},
-					}, nil
-				},
-			)
-			patches.ApplyFunc(
-				bind.WaitDeployed,
-				func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (common.Address, error) {
-					return common.Address{}, errors.New("error")
-				},
-			)
-
-			// Act
-			_, err := ether.DeployContract(nil, metaData)
-
-			// Assert
-			assert.Error(t, err)
-		})
 	})
 }
 
@@ -222,18 +182,13 @@ func TestEther_ContractTransact(t *testing.T) {
 					return signedTx, nil
 				},
 			)
-			patches.ApplyFunc(
-				bind.WaitMined,
-				func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (*gethTypes.Receipt, error) {
-					return &gethTypes.Receipt{}, nil
-				},
-			)
 
 			// Act
-			_, err := ether.ContractTransact(nil, contract, "", []byte(""))
+			res, err := ether.ContractTransact(nil, contract, "", []byte(""))
 
 			// Assert
 			assert.NoError(t, err)
+			assert.Equal(t, res, signedTx)
 		})
 	})
 
@@ -288,36 +243,6 @@ func TestEther_ContractTransact(t *testing.T) {
 			patches.ApplyFunc(
 				bind.Transact,
 				func(c *bind.BoundContract, auth *bind.TransactOpts, data []byte) (*gethTypes.Transaction, error) {
-					return nil, errors.New("error")
-				},
-			)
-
-			// Act
-			_, err := ether.ContractTransact(nil, contract, "", []byte(""))
-
-			// Assert
-			assert.Error(t, err)
-		})
-
-		t.Run("if failed to wait for mained, return error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			ether := newEtherApiForTest()
-			contract := artifacts.NewPotetoStorage()
-			signedTx := gethTypes.NewTx(txData)
-
-			// Mock
-			patches.ApplyFunc(
-				bind.Transact,
-				func(c *bind.BoundContract, auth *bind.TransactOpts, data []byte) (*gethTypes.Transaction, error) {
-					return signedTx, nil
-				},
-			)
-			patches.ApplyFunc(
-				bind.WaitMined,
-				func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (*gethTypes.Receipt, error) {
 					return nil, errors.New("error")
 				},
 			)

@@ -562,10 +562,10 @@ func (ether *Ether) PeerCount() (uint64, error) {
 func (ether *Ether) DeployContract(
 	auth *bind.TransactOpts,
 	metaData *bind.MetaData,
-) (common.Address, error) {
+) (*bind.DeploymentResult, error) {
 	err := ether.SetEthClient()
 	if err != nil {
-		return common.Address{}, err
+		return nil, err
 	}
 	defer ether.Close()
 
@@ -578,16 +578,14 @@ func (ether *Ether) DeployContract(
 	// create and submit the contract deployment
 	deployRes, err := bind.LinkAndDeploy(&deployParams, deployer)
 	if err != nil {
-		return common.Address{}, err
+		return nil, err
 	}
 
-	tx := deployRes.Txs[metaData.ID]
-	// wait for deployment on chain
-	return ether.WaitDeployed(tx.Hash())
+	return deployRes, err
 }
 
 // TODO: backoff
-func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.ContractInstance, contractAddress string, data []byte) (*gethTypes.Receipt, error) {
+func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.ContractInstance, contractAddress string, data []byte) (*gethTypes.Transaction, error) {
 	if contract == nil {
 		return nil, constant.ErrContractInstanceIsNil
 	}
@@ -607,7 +605,9 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.Con
 		return nil, err
 	}
 
-	return ether.WaitMined(tx.Hash())
+	return tx, nil
+
+	// return ether.WaitMined(tx.Hash())
 }
 
 // TODO: support backoff
