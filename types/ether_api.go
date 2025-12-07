@@ -167,14 +167,15 @@ type EtherApi interface {
 
 	/*
 		ContractTransact transacts with a contract.
-		Wait for mined
+
+		internal call geth
 	*/
 	ContractTransact(
 		auth *bind.TransactOpts,
 		contract ContractInstance,
 		contractAddress string,
 		data []byte,
-	) (txReceipt *gethTypes.Receipt, err error)
+	) (txReceipt *gethTypes.Transaction, err error)
 
 	/*
 		WaitMined waits for a transaction with the provided hash and

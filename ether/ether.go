@@ -585,7 +585,7 @@ func (ether *Ether) DeployContract(
 }
 
 // TODO: backoff
-func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.ContractInstance, contractAddress string, data []byte) (*gethTypes.Receipt, error) {
+func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.ContractInstance, contractAddress string, data []byte) (*gethTypes.Transaction, error) {
 	if contract == nil {
 		return nil, constant.ErrContractInstanceIsNil
 	}
@@ -605,7 +605,9 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.Con
 		return nil, err
 	}
 
-	return ether.WaitMined(tx.Hash())
+	return tx, nil
+
+	// return ether.WaitMined(tx.Hash())
 }
 
 // TODO: support backoff

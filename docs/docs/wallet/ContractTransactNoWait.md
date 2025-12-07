@@ -1,13 +1,14 @@
 ---
-sidebar_position: 10
+sidebar_position: 11
 ---
 
 ![](https://img.shields.io/badge/go-geth-lightblue)
 
 ContractTransact executes a transaction on a deployed contract.
-It waits for the transaction to be mined and returns the transaction receipt.
 
-cf.) [`wallet.ContractTransactNoWait`](./ContractTransactNoWait.md)
+You can wait deployment using deployRes.
+
+cf.) [`wallet.ContractTransact`](./ContractTransact.md)
 
 :::warning
 
@@ -17,11 +18,11 @@ cf.) [`wallet.ContractTransactNoWait`](./ContractTransactNoWait.md)
 :::
 
 ```go
-func ContractTransact(
+func ContractTransactNoWait(
 	contract types.ContractInstance,
 	contractAddress string,
 	data []byte,
-) (txReceipt *gethTypes.Receipt, err error)
+) (tx *gethTypes.Transaction, err error)
 ```
 
 ```go
@@ -43,10 +44,13 @@ func main() {
 	data := abi.PackXXX(<data>)
 
 	// Execute transaction
-	receipt, err := w.ContractTransact(contract, contractAddress, data)
+	tx, err := w.ContractTransactNoWait(contract, contractAddress, data)
 	if err != nil {
 		panic(err)
 	}
+
+	// wait to be mined
+	receipt, err := alchemy.Transact.WaitMined(tx.Hash().Hex())
 
 	fmt.Printf("Transaction hash: %s\n", receipt.TxHash)
 	fmt.Printf("Status: %d\n", receipt.Status)
