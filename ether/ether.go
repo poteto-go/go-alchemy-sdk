@@ -58,6 +58,15 @@ func (ether *Ether) SetEthClient() error {
 	return nil
 }
 
+func (ether *Ether) GetEthClient() (*ethclient.Client, error) {
+	err := ether.SetEthClient()
+	if err != nil {
+		return nil, err
+	}
+
+	return ether.client, nil
+}
+
 func (ether *Ether) Close() {
 	if ether.client == nil {
 		return
@@ -639,4 +648,29 @@ func (ether *Ether) WaitDeployed(txHash common.Hash) (common.Address, error) {
 	}
 
 	return address, nil
+}
+
+func (
+	ether *Ether,
+) ContractCall(
+	contract types.ContractInstance,
+	contractAddress common.Address,
+	opts *bind.CallOpts,
+	callData []byte,
+	unpack func([]byte) (any, error),
+) (any, error) {
+	err := ether.SetEthClient()
+	if err != nil {
+		return nil, err
+	}
+	defer ether.Close()
+
+	instance := contract.Instance(ether.client, contractAddress)
+
+	val, err := bind.Call(instance, opts, callData, unpack)
+	if err != nil {
+		return nil, err
+	}
+
+	return val, nil
 }

@@ -161,6 +161,19 @@ func TestWallet_Connect(t *testing.T) {
 	})
 }
 
+func TestWallet_Provider(t *testing.T) {
+	t.Run("can get provider", func(t *testing.T) {
+		// Arrange
+		w := createConnectedWallet()
+
+		// Act
+		provider := w.Provider()
+
+		// Assert
+		assert.NotNil(t, provider)
+	})
+}
+
 func TestWallet_PendingNonceAt(t *testing.T) {
 	t.Run("can get nonce from address", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
@@ -1279,6 +1292,86 @@ func TestWallet_ContractTransactNoWait(t *testing.T) {
 
 		// Act
 		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}
+
+func TestWallet_ContractCall(t *testing.T) {
+	contract := artifacts.NewPotetoStorage()
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	data := []byte("test data")
+	unpack := func(b []byte) (any, error) { return nil, nil }
+	callOpts := &bind.CallOpts{}
+
+	t.Run("can call contract", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		expectedRes := "result"
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ContractCall",
+			func(
+				_ *ether.Ether,
+				_ types.ContractInstance,
+				_ common.Address,
+				_ *bind.CallOpts,
+				_ []byte,
+				_ func([]byte) (any, error),
+			) (any, error) {
+				return expectedRes, nil
+			},
+		)
+
+		// Act
+		res, err := w.ContractCall(contract, contractAddress, callOpts, data, unpack)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, expectedRes, res)
+	})
+
+	t.Run("if wallet is not connected, return error", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.ContractCall(contract, contractAddress, callOpts, data, unpack)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("if failed to call contract, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ContractCall",
+			func(
+				_ *ether.Ether,
+				_ types.ContractInstance,
+				_ common.Address,
+				_ *bind.CallOpts,
+				_ []byte,
+				_ func([]byte) (any, error),
+			) (any, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ContractCall(contract, contractAddress, callOpts, data, unpack)
 
 		// Assert
 		assert.Error(t, err)

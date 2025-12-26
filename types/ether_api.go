@@ -21,6 +21,11 @@ type EtherApi interface {
 	SetEthClient() error
 
 	/*
+		set ether client & return
+	*/
+	GetEthClient() (*ethclient.Client, error)
+
+	/*
 		decrement connCount.
 		if connCount <= 0, close client & set nil
 	*/
@@ -190,4 +195,17 @@ type EtherApi interface {
 		It stops waiting when ctx is canceled.
 	*/
 	WaitDeployed(hash common.Hash) (common.Address, error)
+
+	/*
+		ContractCall calls a contract.
+
+		internal call geth
+	*/
+	ContractCall(
+		contract ContractInstance,
+		contractAddress common.Address,
+		ops *bind.CallOpts,
+		callData []byte,
+		unpack func([]byte) (any, error),
+	) (any, error)
 }

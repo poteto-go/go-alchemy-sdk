@@ -126,6 +126,44 @@ func TestEther_SetEthClientAndClose(t *testing.T) {
 	})
 }
 
+func TestEther_GetEthClient(t *testing.T) {
+	t.Run("can get eth client", func(t *testing.T) {
+		// Arrange
+		ether := newEtherApiForTest()
+
+		// Act
+		client, err := ether.GetEthClient()
+
+		// Assert
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+	})
+
+	t.Run("if failed to set eth client, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		ether := newEtherApiForTest()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(ether),
+			"SetEthClient",
+			func(_ *eth.Ether) error {
+				return errors.New("error")
+			},
+		)
+
+		// Act
+		client, err := ether.GetEthClient()
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, client)
+	})
+}
+
 func TestEther_BlockNumber(t *testing.T) {
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("success request", func(t *testing.T) {
