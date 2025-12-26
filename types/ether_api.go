@@ -21,11 +21,6 @@ type EtherApi interface {
 	SetEthClient() error
 
 	/*
-		set ether client & return
-	*/
-	GetEthClient() (*ethclient.Client, error)
-
-	/*
 		decrement connCount.
 		if connCount <= 0, close client & set nil
 	*/

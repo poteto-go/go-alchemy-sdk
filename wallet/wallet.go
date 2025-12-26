@@ -20,9 +20,6 @@ import (
 
 // Wallet class inherits Signer and can sign transactions and messages using
 type Wallet interface {
-	// get provider
-	Provider() types.IAlchemyProvider
-
 	// get address of wallet
 	GetAddress() string
 
@@ -141,10 +138,6 @@ func New(privateKeyStr string) (Wallet, error) {
 		privateKey: privateKey,
 		publicKey:  publicKeyECDSA,
 	}, nil
-}
-
-func (w *wallet) Provider() types.IAlchemyProvider {
-	return w.provider
 }
 
 func (w *wallet) GetAddress() string {

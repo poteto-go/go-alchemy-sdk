@@ -58,15 +58,6 @@ func (ether *Ether) SetEthClient() error {
 	return nil
 }
 
-func (ether *Ether) GetEthClient() (*ethclient.Client, error) {
-	err := ether.SetEthClient()
-	if err != nil {
-		return nil, err
-	}
-
-	return ether.client, nil
-}
-
 func (ether *Ether) Close() {
 	if ether.client == nil {
 		return

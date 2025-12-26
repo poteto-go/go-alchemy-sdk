@@ -16,11 +16,9 @@ func ContractCall[T any](
 	callData []byte,
 	unpack func([]byte) (T, error),
 ) (T, error) {
-	unpackAny := func(b []byte) (any, error) {
+	res, err := w.ContractCall(contract, contractAddress, opts, callData, func(b []byte) (any, error) {
 		return unpack(b)
-	}
-
-	res, err := w.ContractCall(contract, contractAddress, opts, callData, unpackAny)
+	})
 	if err != nil {
 		return *new(T), err
 	}

@@ -161,19 +161,6 @@ func TestWallet_Connect(t *testing.T) {
 	})
 }
 
-func TestWallet_Provider(t *testing.T) {
-	t.Run("can get provider", func(t *testing.T) {
-		// Arrange
-		w := createConnectedWallet()
-
-		// Act
-		provider := w.Provider()
-
-		// Assert
-		assert.NotNil(t, provider)
-	})
-}
-
 func TestWallet_PendingNonceAt(t *testing.T) {
 	t.Run("can get nonce from address", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
