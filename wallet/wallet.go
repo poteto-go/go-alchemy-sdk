@@ -95,6 +95,18 @@ type Wallet interface {
 	) (*gethTypes.Transaction, error)
 
 	/*
+		ContractCall calls a contract method.
+		It is used for read-only methods.
+	*/
+	ContractCall(
+		contract types.ContractInstance,
+		contractAddress string,
+		opts *bind.CallOpts,
+		callData []byte,
+		unpack func([]byte) (any, error),
+	) (any, error)
+
+	/*
 		ResetPool clears the cached ChainID and TransactOpts.
 		Call this when you need to refresh the cached values.
 
@@ -315,6 +327,21 @@ func (w *wallet) ContractTransactNoWait(
 	}
 
 	return tx, nil
+}
+
+func (w *wallet) ContractCall(
+	contract types.ContractInstance,
+	contractAddress string,
+	opts *bind.CallOpts,
+	callData []byte,
+	unpack func([]byte) (any, error),
+) (any, error) {
+	if w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
+	addr := common.HexToAddress(contractAddress)
+	return w.provider.Eth().ContractCall(contract, addr, opts, callData, unpack)
 }
 
 func (w *wallet) getOrCreateAuth() (*bind.TransactOpts, error) {
