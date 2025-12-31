@@ -17,11 +17,21 @@ type AlchemySetting struct {
 	ApiKey     string        `yaml:"api_key"`
 	Network    types.Network `yaml:"network"`
 	MaxRetries int           `yaml:"max_retries"`
+
 	// currently not working
 	IsRequestBatch bool `yaml:"is_request_batch"`
+
 	// config for backoff retry
 	BackoffConfig  *types.BackoffConfig `yaml:"backoff_config"`
 	RequestTimeout time.Duration        `yaml:"request_timeout"`
+
 	// You should set if you want to use p8 network
 	PrivateNetworkConfig PrivateNetworkConfig `yaml:"private_network_config"`
+
+	/*
+		return true => p8net is selected
+
+		return false => public is selected
+	*/
+	IsPrivateNetwork func(setting AlchemySetting) bool
 }

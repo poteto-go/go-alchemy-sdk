@@ -50,10 +50,14 @@ func settingToUrl(setting AlchemySetting) string {
 }
 
 func isPrivateNetwork(setting AlchemySetting) bool {
-	if setting.PrivateNetworkConfig.Port == 0 || setting.PrivateNetworkConfig.Host == "" {
-		return false
+	if setting.IsPrivateNetwork == nil {
+		return defaultIsPrivateNeetwork(setting)
 	}
-	return true
+	return setting.IsPrivateNetwork(setting)
+}
+
+func defaultIsPrivateNeetwork(setting AlchemySetting) bool {
+	return setting.PrivateNetworkConfig.Host != "" && setting.PrivateNetworkConfig.Port != 0
 }
 
 func (config *AlchemyConfig) GetUrl() string {
