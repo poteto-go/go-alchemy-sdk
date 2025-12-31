@@ -51,12 +51,12 @@ func settingToUrl(setting AlchemySetting) string {
 
 func isPrivateNetwork(setting AlchemySetting) bool {
 	if setting.IsPrivateNetwork == nil {
-		return defaultIsPrivateNeetwork(setting)
+		return defaultIsPrivateNetwork(setting)
 	}
 	return setting.IsPrivateNetwork(setting)
 }
 
-func defaultIsPrivateNeetwork(setting AlchemySetting) bool {
+func defaultIsPrivateNetwork(setting AlchemySetting) bool {
 	return setting.PrivateNetworkConfig.Host != "" && setting.PrivateNetworkConfig.Port != 0
 }
 
