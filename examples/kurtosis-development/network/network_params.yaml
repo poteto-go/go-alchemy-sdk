@@ -1,0 +1,5 @@
+participants:
+  - el_type: geth
+    cl_type: lighthouse
+network_params:
+  network_id: "585858"
