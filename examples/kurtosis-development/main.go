@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -29,5 +30,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	println(blockNumber)
+	fmt.Println(blockNumber)
 }
