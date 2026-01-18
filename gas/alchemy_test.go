@@ -22,6 +22,7 @@ func TestNewAlchemy(t *testing.T) {
 	assert.Equal(t, alchemy.config, config)
 	assert.NotNil(t, alchemy.Core)
 	assert.NotNil(t, alchemy.Transact)
+	assert.NotNil(t, alchemy.Nft)
 }
 
 func TestAlchemy_GetProvider(t *testing.T) {

@@ -10,6 +10,7 @@ type Alchemy struct {
 	config   AlchemyConfig
 	Core     namespace.ICore
 	Transact namespace.ITransact
+	Nft      namespace.INft
 	provider types.IAlchemyProvider
 }
 
@@ -23,11 +24,13 @@ func NewAlchemy(setting AlchemySetting) Alchemy {
 	alchemyProvider.SetEth(ether)
 	coreNamespace := namespace.NewCore(ether)
 	transactNamespace := namespace.NewTransactNamespace(ether)
+	nftNamespace := namespace.NewNftNamespace(ether)
 
 	return Alchemy{
 		config:   alchemyConfig,
 		Core:     coreNamespace,
 		Transact: transactNamespace,
+		Nft:      nftNamespace,
 		provider: alchemyProvider,
 	}
 }
