@@ -4,7 +4,7 @@ go 1.25.1
 
 require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
-	github.com/ethereum/go-ethereum v1.16.7
+	github.com/ethereum/go-ethereum v1.16.8
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/jarcoal/httpmock v1.4.0
 	github.com/stretchr/testify v1.10.0
