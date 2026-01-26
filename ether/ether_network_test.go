@@ -19,7 +19,7 @@ func TestEther_PeerCount(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock
-			alchemyMock.RegisterResponder("net_peerCount", `{"jsonrpc":"2.0","id":1,"result":"0x19"}`)
+			alchemyMock.RegisterResponderOnce("net_peerCount", `{"jsonrpc":"2.0","id":1,"result":"0x19"}`)
 
 			// Act
 			result, err := ether.PeerCount()

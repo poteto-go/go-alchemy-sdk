@@ -21,7 +21,7 @@ func TestSomething(t *testing.T) {
 	mock := alchemymock.NewAlchemyHttpMock(setting, t)
 	defer mock.DeactivateAndReset()
 
-	mock.RegisterResponder("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+	mock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
 
 	balance, err := alchemy.Core.GetBalance("0x", "latest")
 	if err != nil {

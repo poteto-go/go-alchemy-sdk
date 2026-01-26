@@ -24,7 +24,7 @@ func TestEther_PendingNonceAt(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock
-			alchemyMock.RegisterResponder("eth_getTransactionCount", `{"jsonrpc":"2.0","id":1,"result":"0x10"}`)
+			alchemyMock.RegisterResponderOnce("eth_getTransactionCount", `{"jsonrpc":"2.0","id":1,"result":"0x10"}`)
 
 			// Act
 			result, err := ether.PendingNonceAt("0xa7d9ddbe1f17865597fbd27ec712455208b6b76d")
