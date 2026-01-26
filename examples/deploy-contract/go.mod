@@ -3,7 +3,7 @@ module github.com/poteto-go/tutorial-deploy-contract
 go 1.25.1
 
 require (
-	github.com/ethereum/go-ethereum v1.16.7
+	github.com/ethereum/go-ethereum v1.16.8
 	github.com/poteto-go/go-alchemy-sdk v0.0.0-20251108090332-aa3d55515e2c
 )
 
