@@ -1,5 +1,6 @@
 .env
 playground/
 .gemini/history/
+!.gemini/skills/
 gha-creds-*.json
 coverage.out

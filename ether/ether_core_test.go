@@ -135,7 +135,7 @@ func TestEther_BlockNumber(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock
-			alchemyMock.RegisterResponder("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+			alchemyMock.RegisterResponderOnce("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
 
 			// Act
 			result, err := ether.BlockNumber()
@@ -192,7 +192,7 @@ func TestEther_GasPrice(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock
-			alchemyMock.RegisterResponder("eth_gasPrice", `{"jsonrpc":"2.0","id":1,"result":"0x5678"}`)
+			alchemyMock.RegisterResponderOnce("eth_gasPrice", `{"jsonrpc":"2.0","id":1,"result":"0x5678"}`)
 
 			// Act
 			result, err := ether.GasPrice()
@@ -337,7 +337,7 @@ func TestEther_CodeAt(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock
-			alchemyMock.RegisterResponder("eth_getCode", `{"jsonrpc":"2.0","id":1,"result":"0x608060405234801561001057600080fd5b50"}`)
+			alchemyMock.RegisterResponderOnce("eth_getCode", `{"jsonrpc":"2.0","id":1,"result":"0x608060405234801561001057600080fd5b50"}`)
 
 			// Act
 			result, err := ether.CodeAt("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "latest")
@@ -411,7 +411,7 @@ func TestEther_CodeAtHash(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock
-			alchemyMock.RegisterResponder("eth_getCode", `{"jsonrpc":"2.0","id":1,"result":"0x608060405234801561001057600080fd5b50"}`)
+			alchemyMock.RegisterResponderOnce("eth_getCode", `{"jsonrpc":"2.0","id":1,"result":"0x608060405234801561001057600080fd5b50"}`)
 
 			// Act
 			result, err := ether.CodeAtHash("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "0xbd05b61cc68595a7c30039b2b092ea293c9a2faee20158d578528e399f4d4244")
@@ -472,7 +472,7 @@ func TestEther_GetTransaction(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock - minimal transaction response
-			alchemyMock.RegisterResponder("eth_getTransactionByHash", `{
+			alchemyMock.RegisterResponderOnce("eth_getTransactionByHash", `{
 				"jsonrpc":"2.0",
 				"id":1,
 				"result":{
@@ -552,7 +552,7 @@ func TestEther_StorageAt(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock
-			alchemyMock.RegisterResponder("eth_getStorageAt", `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000001"}`)
+			alchemyMock.RegisterResponderOnce("eth_getStorageAt", `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000001"}`)
 
 			// Act
 			result, err := ether.StorageAt("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73", "0x0", "latest")

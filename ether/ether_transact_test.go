@@ -6,15 +6,16 @@ import (
 	"reflect"
 	"testing"
 
+	"math/big"
+	"strings"
+
 	"github.com/agiledragon/gomonkey"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"math/big"
 )
 
 type mockContract struct {
@@ -39,15 +40,15 @@ func TestEther_ContractCall(t *testing.T) {
 
 		mockInstance := &mockContract{abi: parsedABI}
 		addr := common.HexToAddress("0x123")
-		
+
 		expectedVal := big.NewInt(1)
 		expectedHex := "0x0000000000000000000000000000000000000000000000000000000000000001"
-		alchemyMock.RegisterResponder("eth_call", `{"jsonrpc":"2.0","id":1,"result":"`+expectedHex+`"}`)
+		alchemyMock.RegisterResponderOnce("eth_call", `{"jsonrpc":"2.0","id":1,"result":"`+expectedHex+`"}`)
 
 		unpack := func(b []byte) (any, error) {
 			return expectedVal, nil
 		}
-		
+
 		callData := []byte{0x12, 0x34}
 
 		// Act
@@ -65,7 +66,7 @@ func TestEther_ContractCall(t *testing.T) {
 
 			// Arrange
 			ether := newEtherApiForTest()
-			
+
 			// Mock
 			patches.ApplyMethod(
 				reflect.TypeOf(ether),
@@ -98,7 +99,7 @@ func TestEther_ContractCall(t *testing.T) {
 			defer alchemyMock.DeactivateAndReset()
 
 			// Mock: Respond with an error
-			alchemyMock.RegisterResponder("eth_call", `{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"execution reverted"}}`)
+			alchemyMock.RegisterResponderOnce("eth_call", `{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"execution reverted"}}`)
 
 			// Mock objects
 			abiJSON := `[{"constant":true,"inputs":[],"name":"test","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]`

@@ -1,8 +1,12 @@
 package alchemymock
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
+	"sync"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -11,7 +15,9 @@ import (
 
 // AlchemyHttpMock is a helper for mocking Alchemy API responses in tests.
 type AlchemyHttpMock struct {
-	baseUrl string
+	baseUrl    string
+	responders map[string][]httpmock.Responder
+	mu         sync.Mutex
 }
 
 // NewAlchemyHttpMock creates a new AlchemyHttpMock and activates httpmock.
@@ -26,9 +32,12 @@ type AlchemyHttpMock struct {
 func NewAlchemyHttpMock(setting gas.AlchemySetting, t testing.TB) *AlchemyHttpMock {
 	config := gas.NewAlchemyConfig(setting)
 	httpmock.Activate(t)
-	return &AlchemyHttpMock{
-		baseUrl: config.GetUrl(),
+	mock := &AlchemyHttpMock{
+		baseUrl:    config.GetUrl(),
+		responders: make(map[string][]httpmock.Responder),
 	}
+	mock.registerMasterResponder()
+	return mock
 }
 
 // DeactivateAndReset deactivates httpmock and resets its state.
@@ -41,7 +50,7 @@ type jsonRpcRequest struct {
 }
 
 // assert you can call jsonrpc w/ your expected eth method
-func (am *AlchemyHttpMock) RegisterResponder(ethMethod, response string) {
+func (am *AlchemyHttpMock) RegisterResponderOnce(ethMethod, response string) {
 	am.registerResponderWithCode(
 		http.StatusOK,
 		ethMethod,
@@ -51,19 +60,43 @@ func (am *AlchemyHttpMock) RegisterResponder(ethMethod, response string) {
 
 func (m *AlchemyHttpMock) registerResponderWithCode(statusCode int, ethMethod, response string) {
 	responder := httpmock.NewStringResponder(statusCode, response)
-	matcherFunc := func(req *http.Request) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.responders[ethMethod] = append(m.responders[ethMethod], responder)
+}
+
+func (m *AlchemyHttpMock) registerMasterResponder() {
+	httpmock.RegisterResponder("POST", m.baseUrl, func(req *http.Request) (*http.Response, error) {
 		var request jsonRpcRequest
-		if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
-			return false
+
+		// Read the body
+		if req.Body == nil {
+			return nil, errors.New("body is nil")
+		}
+		bodyBytes, err := io.ReadAll(req.Body)
+		if err != nil {
+			return nil, errors.New("cannot read body")
 		}
 
-		return request.Method == ethMethod
-	}
+		// Restore the body so other matchers can read it
+		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-	httpmock.RegisterMatcherResponder(
-		"POST",
-		m.baseUrl,
-		httpmock.NewMatcher("match eth method", matcherFunc),
-		responder,
-	)
+		if err := json.Unmarshal(bodyBytes, &request); err != nil {
+			return nil, errors.New("invalid json")
+		}
+
+		m.mu.Lock()
+		defer m.mu.Unlock()
+
+		responders, ok := m.responders[request.Method]
+		if !ok || len(responders) == 0 {
+			return nil, errors.New("method not mocked or no more mocks available")
+		}
+
+		// Always pop the first responder (FIFO)
+		responder := responders[0]
+		m.responders[request.Method] = responders[1:]
+
+		return responder(req)
+	})
 }

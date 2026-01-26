@@ -42,7 +42,7 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		alchemy := gas.NewAlchemy(setting)
 
 		// Act
-		alchemyMock.RegisterResponder("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+		alchemyMock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
 		balance, err := alchemy.Core.GetBalance("0x", "latest")
 
 		// Assert
@@ -65,7 +65,7 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		alchemy := gas.NewAlchemy(setting)
 
 		// Act
-		alchemyMock.RegisterResponder("eth_unexpected", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+		alchemyMock.RegisterResponderOnce("eth_unexpected", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
 		_, err := alchemy.Core.GetBalance("0x", "latest")
 
 		// Assert
@@ -86,7 +86,7 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		alchemy := gas.NewAlchemy(setting)
 
 		// Act
-		alchemyMock.RegisterResponder("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+		alchemyMock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
 		_, err := alchemy.Core.GetBalance("0x", "latest")
 
 		// Assert
@@ -106,7 +106,7 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		defer alchemyMock.DeactivateAndReset()
 
 		// Act
-		alchemyMock.RegisterResponder("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+		alchemyMock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
 		req, _ := http.NewRequest(
 			http.MethodPost,
 			"https://fuga.g.alchemy.com/v2/hoge",
@@ -116,5 +116,70 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 
 		// Assert
 		assert.Error(t, err)
+	})
+}
+
+func TestAlchemyMock_MultipleResponders(t *testing.T) {
+	t.Run("can register multiple responders", func(t *testing.T) {
+		// Arrange
+		setting := gas.AlchemySetting{
+			ApiKey:  "hoge",
+			Network: "fuga",
+			BackoffConfig: &types.BackoffConfig{
+				MaxRetries: 0,
+			},
+		}
+		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
+		defer alchemyMock.DeactivateAndReset()
+		alchemy := gas.NewAlchemy(setting)
+
+		// Act
+		// Register first responder
+		alchemyMock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+		// Register second responder
+		alchemyMock.RegisterResponderOnce("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x10"}`)
+
+		// Assert
+		// Call first method
+		balance, err1 := alchemy.Core.GetBalance("0x", "latest")
+		assert.NoError(t, err1)
+		assert.Equal(t, "4660", balance.String())
+
+		// Call second method
+		blockNumber, err2 := alchemy.Core.GetBlockNumber()
+		assert.NoError(t, err2)
+		assert.Equal(t, uint64(16), blockNumber)
+	})
+}
+
+func TestAlchemyMock_SequenceResponders(t *testing.T) {
+	t.Run("responders return values in sequence", func(t *testing.T) {
+		// Arrange
+		setting := gas.AlchemySetting{
+			ApiKey:  "hoge",
+			Network: "fuga",
+			BackoffConfig: &types.BackoffConfig{
+				MaxRetries: 0,
+			},
+		}
+		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
+		defer alchemyMock.DeactivateAndReset()
+		alchemy := gas.NewAlchemy(setting)
+
+		// Act
+		// Register sequence of responders for the same method
+		alchemyMock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1"}`) // 1
+		alchemyMock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x2"}`) // 2
+
+		// Assert
+		// First call should get first result
+		balance1, err1 := alchemy.Core.GetBalance("0x", "latest")
+		assert.NoError(t, err1)
+		assert.Equal(t, "1", balance1.String())
+
+		// Second call should get second result
+		balance2, err2 := alchemy.Core.GetBalance("0x", "latest")
+		assert.NoError(t, err2)
+		assert.Equal(t, "2", balance2.String())
 	})
 }
