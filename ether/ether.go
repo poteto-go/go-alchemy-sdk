@@ -234,9 +234,10 @@ func (ether *Ether) StorageAt(address, position, blockTag string) (string, error
 }
 
 func (ether *Ether) GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error) {
-	paramsAny := []any{address}
-	for _, param := range params {
-		paramsAny = append(paramsAny, param)
+	paramsAny := make([]any, 0, len(params)+1)
+	paramsAny = append(paramsAny, strings.ToLower(address))
+	for i, param := range params {
+		paramsAny[i+1] = param
 	}
 
 	result, err := ether.provider.Send(
