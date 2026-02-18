@@ -234,8 +234,8 @@ func (ether *Ether) StorageAt(address, position, blockTag string) (string, error
 }
 
 func (ether *Ether) GetTokenBalances(address string, params ...string) (types.TokenBalanceResponse, error) {
-	paramsAny := make([]any, 0, len(params)+1)
-	paramsAny = append(paramsAny, strings.ToLower(address))
+	paramsAny := make([]any, len(params)+1)
+	paramsAny[0] = strings.ToLower(address)
 	for i, param := range params {
 		paramsAny[i+1] = param
 	}
