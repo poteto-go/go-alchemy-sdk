@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"slices"
@@ -22,21 +23,19 @@ func isAlwaysReProduceError(err error) bool {
 		return false
 	}
 
-	switch assertedErr := err.(type) {
-	// url error always re-produce
-	case *url.Error:
+	if _, ok := errors.AsType[*url.Error](err); ok {
 		return true
-
-	// rpc json error
-	case rpc.Error:
-		return isAlwaysReProduceRpcError(assertedErr)
-
-	case rpc.HTTPError:
-		return isAlwaysReProduceHttpError(assertedErr)
-
-	default:
-		return false
 	}
+
+	if rpcError, ok := errors.AsType[rpc.Error](err); ok {
+		return isAlwaysReProduceRpcError(rpcError)
+	}
+
+	if httpError, ok := errors.AsType[rpc.HTTPError](err); ok {
+		return isAlwaysReProduceHttpError(httpError)
+	}
+
+	return false
 }
 
 func isAlwaysReProduceRpcError(err rpc.Error) bool {
