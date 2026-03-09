@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
-	github.com/ethereum/go-ethereum v1.17.0
+	github.com/ethereum/go-ethereum v1.17.1
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/jarcoal/httpmock v1.4.0
 	github.com/stretchr/testify v1.11.1
@@ -21,7 +21,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
-	github.com/ethereum/c-kzg-4844/v2 v2.1.5 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.6 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -31,7 +31,7 @@ require (
 	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
-	github.com/supranational/blst v0.3.16-0.20250831170142-f48500c1fdbe // indirect
+	github.com/supranational/blst v0.3.16 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
