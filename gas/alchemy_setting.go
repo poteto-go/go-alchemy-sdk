@@ -9,6 +9,7 @@ import (
 // If you want to run p8 mode,
 // you should define host & port
 type PrivateNetworkConfig struct {
+	Url  string `yaml:"url"`
 	Port int    `yaml:"port"`
 	Host string `yaml:"host"`
 }

@@ -44,9 +44,16 @@ func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
 
 func settingToUrl(setting AlchemySetting) string {
 	if isPrivateNetwork(setting) {
-		return "http://" + setting.PrivateNetworkConfig.Host + ":" + strconv.Itoa(setting.PrivateNetworkConfig.Port)
+		return resolvePrivateNetUrl(setting)
 	}
 	return "https://" + string(setting.Network) + ".g.alchemy.com/v2/" + setting.ApiKey
+}
+
+func resolvePrivateNetUrl(setting AlchemySetting) string {
+	if setting.PrivateNetworkConfig.Url != "" {
+		return setting.PrivateNetworkConfig.Url
+	}
+	return "http://" + setting.PrivateNetworkConfig.Host + ":" + strconv.Itoa(setting.PrivateNetworkConfig.Port)
 }
 
 func isPrivateNetwork(setting AlchemySetting) bool {
@@ -57,6 +64,9 @@ func isPrivateNetwork(setting AlchemySetting) bool {
 }
 
 func defaultIsPrivateNetwork(setting AlchemySetting) bool {
+	if setting.PrivateNetworkConfig.Url != "" {
+		return true
+	}
 	return setting.PrivateNetworkConfig.Host != "" && setting.PrivateNetworkConfig.Port != 0
 }
 
