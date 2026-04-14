@@ -127,6 +127,14 @@ type wallet struct {
 }
 
 func New(privateKeyStr string) (Wallet, error) {
+	if len(privateKeyStr) < 2 {
+		return &wallet{}, fmt.Errorf("invalid private key: %s", privateKeyStr)
+	}
+
+	if privateKeyStr[:2] == "0x" {
+		privateKeyStr = privateKeyStr[2:]
+	}
+
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
 	if err != nil {
 		return &wallet{}, err
