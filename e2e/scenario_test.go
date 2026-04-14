@@ -163,6 +163,31 @@ func TestSenario_DeployContract(t *testing.T) {
 	})
 }
 
+func TestScenario_ERC20(t *testing.T) {
+	t.Run("1. can create wallet 2. connect wallet 3. can deploy erc20 contract", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		contractAddress, err := w.DeployContract(&artifacts.ArtifactsMetaData)
+
+		assert.Nil(t, err)
+		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+		deployedContractAddress = contractAddress
+
+		t.Run("can get balance", func(t *testing.T) {
+			contract := artifacts.NewArtifacts()
+
+			balance, err := w.GetERC20Balance(contract, contractAddress.Hex())
+
+			assert.Nil(t, err)
+			assert.Equal(t, balance.Cmp(big.NewInt(0)), 1)
+		})
+	})
+}
+
 func TestScenario_SendTransaction(t *testing.T) {
 	w, err := wallet.New(initPrivateKey)
 

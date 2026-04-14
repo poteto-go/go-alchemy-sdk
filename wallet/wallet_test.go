@@ -17,6 +17,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
+	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
@@ -1362,6 +1363,52 @@ func TestWallet_ContractCall(t *testing.T) {
 
 		// Assert
 		assert.Error(t, err)
+	})
+}
+
+func TestWallet_GetERC20Balance(t *testing.T) {
+	contract := artifacts.NewArtifacts()
+	contractAddress := "0x1234567890123456789012345678901234567890"
+
+	t.Run("can get ERC20 balance", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		expectedBalance := big.NewInt(1000)
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w.erc20),
+			"BalanceOf",
+			func(
+				_ *namespace.ERC20,
+				_ types.ERC20ContractInstance,
+				_ string,
+				_ string,
+			) (*big.Int, error) {
+				return expectedBalance, nil
+			},
+		)
+
+		// Act
+		balance, err := w.GetERC20Balance(contract, contractAddress)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, expectedBalance, balance)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		// Arrange
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.GetERC20Balance(contract, contractAddress)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
 }
 

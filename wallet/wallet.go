@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
+	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
@@ -106,6 +107,16 @@ type Wallet interface {
 		unpack func([]byte) (any, error),
 	) (any, error)
 
+	/* ERC20 support */
+
+	/*
+		GetERC20Balance returns the balance of the ERC20 token for the wallet's address.
+	*/
+	GetERC20Balance(
+		contract types.ERC20ContractInstance,
+		contractAddress string,
+	) (*big.Int, error)
+
 	/*
 		ResetPool clears the cached ChainID and TransactOpts.
 		Call this when you need to refresh the cached values.
@@ -124,6 +135,9 @@ type wallet struct {
 	// Cache for performance
 	cachedChainID *big.Int
 	cachedAuth    *bind.TransactOpts
+
+	// for ERC20
+	erc20 namespace.IERC20
 }
 
 func New(privateKeyStr string) (Wallet, error) {
@@ -162,6 +176,7 @@ func (w *wallet) Connect(provider types.IAlchemyProvider) {
 	defer w.mu.Unlock()
 
 	w.provider = provider
+	w.erc20 = namespace.NewERC20Namespace(provider.Eth())
 }
 
 func (w *wallet) PendingNonceAt() (uint64, error) {
@@ -342,6 +357,21 @@ func (w *wallet) ContractCall(
 
 	addr := common.HexToAddress(contractAddress)
 	return w.provider.Eth().ContractCall(contract, addr, opts, callData, unpack)
+}
+
+func (w *wallet) GetERC20Balance(
+	contract types.ERC20ContractInstance,
+	contractAddress string,
+) (*big.Int, error) {
+	if w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
+	return w.erc20.BalanceOf(
+		contract,
+		contractAddress,
+		w.GetAddress(),
+	)
 }
 
 func (w *wallet) getOrCreateAuth() (*bind.TransactOpts, error) {
