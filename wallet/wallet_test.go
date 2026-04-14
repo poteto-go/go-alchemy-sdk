@@ -55,6 +55,28 @@ func TestNewWallet(t *testing.T) {
 		assert.Equal(t, expectedPublicKey, w.(*wallet).publicKey)
 	})
 
+	t.Run("can create wallet with 0x prefix private key", func(t *testing.T) {
+		// Arrange
+		expectedP8Key, _ := crypto.HexToECDSA(testPrivHex)
+		expectedPublicKey := expectedP8Key.Public().(*ecdsa.PublicKey)
+
+		// Act
+		w, err := New("0x" + testPrivHex)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, expectedP8Key, w.(*wallet).privateKey)
+		assert.Equal(t, expectedPublicKey, w.(*wallet).publicKey)
+	})
+
+	t.Run("private key length is less than 64 characters, return invalid error", func(t *testing.T) {
+		// Act
+		_, err := New("a")
+
+		// Assert
+		assert.Error(t, err)
+	})
+
 	t.Run("if failed hexToECDSA, return err", func(t *testing.T) {
 		// Act
 		_, err := New("key")
