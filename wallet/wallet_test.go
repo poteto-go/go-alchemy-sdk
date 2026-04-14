@@ -69,7 +69,7 @@ func TestNewWallet(t *testing.T) {
 		assert.Equal(t, expectedPublicKey, w.(*wallet).publicKey)
 	})
 
-	t.Run("private key <2 is invalid error", func(t *testing.T) {
+	t.Run("private key length is less than 64 characters, return invalid error", func(t *testing.T) {
 		// Act
 		_, err := New("a")
 
