@@ -1367,7 +1367,7 @@ func TestWallet_ContractCall(t *testing.T) {
 }
 
 func TestWallet_GetERC20Balance(t *testing.T) {
-	contract := artifacts.NewArtifacts()
+	contract := artifacts.NewERC20()
 	contractAddress := "0x1234567890123456789012345678901234567890"
 
 	t.Run("can get ERC20 balance", func(t *testing.T) {

@@ -28,7 +28,7 @@ func TestNewERC20Namespace(t *testing.T) {
 
 func TestERC20_BalanceOf(t *testing.T) {
 	// Arrange
-	contract := artifacts.NewArtifacts()
+	contract := artifacts.NewERC20()
 	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
 	walletAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
 
