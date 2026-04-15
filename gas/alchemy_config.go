@@ -1,6 +1,7 @@
 package gas
 
 import (
+	"net/http"
 	"strconv"
 	"time"
 
@@ -17,6 +18,7 @@ type AlchemyConfig struct {
 	isRequestBatch       bool
 	backoffConfig        *types.BackoffConfig
 	privateNetworkConfig PrivateNetworkConfig
+	customHeaders        []http.Header
 }
 
 func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
@@ -29,6 +31,7 @@ func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
 		isRequestBatch:       setting.IsRequestBatch,
 		backoffConfig:        setting.BackoffConfig,
 		privateNetworkConfig: setting.PrivateNetworkConfig,
+		customHeaders:        setting.CustomHeaders,
 	}
 
 	if config.requestTimeout == 0 {

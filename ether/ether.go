@@ -54,6 +54,16 @@ func (ether *Ether) SetEthClient() error {
 		return err
 	}
 
+	rpcClient.SetHeader("Content-Type", "application/json")
+	rpcClient.SetHeader("Alchemy-Ethers-Sdk-Method", "send")
+	for _, header := range ether.provider.CustomHeaders() {
+		for key, values := range header {
+			for _, value := range values {
+				rpcClient.SetHeader(key, value)
+			}
+		}
+	}
+
 	ether.client = ethclient.NewClient(rpcClient)
 	return nil
 }
