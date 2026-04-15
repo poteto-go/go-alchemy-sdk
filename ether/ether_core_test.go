@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
+	"net/http"
 	"reflect"
 	"testing"
 	"time"
@@ -28,6 +29,11 @@ var utAlchemySetting = gas.AlchemySetting{
 	Network: "fuga",
 	BackoffConfig: &types.BackoffConfig{
 		MaxRetries: 0,
+	},
+	CustomHeaders: []http.Header{
+		{
+			"X-Custom-Header": []string{"custom value"},
+		},
 	},
 }
 
@@ -98,7 +104,6 @@ func TestEther_SetEthClientAndClose(t *testing.T) {
 			assert.Nil(t, ether.Client())
 			assert.Nil(t, err)
 		})
-
 	})
 
 	t.Run("cannot create eth client", func(t *testing.T) {

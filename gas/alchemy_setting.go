@@ -1,6 +1,7 @@
 package gas
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -28,6 +29,8 @@ type AlchemySetting struct {
 
 	// You should set if you want to use p8 network
 	PrivateNetworkConfig PrivateNetworkConfig `yaml:"private_network_config"`
+
+	CustomHeaders []http.Header `yaml:"custom_headers"`
 
 	/*
 		return true => p8net is selected

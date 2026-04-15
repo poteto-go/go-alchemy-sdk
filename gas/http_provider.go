@@ -49,6 +49,10 @@ func (provider *AlchemyProvider) Eth() types.EtherApi {
 	return provider.eth
 }
 
+func (provider *AlchemyProvider) CustomHeaders() []http.Header {
+	return provider.config.customHeaders
+}
+
 /* Send raw transaction */
 func (provider *AlchemyProvider) Send(method string, params types.RequestArgs) (any, error) {
 	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
