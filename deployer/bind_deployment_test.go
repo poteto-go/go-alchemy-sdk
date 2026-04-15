@@ -13,12 +13,14 @@ func Test_BindDeploymentMetadata(t *testing.T) {
 	t.Run("can bind metadata", func(t *testing.T) {
 		// Arrange
 		metadata := &artifacts.ERC20MetaData
+		binData := metadata.Bin
 
 		// Act
 		err := deployer.BindDeploymentMetadata(metadata, big.NewInt(10))
 
 		// Assert
-		assert.Error(t, err)
+		assert.NoError(t, err)
+		assert.NotEqual(t, binData, metadata.Bin)
 	})
 
 	t.Run("pack error", func(t *testing.T) {
