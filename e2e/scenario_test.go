@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
+	"github.com/poteto-go/go-alchemy-sdk/deployer"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/wallet"
@@ -159,6 +160,33 @@ func TestSenario_DeployContract(t *testing.T) {
 
 			assert.Nil(t, err)
 			assert.Greater(t, blockNumber, uint64(0))
+		})
+	})
+}
+
+func TestScenario_ERC20(t *testing.T) {
+	t.Run("1. can create wallet 2. connect wallet 3. can deploy erc20 contract", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		erc20Metadata := &artifacts.ERC20MetaData
+		deployer.BindDeploymentMetadata(erc20Metadata, big.NewInt(1000))
+		contractAddress, err := w.DeployContract(erc20Metadata)
+
+		assert.Nil(t, err)
+		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+		deployedContractAddress = contractAddress
+
+		t.Run("can get balance", func(t *testing.T) {
+			contract := artifacts.NewERC20()
+
+			balance, err := w.GetERC20Balance(contract, contractAddress.Hex())
+
+			assert.Nil(t, err)
+			assert.Equal(t, balance.Cmp(big.NewInt(0)), 1)
 		})
 	})
 }

@@ -39,6 +39,38 @@ func main() {
 }
 ```
 
+### Not Alchemy Provider
+
+```go
+func main() {
+	setting := gas.AlchemySetting{
+		PrivateNetworkConfig: gas.PrivateNetworkConfig{
+			Url: <providerUrl>
+		},
+	}
+
+	alchemy := gas.NewAlchemy(setting)
+}
+```
+
+### Custom Header
+
+```go
+func main() {
+	setting := gas.AlchemySetting{
+		ApiKey:  "<alchemy-api-key>",
+		Network: types.EthSepolia,
+		CustomHeaders: []http.Header{
+			{
+				"X-Custom-Header": []string{"custom value"},
+			},
+		},
+	}
+
+	alchemy := gas.NewAlchemy(setting)
+}
+```
+
 ### More Configuration
 
 ```go
@@ -58,4 +90,8 @@ func main() {
 
 	alchemy := gas.NewAlchemy(setting)
 }
+```
+
+```
+
 ```
