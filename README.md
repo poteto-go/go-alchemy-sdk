@@ -6,14 +6,17 @@ golang sdk for alchemy, inspired by https://github.com/alchemyplatform/alchemy-s
 
 This project aims to be a **bridge between alchemy api and geth** objects.
 
+It supports not only Alchemy, but also other EVM chains.
+
 ## Documentation
 
 - https://go-alchemy-sdk.poteto-mahiro.com/
 
 ## Features
 
-🚀 easily switch private network(`geth`) to Eth-Public Network  
-🧪 easily mock rpc responses w/ `alchemymock`
+🖧 easily switch EVM network | private network to Eth-Public Network.
+⚙️ Designed to meet the needs of custom private chains, such as those requiring custom headers.
+🧪 easily mock rpc responses w/ `alchemymock`.
 
 ## QuickStart
 
@@ -49,14 +52,15 @@ func main() {
 - [x] Deploy Contract to Eth: done for `v0.1.0`
 - [x] Private Geth Support `v0.1.4`
 - [ ] geth migration `in-progress`
-- [ ] Non-Ether Chain Support
+- [ ] Non-EVM Chain Support
 
 ## Alchemy Sdk Namespace Support
 
 - [ ] `Core`: in-progress
+- [ ] `ERC20`(not on alchemy-sdk-js): in-progress
 - [ ] `Nft`
 - [ ] `Debug`
 - [ ] `Notify`
 - [ ] `Portfolio`
 - [ ] `Prices`
-- [ ] `Transact`
+- [ ] `Transact`: in-progress
