@@ -3,4 +3,3 @@ set -euo pipefail
 
 kurtosis enclave stop gas-testnet
 kurtosis clean
-kurtosis engine stop

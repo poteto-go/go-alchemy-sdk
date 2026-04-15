@@ -35,7 +35,7 @@ func BindDeploymentMetadata(base *bind.MetaData, args ...any) error {
 		return err
 	}
 
-	fullBin := append(binBytes, input...)
-	base.Bin = "0x" + hex.EncodeToString(fullBin)
+	binBytes = append(binBytes, input...)
+	base.Bin = "0x" + hex.EncodeToString(binBytes)
 	return nil
 }
