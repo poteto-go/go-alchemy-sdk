@@ -15,7 +15,9 @@ It supports not only Alchemy, but also other EVM chains.
 ## Features
 
 🖧 easily switch EVM network | private network to Eth-Public Network.
+
 ⚙️ Designed to meet the needs of custom private chains, such as those requiring custom headers.
+
 🧪 easily mock rpc responses w/ `alchemymock`.
 
 ## QuickStart
