@@ -1,6 +1,7 @@
 package ether
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -16,6 +17,9 @@ func TestNewEtherApiConfig(t *testing.T) {
 	backoffConfig := types.BackoffConfig{
 		MaxRetries: 1,
 	}
+	customHeaders := []http.Header{
+		{"hello": []string{"world"}},
+	}
 
 	// Act
 	config := NewEtherApiConfig(
@@ -23,6 +27,7 @@ func TestNewEtherApiConfig(t *testing.T) {
 		maxRetries,
 		requestTimeout,
 		&backoffConfig,
+		customHeaders,
 	)
 
 	// Assert
@@ -30,4 +35,5 @@ func TestNewEtherApiConfig(t *testing.T) {
 	assert.Equal(t, config.maxRetries, maxRetries)
 	assert.Equal(t, config.requestTimeout, requestTimeout)
 	assert.Equal(t, config.backoffConfig, &backoffConfig)
+	assert.Equal(t, config.customHeaders, customHeaders)
 }

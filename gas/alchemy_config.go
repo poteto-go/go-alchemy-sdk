@@ -84,5 +84,6 @@ func (config *AlchemyConfig) toEtherApiConfig() ether.EtherApiConfig {
 		config.maxRetries,
 		config.requestTimeout,
 		config.backoffConfig,
+		config.customHeaders,
 	)
 }
