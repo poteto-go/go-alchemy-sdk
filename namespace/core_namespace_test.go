@@ -3,6 +3,7 @@ package namespace_test
 import (
 	"errors"
 	"math/big"
+	"net/http"
 	"reflect"
 	"testing"
 	"time"
@@ -34,6 +35,7 @@ func newEtherApi() *ether.Ether {
 		0,
 		time.Duration(0),
 		nil,
+		[]http.Header{},
 	)).(*ether.Ether)
 }
 

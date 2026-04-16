@@ -63,7 +63,7 @@ func (provider *AlchemyProvider) Send(method string, params types.RequestArgs) (
 }
 
 func send(provider *AlchemyProvider, body []byte) (any, error) {
-	req, err := generateAlchemyRequest(provider.config.GetUrl())
+	req, err := generateAlchemyRequest(provider.config)
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +107,21 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 	return result, nil
 }
 
-func generateAlchemyRequest(url string) (*http.Request, error) {
-	req, err := http.NewRequest("POST", url, nil)
+func generateAlchemyRequest(config AlchemyConfig) (*http.Request, error) {
+	req, err := http.NewRequest("POST", config.GetUrl(), nil)
 	if err != nil {
 		return &http.Request{}, constant.ErrFailedToCreateRequest
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Alchemy-Ethers-Sdk-Method", "send")
+
+	for _, header := range config.customHeaders {
+		for key, values := range header {
+			for _, value := range values {
+				req.Header.Set(key, value)
+			}
+		}
+	}
 
 	return req, nil
 }

@@ -17,10 +17,16 @@ import (
 
 func TestNewAlchemyProvider(t *testing.T) {
 	// Arrange
+	customHeaders := []http.Header{
+		{
+			"hello": []string{"world"},
+		},
+	}
 	config := NewAlchemyConfig(
 		AlchemySetting{
-			ApiKey:  "hoge",
-			Network: "fuga",
+			ApiKey:        "hoge",
+			Network:       "fuga",
+			CustomHeaders: customHeaders,
 		},
 	)
 
@@ -30,6 +36,7 @@ func TestNewAlchemyProvider(t *testing.T) {
 	// Assert
 	assert.Equal(t, config, provider.config)
 	assert.Equal(t, 1, provider.id)
+	assert.Equal(t, config.customHeaders, customHeaders)
 }
 
 func newProviderForTest() *AlchemyProvider {
@@ -37,6 +44,11 @@ func newProviderForTest() *AlchemyProvider {
 		AlchemySetting{
 			ApiKey:  "hoge",
 			Network: "fuga",
+			CustomHeaders: []http.Header{
+				{
+					"hello": []string{"world"},
+				},
+			},
 		},
 	)
 	return NewAlchemyProvider(config).(*AlchemyProvider)
