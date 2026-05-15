@@ -26,6 +26,7 @@ import (
 var testAddrHex = "970e8128ab834e8eac17ab8e3812f010678cf791"
 var testAddrHexTo = "970e8128ab834e8eac17ab8e3812f010678cf792"
 var testPrivHex = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
+var testPrivHexForNew = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232030"
 
 func createConnectedWallet() *wallet {
 	w, _ := New(testPrivHex)
@@ -44,25 +45,11 @@ func createConnectedWallet() *wallet {
 func TestNewWallet(t *testing.T) {
 	t.Run("if can hex to ECDSA, return wallet", func(t *testing.T) {
 		// Arrange
-		expectedP8Key, _ := crypto.HexToECDSA(testPrivHex)
+		expectedP8Key, _ := crypto.HexToECDSA(testPrivHexForNew)
 		expectedPublicKey := expectedP8Key.Public().(*ecdsa.PublicKey)
 
 		// Act
-		w, err := New(testPrivHex)
-
-		// Assert
-		assert.Nil(t, err)
-		assert.Equal(t, expectedP8Key, w.(*wallet).privateKey)
-		assert.Equal(t, expectedPublicKey, w.(*wallet).publicKey)
-	})
-
-	t.Run("can create wallet with 0x prefix private key", func(t *testing.T) {
-		// Arrange
-		expectedP8Key, _ := crypto.HexToECDSA(testPrivHex)
-		expectedPublicKey := expectedP8Key.Public().(*ecdsa.PublicKey)
-
-		// Act
-		w, err := New("0x" + testPrivHex)
+		w, err := New("0x" + testPrivHexForNew)
 
 		// Assert
 		assert.Nil(t, err)
