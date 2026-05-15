@@ -142,7 +142,7 @@ type wallet struct {
 }
 
 func New(privateKeyStr string) (Wallet, error) {
-	privateKeyStr = strings.Trim(privateKeyStr, "0x")
+	privateKeyStr = strings.TrimPrefix(privateKeyStr, "0x")
 
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
 	if err != nil {
