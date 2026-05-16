@@ -65,12 +65,16 @@ func (ether *Ether) SetEthClient() error {
 
 // geth only accepted 60 seconds
 func (ether *Ether) isClientJwsAlive() bool {
+	if ether.client == nil {
+		return false
+	}
+
 	if len(ether.config.jwtSecret) == 0 {
 		return ether.client != nil
 	}
 
 	now := time.Now().Unix()
-	return ether.clientCreatedAt < now+(time.Second.Microseconds()*60)
+	return ether.clientCreatedAt+(time.Second.Microseconds()*60) >= now
 }
 
 // kill all client
