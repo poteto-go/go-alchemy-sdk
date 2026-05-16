@@ -35,3 +35,7 @@ func NewEtherApiConfig(
 		jwtSecret:      jwtSecret,
 	}
 }
+
+func (config *EtherApiConfig) JwtSecret() []byte {
+	return config.jwtSecret
+}

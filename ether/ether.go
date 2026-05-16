@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
@@ -23,11 +24,12 @@ import (
 )
 
 type Ether struct {
-	provider  types.IAlchemyProvider
-	config    EtherApiConfig
-	connCount int
-	client    *ethclient.Client
-	mu        *sync.Mutex
+	provider        types.IAlchemyProvider
+	config          EtherApiConfig
+	connCount       int
+	client          *ethclient.Client
+	clientCreatedAt int64
+	mu              *sync.Mutex
 }
 
 func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.EtherApi {
@@ -42,16 +44,49 @@ func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.E
 
 func (ether *Ether) SetEthClient() error {
 	ether.connCount += 1
-	if ether.client != nil {
+	if ether.isClientJwsAlive() {
 		return nil
 	}
+
+	ether.kill()
 
 	ether.mu.Lock()
 	defer ether.mu.Unlock()
 
-	rpcClient, err := rpc.Dial(ether.config.url)
+	rpcClient, err := ether.createRpcClient()
 	if err != nil {
 		return err
+	}
+
+	ether.client = ethclient.NewClient(rpcClient)
+	ether.clientCreatedAt = time.Now().Unix()
+	return nil
+}
+
+// geth only accepted 60 seconds
+func (ether *Ether) isClientJwsAlive() bool {
+	if len(ether.config.jwtSecret) == 0 {
+		return ether.client != nil
+	}
+
+	now := time.Now().Unix()
+	return ether.clientCreatedAt < now+(time.Second.Microseconds()*60)
+}
+
+// kill all client
+func (ether *Ether) kill() {
+	if ether.client == nil {
+		return
+	}
+
+	ether.client.Close()
+	ether.client = nil
+}
+
+func (ether *Ether) createRpcClient() (*rpc.Client, error) {
+	rpcClient, err := rpc.Dial(ether.config.url)
+	if err != nil {
+		return nil, err
 	}
 
 	rpcClient.SetHeader("Content-Type", "application/json")
@@ -64,7 +99,23 @@ func (ether *Ether) SetEthClient() error {
 		}
 	}
 
-	ether.client = ethclient.NewClient(rpcClient)
+	if err := ether.generateAndSetAuthorization(rpcClient); err != nil {
+		return nil, err
+	}
+	return rpcClient, nil
+}
+
+func (ether *Ether) generateAndSetAuthorization(rpcClient *rpc.Client) error {
+	if len(ether.config.JwtSecret()) == 0 {
+		return nil
+	}
+
+	jws, err := internal.GenerateJws(ether.config.jwtSecret)
+	if err != nil {
+		return err
+	}
+
+	rpcClient.SetHeader("Authorization", "Bearer "+jws)
 	return nil
 }
 
@@ -78,8 +129,7 @@ func (ether *Ether) Close() {
 		return
 	}
 
-	ether.client.Close()
-	ether.client = nil
+	ether.kill()
 }
 
 func (ether *Ether) Client() *ethclient.Client {
