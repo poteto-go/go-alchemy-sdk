@@ -14,8 +14,12 @@ type Alchemy struct {
 	provider types.IAlchemyProvider
 }
 
-func NewAlchemy(setting AlchemySetting) Alchemy {
-	alchemyConfig := NewAlchemyConfig(setting)
+func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
+	alchemyConfig, err := NewAlchemyConfig(setting)
+	if err != nil {
+		return Alchemy{}, err
+	}
+
 	alchemyProvider := NewAlchemyProvider(alchemyConfig)
 	ether := ether.NewEtherApi(
 		alchemyProvider,
@@ -32,7 +36,7 @@ func NewAlchemy(setting AlchemySetting) Alchemy {
 		Transact: transactNamespace,
 		Nft:      nftNamespace,
 		provider: alchemyProvider,
-	}
+	}, nil
 }
 
 func (gas *Alchemy) GetProvider() types.IAlchemyProvider {

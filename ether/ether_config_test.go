@@ -28,6 +28,7 @@ func TestNewEtherApiConfig(t *testing.T) {
 		requestTimeout,
 		&backoffConfig,
 		customHeaders,
+		[]byte(""),
 	)
 
 	// Assert

@@ -15,6 +15,7 @@ type EtherApiConfig struct {
 	requestTimeout time.Duration
 	backoffConfig  *types.BackoffConfig
 	customHeaders  []http.Header
+	jwtSecret      []byte
 }
 
 func NewEtherApiConfig(
@@ -23,6 +24,7 @@ func NewEtherApiConfig(
 	requestTimeout time.Duration,
 	backoffConfig *types.BackoffConfig,
 	customHeaders []http.Header,
+	jwtSecret []byte,
 ) EtherApiConfig {
 	return EtherApiConfig{
 		url:            url,
@@ -30,5 +32,10 @@ func NewEtherApiConfig(
 		requestTimeout: requestTimeout,
 		backoffConfig:  backoffConfig,
 		customHeaders:  customHeaders,
+		jwtSecret:      jwtSecret,
 	}
+}
+
+func (config *EtherApiConfig) JwtSecret() []byte {
+	return config.jwtSecret
 }

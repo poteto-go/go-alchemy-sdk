@@ -43,7 +43,11 @@ func setup() {
 			Port: port,
 		},
 	}
-	alchemy = gas.NewAlchemy(setting)
+	var errA error
+	alchemy, errA = gas.NewAlchemy(setting)
+	if errA != nil {
+		panic(errA)
+	}
 }
 
 func teardown() {

@@ -12,10 +12,12 @@ func TestNewAlchemy(t *testing.T) {
 		ApiKey:  "hoge",
 		Network: "fuga",
 	}
-	config := NewAlchemyConfig(setting)
+	config, err := NewAlchemyConfig(setting)
+	assert.NoError(t, err)
 
 	// Act
-	alchemy := NewAlchemy(setting)
+	alchemy, err := NewAlchemy(setting)
+	assert.NoError(t, err)
 
 	// Assert
 	assert.NotNil(t, alchemy)
@@ -31,7 +33,8 @@ func TestAlchemy_GetProvider(t *testing.T) {
 		ApiKey:  "hoge",
 		Network: "fuga",
 	}
-	alchemy := NewAlchemy(setting)
+	alchemy, err := NewAlchemy(setting)
+	assert.NoError(t, err)
 
 	// Act
 	provider := alchemy.GetProvider()

@@ -39,7 +39,8 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		}
 		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
 		defer alchemyMock.DeactivateAndReset()
-		alchemy := gas.NewAlchemy(setting)
+		alchemy, err := gas.NewAlchemy(setting)
+		assert.NoError(t, err)
 
 		// Act
 		alchemyMock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
@@ -62,11 +63,12 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		}
 		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
 		defer alchemyMock.DeactivateAndReset()
-		alchemy := gas.NewAlchemy(setting)
+		alchemy, err := gas.NewAlchemy(setting)
+		assert.NoError(t, err)
 
 		// Act
 		alchemyMock.RegisterResponderOnce("eth_unexpected", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
-		_, err := alchemy.Core.GetBalance("0x", "latest")
+		_, err = alchemy.Core.GetBalance("0x", "latest")
 
 		// Assert
 		assert.Error(t, err)
@@ -83,11 +85,12 @@ func TestAlchemyMock_RegisterResponder(t *testing.T) {
 		}
 		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
 		alchemyMock.DeactivateAndReset()
-		alchemy := gas.NewAlchemy(setting)
+		alchemy, err := gas.NewAlchemy(setting)
+		assert.NoError(t, err)
 
 		// Act
 		alchemyMock.RegisterResponderOnce("eth_getBalance", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
-		_, err := alchemy.Core.GetBalance("0x", "latest")
+		_, err = alchemy.Core.GetBalance("0x", "latest")
 
 		// Assert
 		assert.Error(t, err)
@@ -131,7 +134,8 @@ func TestAlchemyMock_MultipleResponders(t *testing.T) {
 		}
 		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
 		defer alchemyMock.DeactivateAndReset()
-		alchemy := gas.NewAlchemy(setting)
+		alchemy, err := gas.NewAlchemy(setting)
+		assert.NoError(t, err)
 
 		// Act
 		// Register first responder
@@ -164,7 +168,8 @@ func TestAlchemyMock_SequenceResponders(t *testing.T) {
 		}
 		alchemyMock := alchemymock.NewAlchemyHttpMock(setting, t)
 		defer alchemyMock.DeactivateAndReset()
-		alchemy := gas.NewAlchemy(setting)
+		alchemy, err := gas.NewAlchemy(setting)
+		assert.NoError(t, err)
 
 		// Act
 		// Register sequence of responders for the same method
@@ -173,13 +178,13 @@ func TestAlchemyMock_SequenceResponders(t *testing.T) {
 
 		// Assert
 		// First call should get first result
-		balance1, err1 := alchemy.Core.GetBalance("0x", "latest")
-		assert.NoError(t, err1)
+		balance1, err3 := alchemy.Core.GetBalance("0x", "latest")
+		assert.NoError(t, err3)
 		assert.Equal(t, "1", balance1.String())
 
 		// Second call should get second result
-		balance2, err2 := alchemy.Core.GetBalance("0x", "latest")
-		assert.NoError(t, err2)
+		balance2, err4 := alchemy.Core.GetBalance("0x", "latest")
+		assert.NoError(t, err4)
 		assert.Equal(t, "2", balance2.String())
 	})
 }

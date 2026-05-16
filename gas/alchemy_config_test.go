@@ -11,7 +11,7 @@ import (
 func TestNewAlchemyConfig(t *testing.T) {
 	t.Run("public mode", func(t *testing.T) {
 		// Act
-		config := NewAlchemyConfig(
+		config, err := NewAlchemyConfig(
 			AlchemySetting{
 				ApiKey:  "api-key",
 				Network: types.MaticMainnet,
@@ -19,6 +19,7 @@ func TestNewAlchemyConfig(t *testing.T) {
 		)
 
 		// Assert
+		assert.NoError(t, err)
 		assert.Equal(t, config.apiKey, "api-key")
 		assert.Equal(t, string(config.network), "matic-mainnet")
 		assert.Equal(t, config.url, "https://matic-mainnet.g.alchemy.com/v2/api-key")
@@ -26,7 +27,7 @@ func TestNewAlchemyConfig(t *testing.T) {
 
 	t.Run("p8 mode", func(t *testing.T) {
 		// Act
-		config := NewAlchemyConfig(
+		config, err := NewAlchemyConfig(
 			AlchemySetting{
 				PrivateNetworkConfig: PrivateNetworkConfig{
 					Host: "127.0.0.1",
@@ -36,6 +37,7 @@ func TestNewAlchemyConfig(t *testing.T) {
 		)
 
 		// Assert
+		assert.NoError(t, err)
 		assert.Equal(t, config.url, "http://127.0.0.1:8080")
 	})
 
@@ -47,7 +49,7 @@ func TestNewAlchemyConfig(t *testing.T) {
 		}
 
 		// Act
-		config := NewAlchemyConfig(
+		config, err := NewAlchemyConfig(
 			AlchemySetting{
 				ApiKey:  "api-key",
 				Network: types.MaticMainnet,
@@ -60,6 +62,7 @@ func TestNewAlchemyConfig(t *testing.T) {
 		)
 
 		// Assert
+		assert.NoError(t, err)
 		assert.Equal(t, config.apiKey, "api-key")
 		assert.Equal(t, string(config.network), "matic-mainnet")
 		assert.Equal(t, config.url, "https://matic-mainnet.g.alchemy.com/v2/api-key")
@@ -69,12 +72,13 @@ func TestNewAlchemyConfig(t *testing.T) {
 func TestAlchemyConfig_GetUrl(t *testing.T) {
 	t.Run("can resolve alchemy rpc url", func(t *testing.T) {
 		// Arrange
-		config := NewAlchemyConfig(
+		config, err := NewAlchemyConfig(
 			AlchemySetting{
 				ApiKey:  "api-key",
 				Network: types.MaticMainnet,
 			},
 		)
+		assert.NoError(t, err)
 
 		// Act
 		url := config.GetUrl()
@@ -85,13 +89,14 @@ func TestAlchemyConfig_GetUrl(t *testing.T) {
 
 	t.Run("can resolve private (means not alchemy) rpc by url", func(t *testing.T) {
 		// Arrange
-		config := NewAlchemyConfig(
+		config, err := NewAlchemyConfig(
 			AlchemySetting{
 				PrivateNetworkConfig: PrivateNetworkConfig{
 					Url: "http://custom-rpc.com",
 				},
 			},
 		)
+		assert.NoError(t, err)
 
 		// Act
 		url := config.GetUrl()
@@ -103,12 +108,13 @@ func TestAlchemyConfig_GetUrl(t *testing.T) {
 
 func TestAlchemyConfig_toEtherApiConfig(t *testing.T) {
 	// Arrange
-	config := NewAlchemyConfig(
+	config, err := NewAlchemyConfig(
 		AlchemySetting{
 			ApiKey:  "api-key",
 			Network: types.MaticMainnet,
 		},
 	)
+	assert.NoError(t, err)
 
 	// Act
 	etherConfig := config.toEtherApiConfig()

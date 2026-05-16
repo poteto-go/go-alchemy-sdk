@@ -22,13 +22,14 @@ func TestNewAlchemyProvider(t *testing.T) {
 			"hello": []string{"world"},
 		},
 	}
-	config := NewAlchemyConfig(
+	config, err := NewAlchemyConfig(
 		AlchemySetting{
 			ApiKey:        "hoge",
 			Network:       "fuga",
 			CustomHeaders: customHeaders,
 		},
 	)
+	assert.NoError(t, err)
 
 	// Act
 	provider := NewAlchemyProvider(config).(*AlchemyProvider)
@@ -40,7 +41,7 @@ func TestNewAlchemyProvider(t *testing.T) {
 }
 
 func newProviderForTest() *AlchemyProvider {
-	config := NewAlchemyConfig(
+	config, _ := NewAlchemyConfig(
 		AlchemySetting{
 			ApiKey:  "hoge",
 			Network: "fuga",
