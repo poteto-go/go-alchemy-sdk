@@ -1,11 +1,13 @@
 package gas
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/ether"
+	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
@@ -19,9 +21,19 @@ type AlchemyConfig struct {
 	backoffConfig        *types.BackoffConfig
 	privateNetworkConfig PrivateNetworkConfig
 	customHeaders        []http.Header
+	jwtSecret            []byte
 }
 
-func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
+func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
+	decodedJwt, err := internal.DecodeHex(setting.PrivateNetworkConfig.JwtSecret)
+	if err != nil {
+		return AlchemyConfig{}, err
+	}
+
+	if len(decodedJwt) != 0 && len(decodedJwt) != 32 {
+		return AlchemyConfig{}, errors.New("unexpected jwt size: required empty or 32 byte (raw 64)")
+	}
+
 	config := AlchemyConfig{
 		apiKey:               setting.ApiKey,
 		network:              setting.Network,
@@ -32,6 +44,7 @@ func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
 		backoffConfig:        setting.BackoffConfig,
 		privateNetworkConfig: setting.PrivateNetworkConfig,
 		customHeaders:        setting.CustomHeaders,
+		jwtSecret:            decodedJwt,
 	}
 
 	if config.requestTimeout == 0 {
@@ -42,7 +55,7 @@ func NewAlchemyConfig(setting AlchemySetting) AlchemyConfig {
 		config.backoffConfig = &types.DefaultBackoffConfig
 	}
 
-	return config
+	return config, nil
 }
 
 func settingToUrl(setting AlchemySetting) string {
@@ -85,5 +98,6 @@ func (config *AlchemyConfig) toEtherApiConfig() ether.EtherApiConfig {
 		config.requestTimeout,
 		config.backoffConfig,
 		config.customHeaders,
+		config.jwtSecret,
 	)
 }

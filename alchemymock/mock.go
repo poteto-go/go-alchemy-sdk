@@ -30,7 +30,10 @@ type AlchemyHttpMock struct {
 //	defer mock.DeactivateAndReset()
 //	alchemy := gas.NewAlchemy(setting)
 func NewAlchemyHttpMock(setting gas.AlchemySetting, t testing.TB) *AlchemyHttpMock {
-	config := gas.NewAlchemyConfig(setting)
+	config, err := gas.NewAlchemyConfig(setting)
+	if err != nil {
+		t.Fatal(err)
+	}
 	httpmock.Activate(t)
 	mock := &AlchemyHttpMock{
 		baseUrl:    config.GetUrl(),

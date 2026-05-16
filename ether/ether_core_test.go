@@ -39,7 +39,11 @@ var utAlchemySetting = gas.AlchemySetting{
 
 func newEtherApiForTest() *eth.Ether {
 	provider := newProviderForTest()
-	config := gas.NewAlchemyConfig(utAlchemySetting)
+	config, err := gas.NewAlchemyConfig(utAlchemySetting)
+	if err != nil {
+		panic(err)
+	}
+
 	return ether.NewEtherApi(
 		provider,
 		eth.NewEtherApiConfig(
@@ -48,6 +52,7 @@ func newEtherApiForTest() *eth.Ether {
 			time.Duration(1*time.Second),
 			nil,
 			[]http.Header{},
+			[]byte(""),
 		),
 	).(*eth.Ether)
 }
@@ -61,14 +66,18 @@ func newNilEtherApiForTest(provider *gas.AlchemyProvider) *eth.Ether {
 			time.Duration(0),
 			nil,
 			[]http.Header{},
+			[]byte(""),
 		),
 	).(*eth.Ether)
 }
 
 func newProviderForTest() *gas.AlchemyProvider {
-	config := gas.NewAlchemyConfig(
+	config, err := gas.NewAlchemyConfig(
 		utAlchemySetting,
 	)
+	if err != nil {
+		panic(err)
+	}
 	return gas.NewAlchemyProvider(config).(*gas.AlchemyProvider)
 }
 

@@ -28,7 +28,10 @@ func newEtherApi() *ether.Ether {
 			MaxRetries: 0,
 		},
 	}
-	config := gas.NewAlchemyConfig(setting)
+	config, err := gas.NewAlchemyConfig(setting)
+	if err != nil {
+		panic(err)
+	}
 	provider := gas.NewAlchemyProvider(config)
 	return ether.NewEtherApi(provider, ether.NewEtherApiConfig(
 		config.GetUrl(),
@@ -36,6 +39,7 @@ func newEtherApi() *ether.Ether {
 		time.Duration(0),
 		nil,
 		[]http.Header{},
+		nil,
 	)).(*ether.Ether)
 }
 

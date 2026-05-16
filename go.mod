@@ -6,6 +6,7 @@ require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
 	github.com/ethereum/go-ethereum v1.17.2
 	github.com/go-viper/mapstructure/v2 v2.5.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jarcoal/httpmock v1.4.0
 	github.com/stretchr/testify v1.11.1
 )

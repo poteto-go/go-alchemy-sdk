@@ -35,7 +35,10 @@ func createConnectedWallet() *wallet {
 		ApiKey:  "api-key",
 		Network: types.EthMainnet,
 	}
-	alchemy := gas.NewAlchemy(setting)
+	alchemy, err := gas.NewAlchemy(setting)
+	if err != nil {
+		panic(err)
+	}
 
 	w.Connect(alchemy.GetProvider())
 
@@ -159,7 +162,8 @@ func TestWallet_Connect(t *testing.T) {
 			ApiKey:  "api-key",
 			Network: types.EthMainnet,
 		}
-		alchemy := gas.NewAlchemy(setting)
+		alchemy, err := gas.NewAlchemy(setting)
+		assert.NoError(t, err)
 
 		w, _ := New(testPrivHex)
 
