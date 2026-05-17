@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
@@ -117,6 +118,30 @@ type Wallet interface {
 		contract types.ERC20ContractInstance,
 		contractAddress string,
 	) (*big.Int, error)
+
+	/*
+		transfer erc20 token by provided wallet
+			- wait for mined
+			- gas limit is 300000 for default
+	*/
+	ERC20Transfer(
+		contractAddress,
+		toAddress string,
+		amount *big.Int,
+		gasLimit *uint64,
+	) (*gethTypes.Receipt, error)
+
+	/*
+		transfer erc20 token by provided wallet
+			- wait for mined
+			- gas limit is 300000 for default
+	*/
+	ERC20TransferNoWait(
+		contractAddress,
+		toAddress string,
+		amount *big.Int,
+		gasLimit *uint64,
+	) (common.Hash, error)
 
 	/*
 		ResetPool clears the cached ChainID and TransactOpts.
@@ -317,12 +342,7 @@ func (w *wallet) ContractTransact(
 		return nil, err
 	}
 
-	txReceipt, err := w.provider.Eth().WaitMined(tx.Hash())
-	if err != nil {
-		return nil, err
-	}
-
-	return txReceipt, nil
+	return w.waitMined(tx.Hash())
 }
 
 func (w *wallet) ContractTransactNoWait(
@@ -377,6 +397,75 @@ func (w *wallet) GetERC20Balance(
 	)
 }
 
+func (w *wallet) ERC20Transfer(
+	contractAddress, toAddress string, amount *big.Int, gasLimit *uint64,
+) (*gethTypes.Receipt, error) {
+	if w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
+	txHash, err := w.ERC20TransferNoWait(
+		contractAddress,
+		toAddress,
+		amount,
+		gasLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.waitMined(txHash)
+}
+
+func (w *wallet) ERC20TransferNoWait(
+	contractAddress,
+	toAddress string,
+	amount *big.Int,
+	gasLimit *uint64,
+) (common.Hash, error) {
+	if w.provider == nil {
+		return common.Hash{}, constant.ErrWalletIsNotConnected
+	}
+
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(constant.TransferFnSignature); err != nil {
+		return common.Hash{}, err
+	}
+	methodID := hash.Sum(nil)[:4]
+
+	paddedAddress := common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), 32)
+	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
+
+	data := make([]byte, 0, 68)
+	data = append(data, methodID...)
+	data = append(data, paddedAddress...)
+	data = append(data, paddedAmount...)
+
+	var txGasLimit uint64
+	if gasLimit == nil {
+		txGasLimit = 300000
+	} else {
+		txGasLimit = *gasLimit
+	}
+
+	txRequest := types.TransactionRequest{
+		From:     w.GetAddress(),
+		To:       contractAddress,
+		Value:    "0x0",
+		GasLimit: txGasLimit,
+		Data:     data,
+	}
+
+	txHash, err := w.SendTransaction(
+		txRequest,
+	)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	return txHash, nil
+}
+
 func (w *wallet) getOrCreateAuth() (*bind.TransactOpts, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -402,6 +491,15 @@ func (w *wallet) getOrCreateAuth() (*bind.TransactOpts, error) {
 		return w.cachedAuth, nil
 	}
 	return w.cachedAuth, nil
+}
+
+func (w *wallet) waitMined(txHash common.Hash) (*gethTypes.Receipt, error) {
+	txReceipt, err := w.provider.Eth().WaitMined(txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return txReceipt, nil
 }
 
 func (w *wallet) ResetPool() {
