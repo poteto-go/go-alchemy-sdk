@@ -17,6 +17,8 @@ type ERC20ContractInstance interface {
 	ContractInstance
 	PackBalanceOf(walletAddress common.Address) []byte
 	UnpackBalanceOf(data []byte) (*big.Int, error)
+	PackTransfer(to common.Address, amount *big.Int) []byte
+	UnpackTransfer(data []byte) (bool, error)
 }
 
 type EtherApi interface {

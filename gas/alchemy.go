@@ -11,6 +11,7 @@ type Alchemy struct {
 	Core     namespace.ICore
 	Transact namespace.ITransact
 	Nft      namespace.INft
+	ERC20    namespace.IERC20
 	provider types.IAlchemyProvider
 }
 
@@ -29,12 +30,14 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 	coreNamespace := namespace.NewCore(ether)
 	transactNamespace := namespace.NewTransactNamespace(ether)
 	nftNamespace := namespace.NewNftNamespace(ether)
+	erc20Namespace := namespace.NewERC20Namespace(ether)
 
 	return Alchemy{
 		config:   alchemyConfig,
 		Core:     coreNamespace,
 		Transact: transactNamespace,
 		Nft:      nftNamespace,
+		ERC20:    erc20Namespace,
 		provider: alchemyProvider,
 	}, nil
 }

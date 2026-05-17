@@ -137,8 +137,6 @@ func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTyp
 		return nil, err
 	}
 
-	data := common.FromHex(txRequest.Data)
-
 	// EIP-1559 (DynamicFeeTx)
 	if txRequest.MaxFeePerGas != nil || txRequest.MaxPriorityFeePerGas != nil {
 		return &gethTypes.DynamicFeeTx{
@@ -149,7 +147,7 @@ func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTyp
 			Gas:        txRequest.GasLimit,
 			To:         &toAddress,
 			Value:      value,
-			Data:       data,
+			Data:       txRequest.Data,
 			AccessList: gethTypes.AccessList{},
 		}, nil
 	}
@@ -163,7 +161,7 @@ func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTyp
 			Gas:        txRequest.GasLimit,
 			To:         &toAddress,
 			Value:      value,
-			Data:       data,
+			Data:       txRequest.Data,
 			AccessList: gethTypes.AccessList{},
 		}, nil
 	}
@@ -175,6 +173,6 @@ func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTyp
 		Gas:      txRequest.GasLimit,
 		To:       &toAddress,
 		Value:    value,
-		Data:     data,
+		Data:     txRequest.Data,
 	}, nil
 }

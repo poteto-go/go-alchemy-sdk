@@ -240,7 +240,7 @@ func TestWallet_SignTx(t *testing.T) {
 			GasPrice: big.NewInt(0),
 			GasLimit: 1000,
 			Value:    "0x123",
-			Data:     "0x123",
+			Data:     []byte("0x123"),
 		}
 		estimatedGasPrice := big.NewInt(100)
 
@@ -281,8 +281,8 @@ func TestWallet_SignTx(t *testing.T) {
 		assert.Equal(t, "0x0000000000000000000000000000000000000123", signedTx.To().Hex())
 		v, r, s := signedTx.RawSignatureValues()
 		assert.Equal(t, v.Cmp(big.NewInt(3)), 1)
-		assert.Equal(t, common.BigToHash(r).Hex(), "0x75ea94b2f16c4cd67f1a2cc8f35659a434ea7b6f7704dd062f6686d865547fab")
-		assert.Equal(t, common.BigToHash(s).Hex(), "0x2af447088ccf07c8742b3cd428d77580ab21e8e88340fbfb20ae7a747d86ca21")
+		assert.Equal(t, common.BigToHash(r).Hex(), "0xe012575d94bd21ee6d854e546ec49356931412ae407f56f52272be71a4445878")
+		assert.Equal(t, common.BigToHash(s).Hex(), "0x113b2384592639614c67532e8216a985e7cac9de6cec00ee44534a2881e42975")
 	})
 
 	t.Run("if wallet is not connected, return error", func(t *testing.T) {
@@ -484,7 +484,7 @@ func TestWallet_SignTx(t *testing.T) {
 			GasPrice: big.NewInt(0),
 			GasLimit: 1000,
 			Value:    "0x123",
-			Data:     "0x123",
+			Data:     []byte("0x123"),
 		}
 		estimatedGasPrice := big.NewInt(100)
 
@@ -537,7 +537,7 @@ func TestWallet_SignTx(t *testing.T) {
 			GasPrice: big.NewInt(0),
 			GasLimit: 1000,
 			Value:    "0x123",
-			Data:     "0x123",
+			Data:     []byte("0x123"),
 		}
 		estimatedGasPrice := big.NewInt(100)
 
@@ -582,7 +582,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 		GasPrice: big.NewInt(0),
 		GasLimit: 1000,
 		Value:    "0x123",
-		Data:     "0x123",
+		Data:     []byte("0x123"),
 	}
 	address := common.HexToAddress("0x123")
 	txData := &gethTypes.AccessListTx{
@@ -1422,6 +1422,199 @@ func TestWallet_GetERC20Balance(t *testing.T) {
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_ERC20Transfer(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	otherAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can transfer ERC20", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		// Act
+		_, err := w.ERC20Transfer(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.Nil(t, err)
+	})
+
+	t.Run("handle error on transfer", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ERC20Transfer(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		// Arrange
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.ERC20Transfer(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_ERC20TransferNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	otherAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can transfer ERC20", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		// Act
+		txHash, err := w.ERC20TransferNoWait(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, txHash, expectedHash)
+	})
+
+	t.Run("can transfer ERC20 w/ custom gasLimit", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		// Act
+		txHash, err := w.ERC20TransferNoWait(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			new(uint64(1)),
+		)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, txHash, expectedHash)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		// Arrange
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.ERC20TransferNoWait(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("handle send tx error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ERC20TransferNoWait(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.Error(t, err)
 	})
 }
 

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -406,7 +405,7 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 			GasPrice: big.NewInt(10),
 			GasLimit: 21000,
 			Value:    "0x123",
-			Data:     "0x123",
+			Data:     []byte("0x123"),
 		}
 
 		txData, err := utils.TransformTxRequestToGethTxData(txRequest)
@@ -421,7 +420,7 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 		assert.Equal(t, legacyTx.Gas, txRequest.GasLimit)
 		value, _ := utils.FromBigHex(txRequest.Value)
 		assert.Equal(t, legacyTx.Value, value)
-		assert.Equal(t, string(legacyTx.Data), string(common.FromHex(txRequest.Data)))
+		assert.Equal(t, legacyTx.Data, txRequest.Data)
 	})
 
 	t.Run("can transform txRequest to geth.DynamicFeeTx", func(t *testing.T) {
@@ -433,7 +432,7 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 			MaxPriorityFeePerGas: big.NewInt(2),
 			GasLimit:             21000,
 			Value:                "0x123",
-			Data:                 "0x123",
+			Data:                 []byte("0x123"),
 		}
 
 		txData, err := utils.TransformTxRequestToGethTxData(txRequest)
@@ -450,7 +449,7 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 		assert.Equal(t, dynamicTx.Gas, txRequest.GasLimit)
 		value, _ := utils.FromBigHex(txRequest.Value)
 		assert.Equal(t, dynamicTx.Value, value)
-		assert.Equal(t, string(dynamicTx.Data), string(common.FromHex(txRequest.Data)))
+		assert.Equal(t, dynamicTx.Data, txRequest.Data)
 	})
 
 	t.Run("can transform txRequest to geth.AccessListTx", func(t *testing.T) {
@@ -462,7 +461,7 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 			GasPrice:   big.NewInt(10),
 			GasLimit:   21000,
 			Value:      "0x123",
-			Data:       "0x123",
+			Data:       []byte("0x123"),
 			AccessList: &accessList,
 		}
 
@@ -479,7 +478,7 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 		assert.Equal(t, accessListTx.Gas, txRequest.GasLimit)
 		value, _ := utils.FromBigHex(txRequest.Value)
 		assert.Equal(t, accessListTx.Value, value)
-		assert.Equal(t, string(accessListTx.Data), string(common.FromHex(txRequest.Data)))
+		assert.Equal(t, accessListTx.Data, txRequest.Data)
 	})
 
 	t.Run("if failed from big hex, return error", func(t *testing.T) {

@@ -395,6 +395,7 @@ func (ether *Ether) EstimateGas(tx types.TransactionRequest) (*big.Int, error) {
 			From:  common.HexToAddress(tx.From),
 			To:    (&toAddress),
 			Value: value,
+			Data:  tx.Data,
 		},
 	)
 	if err != nil {

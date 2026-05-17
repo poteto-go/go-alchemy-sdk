@@ -60,7 +60,7 @@ type TransactionRequest struct {
 	GasPrice             *big.Int  `json:"gasPrice,omitempty"`
 	MaxPriorityFeePerGas *big.Int  `json:"maxPriorityFeePerGas,omitempty"`
 	MaxFeePerGas         *big.Int  `json:"maxFeePerGas,omitempty"`
-	Data                 string    `json:"data,omitempty"`
+	Data                 []byte    `json:"data,omitempty"`
 	Value                string    `json:"value,omitempty"`
 	ChainID              *big.Int  `json:"chainId,omitempty"`
 	AccessList           *[]string `json:"accessList,omitempty"`
