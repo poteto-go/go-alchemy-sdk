@@ -3,6 +3,7 @@ package ether
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -440,6 +441,36 @@ func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, 
 	}
 
 	return result.(string), nil
+}
+
+func (ether *Ether) CallContract(
+	msg ethereum.CallMsg,
+	blockTag string,
+) ([]byte, error) {
+	err := ether.SetEthClient()
+	if err != nil {
+		return nil, err
+	}
+	defer ether.Close()
+
+	blockNumber, err := utils.ToBlockNumber(blockTag)
+	if err != nil {
+		return nil, err
+	}
+
+	output, err := internal.GethRequestTwoArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		ether.client.CallContract,
+		msg,
+		blockNumber,
+	)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return output, nil
 }
 
 func (ether *Ether) GetTransactionReceipt(hash string) (*gethTypes.Receipt, error) {

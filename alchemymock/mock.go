@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -93,7 +94,7 @@ func (m *AlchemyHttpMock) registerMasterResponder() {
 
 		responders, ok := m.responders[request.Method]
 		if !ok || len(responders) == 0 {
-			return nil, errors.New("method not mocked or no more mocks available")
+			return nil, fmt.Errorf("method not mocked or no more mocks available: %s", request.Method)
 		}
 
 		// Always pop the first responder (FIFO)

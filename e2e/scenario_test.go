@@ -204,7 +204,6 @@ func TestScenario_ERC20(t *testing.T) {
 			assert.Nil(t, err)
 
 			balance, err := alchemy.ERC20.BalanceOf(
-				artifacts.NewERC20(),
 				deployedContractAddress.Hex(),
 				otherAddress,
 			)

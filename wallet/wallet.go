@@ -391,7 +391,6 @@ func (w *wallet) GetERC20Balance(
 	}
 
 	return w.erc20.BalanceOf(
-		contract,
 		contractAddress,
 		w.GetAddress(),
 	)

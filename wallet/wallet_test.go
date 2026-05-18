@@ -1397,7 +1397,6 @@ func TestWallet_GetERC20Balance(t *testing.T) {
 			"BalanceOf",
 			func(
 				_ *namespace.ERC20,
-				_ types.ERC20ContractInstance,
 				_ string,
 				_ string,
 			) (*big.Int, error) {

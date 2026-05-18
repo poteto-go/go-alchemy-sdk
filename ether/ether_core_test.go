@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/jarcoal/httpmock"
 	"github.com/poteto-go/go-alchemy-sdk/alchemymock"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
@@ -186,7 +187,7 @@ func TestEther_BlockNumber(t *testing.T) {
 			assert.Error(t, err)
 		})
 
-		t.Run("if failed estimate gas, return error", func(t *testing.T) {
+		t.Run("if failed to get block number, return error", func(t *testing.T) {
 			// Arrange
 			ether := newEtherApiForTest()
 
@@ -262,18 +263,18 @@ func TestEther_GetBalance(t *testing.T) {
 
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("success request", func(t *testing.T) {
-			httpmock.Activate(t)
+			//  Arrange
+			alchemyMock := newAlchemyMockOnEtherTest(t)
 			patches := gomonkey.NewPatches()
 			defer func() {
-				httpmock.DeactivateAndReset()
+				alchemyMock.DeactivateAndReset()
 				patches.Reset()
 			}()
 
 			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				"https://fuga.g.alchemy.com/v2/hoge",
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
+			alchemyMock.RegisterResponderOnce(
+				"eth_getBalance",
+				`{"jsonrpc":"2.0","id":1,"result":"0x1234"}`,
 			)
 
 			patches.ApplyFunc(
@@ -315,18 +316,18 @@ func TestEther_GetBalance(t *testing.T) {
 		})
 
 		t.Run("if failed from hex -> error", func(t *testing.T) {
-			httpmock.Activate(t)
+			//  Arrange
+			alchemyMock := newAlchemyMockOnEtherTest(t)
 			patches := gomonkey.NewPatches()
 			defer func() {
-				httpmock.DeactivateAndReset()
+				alchemyMock.DeactivateAndReset()
 				patches.Reset()
 			}()
 
 			// Mock
-			httpmock.RegisterResponder(
-				"POST",
-				"https://fuga.g.alchemy.com/v2/hoge",
-				httpmock.NewStringResponder(200, `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`),
+			alchemyMock.RegisterResponderOnce(
+				"eth_getBalance",
+				`{"jsonrpc":"2.0","id":1,"result":"0x1234"}`,
 			)
 
 			patches.ApplyFunc(
@@ -1081,6 +1082,93 @@ func TestEther_Call(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, err, expectedErr)
+		})
+	})
+}
+
+func TestEther_CallContract(t *testing.T) {
+	var contractAddress = common.HexToAddress("0xE25583099BA105D9ec0A67f5Ae86D90e50036425")
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+			expected, _ := hexutil.Decode("0x1234")
+
+			// Mock
+			alchemyMock.RegisterResponderOnce(
+				"eth_call",
+				`{"jsonrpc":"2.0","id":1,"result":"0x1234"}`,
+			)
+
+			// Act
+			result, err := ether.CallContract(
+				ethereum.CallMsg{
+					To: &contractAddress,
+				},
+				"latest",
+			)
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, result, expected)
+		})
+	})
+
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.CallContract(ethereum.CallMsg{}, "latest")
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("invalid blockTag, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			// Act
+			_, err := ether.CallContract(
+				ethereum.CallMsg{
+					To: &contractAddress,
+				},
+				"invalid",
+			)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed to call contract, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Act
+			_, err := ether.CallContract(
+				ethereum.CallMsg{
+					To: &contractAddress,
+				},
+				"latest",
+			)
+
+			// Assert
+			assert.Error(t, err)
 		})
 	})
 }
