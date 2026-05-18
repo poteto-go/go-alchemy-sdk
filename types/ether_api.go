@@ -3,6 +3,7 @@ package types
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -112,6 +113,11 @@ type EtherApi interface {
 		This is useful for calling getters on Contracts.
 	*/
 	Call(tx TransactionRequest, blockTag string) (string, error)
+
+	/*
+		Return the result of eth_call of smart contract by provided call message.
+	*/
+	CallContract(msg ethereum.CallMsg, blockTag string) ([]byte, error)
 
 	/*
 		Null if the tx has not been mined.

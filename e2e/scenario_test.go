@@ -185,16 +185,14 @@ func TestScenario_ERC20(t *testing.T) {
 		deployedContractAddress = contractAddress
 
 		t.Run("can get balance", func(t *testing.T) {
-			contract := artifacts.NewERC20()
-
-			balance, err := w.GetERC20Balance(contract, contractAddress.Hex())
+			balance, err := w.ERC20().BalanceOf(contractAddress.Hex())
 
 			assert.Nil(t, err)
 			assert.Equal(t, balance.Cmp(big.NewInt(10)), 1)
 		})
 
 		t.Run("transfer & get balance", func(t *testing.T) {
-			_, err := w.ERC20Transfer(
+			_, err := w.ERC20().Transfer(
 				deployedContractAddress.Hex(),
 				otherAddress,
 				big.NewInt(100),
@@ -204,7 +202,6 @@ func TestScenario_ERC20(t *testing.T) {
 			assert.Nil(t, err)
 
 			balance, err := alchemy.ERC20.BalanceOf(
-				artifacts.NewERC20(),
 				deployedContractAddress.Hex(),
 				otherAddress,
 			)

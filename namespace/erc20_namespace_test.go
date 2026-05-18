@@ -1,17 +1,15 @@
 package namespace_test
 
 import (
+	"fmt"
 	"math/big"
 	"reflect"
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
+	"github.com/ethereum/go-ethereum"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
-	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +26,6 @@ func TestNewERC20Namespace(t *testing.T) {
 
 func TestERC20_BalanceOf(t *testing.T) {
 	// Arrange
-	contract := artifacts.NewERC20()
 	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
 	walletAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
 
@@ -39,29 +36,29 @@ func TestERC20_BalanceOf(t *testing.T) {
 		// Arrange
 		eth := newEtherApi()
 		erc20 := namespace.NewERC20Namespace(eth)
+		tmp := new(big.Int)
+		expected := tmp.SetBytes([]byte("0x1"))
 
 		// Mock
 		patches.ApplyMethod(
 			reflect.TypeOf(eth),
-			"ContractCall",
+			"CallContract",
 			func(
 				_ *ether.Ether,
-				_ types.ContractInstance,
-				_ common.Address,
-				_ *bind.CallOpts,
-				_ []byte,
-				_ func([]byte) (any, error),
-			) (any, error) {
-				return big.NewInt(1), nil
+				_ ethereum.CallMsg,
+				_ string,
+			) ([]byte, error) {
+				return []byte("0x1"), nil
 			},
 		)
 
 		// Act
-		balance, err := erc20.BalanceOf(contract, contractAddress, walletAddress)
+		balance, err := erc20.BalanceOf(contractAddress, walletAddress)
+		fmt.Println(balance)
 
 		// Assert
 		assert.NoError(t, err)
-		assert.Equal(t, balance.Cmp(big.NewInt(1)), 0)
+		assert.Equal(t, balance.Cmp(expected), 0)
 	})
 
 	t.Run("returns error if contract call fails", func(t *testing.T) {
@@ -75,21 +72,18 @@ func TestERC20_BalanceOf(t *testing.T) {
 		// Mock
 		patches.ApplyMethod(
 			reflect.TypeOf(eth),
-			"ContractCall",
+			"CallContract",
 			func(
 				_ *ether.Ether,
-				_ types.ContractInstance,
-				_ common.Address,
-				_ *bind.CallOpts,
-				_ []byte,
-				_ func([]byte) (any, error),
-			) (any, error) {
-				return nil, assert.AnError
+				_ ethereum.CallMsg,
+				_ string,
+			) ([]byte, error) {
+				return []byte(""), assert.AnError
 			},
 		)
 
 		// Act
-		balance, err := erc20.BalanceOf(contract, contractAddress, walletAddress)
+		balance, err := erc20.BalanceOf(contractAddress, walletAddress)
 
 		// Assert
 		assert.ErrorIs(t, err, assert.AnError)

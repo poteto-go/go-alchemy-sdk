@@ -1,12 +1,11 @@
-ref: [Wallet-GetERC20BalanceOf](../wallet/GetERC20Balance.md)
+ref: [Wallet-ERC20-BalanceOf](../wallet/ERC20.md#balanceof)
 
 ![](https://img.shields.io/badge/go-geth-lightblue)
 
-Get ERC20 token Balance of provided wallet.
+Get ERC20 token Balance of provided walletAddress.
 
 ```go
 func BalanceOf(
-    contract types.ERC20ContractInstance,
     contractAddress,
     walletAddress string,
 ) (balance *big.Int, err error)

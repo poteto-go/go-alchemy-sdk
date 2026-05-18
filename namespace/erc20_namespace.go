@@ -3,9 +3,11 @@ package namespace
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"golang.org/x/crypto/sha3"
 )
 
 type IERC20 interface {
@@ -13,7 +15,6 @@ type IERC20 interface {
 		BalanceOf returns the balance of the specified address.
 	*/
 	BalanceOf(
-		contract types.ERC20ContractInstance,
 		contractAddress,
 		walletAddress string,
 	) (*big.Int, error)
@@ -30,25 +31,35 @@ func NewERC20Namespace(ether types.EtherApi) IERC20 {
 }
 
 func (e *ERC20) BalanceOf(
-	contract types.ERC20ContractInstance,
 	contractAddress,
 	walletAddress string,
 ) (*big.Int, error) {
-	callData := contract.PackBalanceOf(common.HexToAddress(walletAddress))
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(constant.BalanceOfFnSignature); err != nil {
+		return nil, err
+	}
+	methodID := hash.Sum(nil)[:4]
 
-	unpack := func(data []byte) (any, error) {
-		return contract.UnpackBalanceOf(data)
+	contractAddr := common.HexToAddress(contractAddress)
+	paddedAddress := common.LeftPadBytes(common.HexToAddress(walletAddress).Bytes(), 32)
+
+	data := make([]byte, 0, 36)
+	data = append(data, methodID...)
+	data = append(data, paddedAddress...)
+
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: data,
 	}
 
-	output, err := e.ether.ContractCall(
-		contract,
-		common.HexToAddress(contractAddress),
-		&bind.CallOpts{},
-		callData,
-		unpack,
+	output, err := e.ether.CallContract(
+		msg,
+		"latest",
 	)
 	if err != nil {
 		return nil, err
 	}
-	return output.(*big.Int), nil
+
+	outputInt := new(big.Int)
+	return outputInt.SetBytes(output), nil
 }
