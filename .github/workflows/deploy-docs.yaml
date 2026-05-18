@@ -1,5 +1,12 @@
 name: Deploy Worker
 on:
+  pull_request:
+    branches:
+      - main
+    path:
+      - docs/**
+      - .github/workflows/deploy-docs.yaml
+
   push:
     branches:
       - main
@@ -20,7 +27,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
 
       - name: Install dependencies
         run: pnpm install
@@ -28,7 +40,8 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Build & Deploy Worker
+      - name: Deploy Worker
+        if: github.event_name == 'push'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
