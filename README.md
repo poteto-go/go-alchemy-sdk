@@ -20,6 +20,8 @@ It supports not only Alchemy, but also other EVM chains.
 
 🧪 easily mock rpc responses w/ `alchemymock`.
 
+🪙 Smart Contract native support (in-progress)
+
 ## QuickStart
 
 ```go
@@ -51,18 +53,10 @@ func main() {
 
 ## Major Milestone
 
-- [x] Deploy Contract to Eth: done for `v0.1.0`
-- [x] Private Geth Support `v0.1.4`
-- [ ] geth migration `in-progress`
-- [ ] Non-EVM Chain Support
-
-## Alchemy Sdk Namespace Support
-
-- [ ] `Core`: in-progress
-- [ ] `ERC20`(not on alchemy-sdk-js): in-progress
-- [ ] `Nft`
-- [ ] `Debug`
-- [ ] `Notify`
-- [ ] `Portfolio`
-- [ ] `Prices`
-- [ ] `Transact`: in-progress
+- [x] Deploy Contract to Eth: `v0.1.0`
+- [x] Smart-Contract Tx & call support: `v0.2.0`
+- [x] Private Geth Support & `ERC20.Transfer`: `v0.3.0`
+- [ ] `ERC20` method fully support: `rc0.4.0`
+- [ ] `SC(Stable Coin)` method fully support: `rc0.6.0`
+- [ ] `NFT(ERC721)` method fully support: `rc0.8.0`
+- [ ] stable release: `rc1.0.0`
