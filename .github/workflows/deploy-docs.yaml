@@ -29,6 +29,12 @@ jobs:
         with:
           version: 10
 
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12
+          cache: "pnpm"
+
       - name: Install dependencies
         run: pnpm install
 
