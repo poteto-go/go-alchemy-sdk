@@ -5,19 +5,23 @@ import (
 	"math/big"
 )
 
+const (
+	abiWordSize      = 32
+	abiStringHeaderSize = 64 // offset(32) + length(32)
+)
+
 // DecodeABIString decodes an ABI-encoded string (offset, length, data).
 func DecodeABIString(output []byte) (string, error) {
-	if len(output) < 64 {
+	if len(output) < abiStringHeaderSize {
 		return "", fmt.Errorf("invalid ABI string: output too short, got %d bytes", len(output))
 	}
-
-	// The offset is at output[0:32], but we already know we're reading a string.
-	// We read length from output[32:64]
-	length := new(big.Int).SetBytes(output[32:64]).Int64()
-
-	if int64(len(output)) < 64+length {
-		return "", fmt.Errorf("invalid ABI string: declared length %d exceeds output size %d", length, len(output)-64)
+	
+	// Read length from output[32:64]
+	length := new(big.Int).SetBytes(output[abiWordSize : abiWordSize*2]).Int64()
+	
+	if int64(len(output)) < abiStringHeaderSize+length {
+		return "", fmt.Errorf("invalid ABI string: declared length %d exceeds output size %d", length, len(output)-abiStringHeaderSize)
 	}
-
-	return string(output[64 : 64+length]), nil
+	
+	return string(output[abiStringHeaderSize : abiStringHeaderSize+length]), nil
 }
