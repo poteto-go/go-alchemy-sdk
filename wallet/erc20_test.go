@@ -145,110 +145,81 @@ func TestWallet_ERC20Transfer(t *testing.T) {
 	})
 }
 
-func TestWallet_ERC20TransferNoWait(t *testing.T) {
+func TestWallet_ERC20ReadMethods(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
-	otherAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
-	expectedHash := common.HexToHash("0x123")
 
-	t.Run("can transfer ERC20", func(t *testing.T) {
+	t.Run("can get total supply", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
-
-		// Arrange
 		w := createConnectedWallet()
+		expected := big.NewInt(1000)
 
-		// Mock
-		patches.ApplyMethod(
-			reflect.TypeOf(w),
-			"SendTransaction",
-			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
-				return expectedHash, nil
-			},
-		)
+		patches.ApplyMethod(reflect.TypeOf(w.erc20), "TotalSupply", func(_ *namespace.ERC20, _ string) (*big.Int, error) {
+			return expected, nil
+		})
 
-		// Act
-		txHash, err := w.ERC20().TransferNoWait(
-			contractAddress,
-			otherAddress,
-			big.NewInt(1),
-			nil,
-		)
-
-		// Assert
-		assert.Nil(t, err)
-		assert.Equal(t, txHash, expectedHash)
+		res, err := w.ERC20().TotalSupply(contractAddress)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
 	})
 
-	t.Run("can transfer ERC20 w/ custom gasLimit", func(t *testing.T) {
+	t.Run("can get allowance", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
-
-		// Arrange
 		w := createConnectedWallet()
+		expected := big.NewInt(500)
 
-		// Mock
-		patches.ApplyMethod(
-			reflect.TypeOf(w),
-			"SendTransaction",
-			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
-				return expectedHash, nil
-			},
-		)
+		patches.ApplyMethod(reflect.TypeOf(w.erc20), "Allowance", func(_ *namespace.ERC20, _, _, _ string) (*big.Int, error) {
+			return expected, nil
+		})
 
-		// Act
-		txHash, err := w.ERC20().TransferNoWait(
-			contractAddress,
-			otherAddress,
-			big.NewInt(1),
-			new(uint64(1)),
-		)
-
-		// Assert
-		assert.Nil(t, err)
-		assert.Equal(t, txHash, expectedHash)
+		res, err := w.ERC20().Allowance(contractAddress, "owner", "spender")
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
 	})
 
-	t.Run("error w/o connect wallet", func(t *testing.T) {
-		// Arrange
-		w, _ := New(testPrivHex)
-
-		// Act
-		_, err := w.ERC20().TransferNoWait(
-			contractAddress,
-			otherAddress,
-			big.NewInt(1),
-			nil,
-		)
-
-		// Assert
-		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
-	})
-
-	t.Run("handle send tx error", func(t *testing.T) {
+	t.Run("can get name", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
-
-		// Arrange
 		w := createConnectedWallet()
+		expected := "TestToken"
 
-		// Mock
-		patches.ApplyMethod(
-			reflect.TypeOf(w),
-			"SendTransaction",
-			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
-				return common.Hash{}, errors.New("error")
-			},
-		)
+		patches.ApplyMethod(reflect.TypeOf(w.erc20), "Name", func(_ *namespace.ERC20, _ string) (string, error) {
+			return expected, nil
+		})
 
-		// Act
-		_, err := w.ERC20().Transfer(
-			contractAddress,
-			otherAddress,
-			big.NewInt(1),
-			nil,
-		)
+		res, err := w.ERC20().Name(contractAddress)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
 
-		// Assert
-		assert.Error(t, err)
+	t.Run("can get symbol", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+		w := createConnectedWallet()
+		expected := "TEST"
+
+		patches.ApplyMethod(reflect.TypeOf(w.erc20), "Symbol", func(_ *namespace.ERC20, _ string) (string, error) {
+			return expected, nil
+		})
+
+		res, err := w.ERC20().Symbol(contractAddress)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
+
+	t.Run("can get decimals", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+		w := createConnectedWallet()
+		expected := uint8(18)
+
+		patches.ApplyMethod(reflect.TypeOf(w.erc20), "Decimals", func(_ *namespace.ERC20, _ string) (uint8, error) {
+			return expected, nil
+		})
+
+		res, err := w.ERC20().Decimals(contractAddress)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
 	})
 }
