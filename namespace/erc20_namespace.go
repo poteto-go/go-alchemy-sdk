@@ -170,7 +170,12 @@ func (e *ERC20) Name(contractAddress string) (string, error) {
 		return "", err
 	}
 
-	return string(output), nil
+	// Solidity string returns: offset (32 bytes), length (32 bytes), then the string data
+	if len(output) < 64 {
+		return "", nil
+	}
+	length := new(big.Int).SetBytes(output[32:64]).Int64()
+	return string(output[64 : 64+length]), nil
 }
 
 func (e *ERC20) Symbol(contractAddress string) (string, error) {
@@ -195,7 +200,12 @@ func (e *ERC20) Symbol(contractAddress string) (string, error) {
 		return "", err
 	}
 
-	return string(output), nil
+	// Solidity string returns: offset (32 bytes), length (32 bytes), then the string data
+	if len(output) < 64 {
+		return "", nil
+	}
+	length := new(big.Int).SetBytes(output[32:64]).Int64()
+	return string(output[64 : 64+length]), nil
 }
 
 func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
