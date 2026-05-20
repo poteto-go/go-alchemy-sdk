@@ -200,7 +200,7 @@ func TestWallet_ERC20TransferNoWait(t *testing.T) {
 			contractAddress,
 			otherAddress,
 			big.NewInt(1),
-			new(uint64),
+			new(uint64(1)),
 		)
 
 		// Assert
