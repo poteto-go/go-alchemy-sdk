@@ -49,27 +49,10 @@ func (e *ERC20) BalanceOf(
 	contractAddress,
 	walletAddress string,
 ) (*big.Int, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(constant.BalanceOfFnSignature); err != nil {
-		return nil, err
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	contractAddr := common.HexToAddress(contractAddress)
-	paddedAddress := common.LeftPadBytes(common.HexToAddress(walletAddress).Bytes(), 32)
-
-	data := make([]byte, 0, 36)
-	data = append(data, methodID...)
-	data = append(data, paddedAddress...)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: data,
-	}
-
-	output, err := e.ether.CallContract(
-		msg,
-		"latest",
+	output, err := e.callReadMethod(
+		constant.BalanceOfFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(walletAddress).Bytes(), 32),
 	)
 	if err != nil {
 		return nil, err
@@ -80,22 +63,9 @@ func (e *ERC20) BalanceOf(
 }
 
 func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(constant.TotalSupplyFnSignature); err != nil {
-		return nil, err
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	contractAddr := common.HexToAddress(contractAddress)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: methodID,
-	}
-
-	output, err := e.ether.CallContract(
-		msg,
-		"latest",
+	output, err := e.callReadMethod(
+		constant.TotalSupplyFnSignature,
+		contractAddress,
 	)
 	if err != nil {
 		return nil, err
@@ -106,29 +76,11 @@ func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
 }
 
 func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(constant.AllowanceFnSignature); err != nil {
-		return nil, err
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	contractAddr := common.HexToAddress(contractAddress)
-	paddedOwner := common.LeftPadBytes(common.HexToAddress(owner).Bytes(), 32)
-	paddedSpender := common.LeftPadBytes(common.HexToAddress(spender).Bytes(), 32)
-
-	data := make([]byte, 0, 68)
-	data = append(data, methodID...)
-	data = append(data, paddedOwner...)
-	data = append(data, paddedSpender...)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: data,
-	}
-
-	output, err := e.ether.CallContract(
-		msg,
-		"latest",
+	output, err := e.callReadMethod(
+		constant.AllowanceFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(owner).Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(spender).Bytes(), 32),
 	)
 	if err != nil {
 		return nil, err
@@ -139,66 +91,33 @@ func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, err
 }
 
 func (e *ERC20) Name(contractAddress string) (string, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(constant.NameFnSignature); err != nil {
-		return "", fmt.Errorf("failed to hash name signature: %w", err)
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	contractAddr := common.HexToAddress(contractAddress)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: methodID,
-	}
-
-	output, err := e.ether.CallContract(msg, "latest")
+	output, err := e.callReadMethod(
+		constant.NameFnSignature,
+		contractAddress,
+	)
 	if err != nil {
-		return "", fmt.Errorf("failed to call name: %w", err)
+		return "", err
 	}
 
 	return utils.DecodeABIString(output)
 }
 
 func (e *ERC20) Symbol(contractAddress string) (string, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(constant.SymbolFnSignature); err != nil {
-		return "", fmt.Errorf("failed to hash symbol signature: %w", err)
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	contractAddr := common.HexToAddress(contractAddress)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: methodID,
-	}
-
-	output, err := e.ether.CallContract(msg, "latest")
+	output, err := e.callReadMethod(
+		constant.SymbolFnSignature,
+		contractAddress,
+	)
 	if err != nil {
-		return "", fmt.Errorf("failed to call symbol: %w", err)
+		return "", err
 	}
 
 	return utils.DecodeABIString(output)
 }
 
 func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(constant.DecimalsFnSignature); err != nil {
-		return 0, err
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	contractAddr := common.HexToAddress(contractAddress)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: methodID,
-	}
-
-	output, err := e.ether.CallContract(
-		msg,
-		"latest",
+	output, err := e.callReadMethod(
+		constant.DecimalsFnSignature,
+		contractAddress,
 	)
 	if err != nil {
 		return 0, err
@@ -209,4 +128,34 @@ func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
 		return 0, fmt.Errorf("decimals overflow: %d", decimals)
 	}
 	return uint8(decimals), nil
+}
+
+func (e *ERC20) callReadMethod(
+	method []byte,
+	contractAddress string,
+	args ...[]byte,
+) ([]byte, error) {
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(method); err != nil {
+		return nil, err
+	}
+	methodID := hash.Sum(nil)[:4]
+
+	data := make([]byte, 0, 4+len(args)*32)
+	data = append(data, methodID...)
+	for _, arg := range args {
+		data = append(data, arg...)
+	}
+
+	contractAddr := common.HexToAddress(contractAddress)
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: data,
+	}
+
+	output, err := e.ether.CallContract(msg, "latest")
+	if err != nil {
+		return []byte{}, err
+	}
+	return output, nil
 }
