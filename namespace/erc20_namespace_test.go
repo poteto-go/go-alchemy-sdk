@@ -1,7 +1,6 @@
 package namespace_test
 
 import (
-	"fmt"
 	"math/big"
 	"reflect"
 	"testing"
@@ -24,69 +23,86 @@ func TestNewERC20Namespace(t *testing.T) {
 	assert.NotNil(t, erc20)
 }
 
-func TestERC20_BalanceOf(t *testing.T) {
-	// Arrange
+func TestERC20_ReadMethods(t *testing.T) {
 	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
-	walletAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
-
-	t.Run("can get balance of erc20", func(t *testing.T) {
+	
+	t.Run("TotalSupply", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
-
-		// Arrange
 		eth := newEtherApi()
 		erc20 := namespace.NewERC20Namespace(eth)
-		tmp := new(big.Int)
-		expected := tmp.SetBytes([]byte("0x1"))
+		expected := big.NewInt(1000)
 
-		// Mock
-		patches.ApplyMethod(
-			reflect.TypeOf(eth),
-			"CallContract",
-			func(
-				_ *ether.Ether,
-				_ ethereum.CallMsg,
-				_ string,
-			) ([]byte, error) {
-				return []byte("0x1"), nil
-			},
-		)
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected.Bytes(), nil
+		})
 
-		// Act
-		balance, err := erc20.BalanceOf(contractAddress, walletAddress)
-		fmt.Println(balance)
-
-		// Assert
+		res, err := erc20.TotalSupply(contractAddress)
 		assert.NoError(t, err)
-		assert.Equal(t, balance.Cmp(expected), 0)
+		assert.Equal(t, expected.Cmp(res), 0)
 	})
 
-	t.Run("returns error if contract call fails", func(t *testing.T) {
+	t.Run("Allowance", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
-
-		// Arrange
 		eth := newEtherApi()
 		erc20 := namespace.NewERC20Namespace(eth)
+		expected := big.NewInt(500)
 
-		// Mock
-		patches.ApplyMethod(
-			reflect.TypeOf(eth),
-			"CallContract",
-			func(
-				_ *ether.Ether,
-				_ ethereum.CallMsg,
-				_ string,
-			) ([]byte, error) {
-				return []byte(""), assert.AnError
-			},
-		)
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected.Bytes(), nil
+		})
 
-		// Act
-		balance, err := erc20.BalanceOf(contractAddress, walletAddress)
+		res, err := erc20.Allowance(contractAddress, "0xowner", "0xspender")
+		assert.NoError(t, err)
+		assert.Equal(t, expected.Cmp(res), 0)
+	})
 
-		// Assert
-		assert.ErrorIs(t, err, assert.AnError)
-		assert.Nil(t, balance)
+	t.Run("Name", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+		expected := "TestToken"
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return []byte(expected), nil
+		})
+
+		res, err := erc20.Name(contractAddress)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
+
+	t.Run("Symbol", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+		expected := "TEST"
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return []byte(expected), nil
+		})
+
+		res, err := erc20.Symbol(contractAddress)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
+
+	t.Run("Decimals", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+		expected := uint8(18)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return big.NewInt(int64(expected)).Bytes(), nil
+		})
+
+		res, err := erc20.Decimals(contractAddress)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
 	})
 }
