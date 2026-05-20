@@ -145,6 +145,114 @@ func TestWallet_ERC20Transfer(t *testing.T) {
 	})
 }
 
+func TestWallet_ERC20TransferNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	otherAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can transfer ERC20", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		// Act
+		txHash, err := w.ERC20().TransferNoWait(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, txHash, expectedHash)
+	})
+
+	t.Run("can transfer ERC20 w/ custom gasLimit", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		// Act
+		txHash, err := w.ERC20().TransferNoWait(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			new(uint64), // fix: pointer to uint64
+		)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, txHash, expectedHash)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		// Arrange
+		w, _ := New(testPrivHex)
+
+		// Act
+		_, err := w.ERC20().TransferNoWait(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("handle send tx error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		// Act
+		_, err := w.ERC20().Transfer(
+			contractAddress,
+			otherAddress,
+			big.NewInt(1),
+			nil,
+		)
+
+		// Assert
+		assert.Error(t, err)
+	})
+}
+
 func TestWallet_ERC20ReadMethods(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
 
