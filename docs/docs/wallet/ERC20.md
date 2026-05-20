@@ -41,7 +41,7 @@ You can fetch token metadata and balance information:
 - [Decimals](./Decimals.md)
 - [BalanceOf](./GetBalance.md)
 
-See also: [Namespace ERC20](../../core-namespace/EstimateGas.md) (referencing lower-level implementations).
+See also: [Namespace Core](../core-namespace/EstimateGas.md) (referencing lower-level implementations).
 
 ## Transfer & TransferNoWait
 
