@@ -18,6 +18,31 @@ type IERC20 interface {
 		contractAddress,
 		walletAddress string,
 	) (*big.Int, error)
+
+	/*
+		TotalSupply returns the total supply of the token.
+	*/
+	TotalSupply(contractAddress string) (*big.Int, error)
+
+	/*
+		Allowance returns the amount of tokens the spender is allowed to spend on behalf of the owner.
+	*/
+	Allowance(contractAddress, owner, spender string) (*big.Int, error)
+
+	/*
+		Name returns the name of the token.
+	*/
+	Name(contractAddress string) (string, error)
+
+	/*
+		Symbol returns the symbol of the token.
+	*/
+	Symbol(contractAddress string) (string, error)
+
+	/*
+		Decimals returns the number of decimals the token uses.
+	*/
+	Decimals(contractAddress string) (uint8, error)
 }
 
 type ERC20 struct {
@@ -62,4 +87,138 @@ func (e *ERC20) BalanceOf(
 
 	outputInt := new(big.Int)
 	return outputInt.SetBytes(output), nil
+}
+
+func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(constant.TotalSupplyFnSignature); err != nil {
+		return nil, err
+	}
+	methodID := hash.Sum(nil)[:4]
+
+	contractAddr := common.HexToAddress(contractAddress)
+
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: methodID,
+	}
+
+	output, err := e.ether.CallContract(
+		msg,
+		"latest",
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	outputInt := new(big.Int)
+	return outputInt.SetBytes(output), nil
+}
+
+func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, error) {
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(constant.AllowanceFnSignature); err != nil {
+		return nil, err
+	}
+	methodID := hash.Sum(nil)[:4]
+
+	contractAddr := common.HexToAddress(contractAddress)
+	paddedOwner := common.LeftPadBytes(common.HexToAddress(owner).Bytes(), 32)
+	paddedSpender := common.LeftPadBytes(common.HexToAddress(spender).Bytes(), 32)
+
+	data := make([]byte, 0, 68)
+	data = append(data, methodID...)
+	data = append(data, paddedOwner...)
+	data = append(data, paddedSpender...)
+
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: data,
+	}
+
+	output, err := e.ether.CallContract(
+		msg,
+		"latest",
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	outputInt := new(big.Int)
+	return outputInt.SetBytes(output), nil
+}
+
+func (e *ERC20) Name(contractAddress string) (string, error) {
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(constant.NameFnSignature); err != nil {
+		return "", err
+	}
+	methodID := hash.Sum(nil)[:4]
+
+	contractAddr := common.HexToAddress(contractAddress)
+
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: methodID,
+	}
+
+	output, err := e.ether.CallContract(
+		msg,
+		"latest",
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return string(output), nil
+}
+
+func (e *ERC20) Symbol(contractAddress string) (string, error) {
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(constant.SymbolFnSignature); err != nil {
+		return "", err
+	}
+	methodID := hash.Sum(nil)[:4]
+
+	contractAddr := common.HexToAddress(contractAddress)
+
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: methodID,
+	}
+
+	output, err := e.ether.CallContract(
+		msg,
+		"latest",
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return string(output), nil
+}
+
+func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(constant.DecimalsFnSignature); err != nil {
+		return 0, err
+	}
+	methodID := hash.Sum(nil)[:4]
+
+	contractAddr := common.HexToAddress(contractAddress)
+
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: methodID,
+	}
+
+	output, err := e.ether.CallContract(
+		msg,
+		"latest",
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint8(new(big.Int).SetBytes(output).Uint64()), nil
 }
