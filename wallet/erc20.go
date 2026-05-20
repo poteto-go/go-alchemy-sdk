@@ -30,6 +30,31 @@ type WalletERC20 interface {
 		get balance of provided wallet & erc20 token
 	*/
 	BalanceOf(contractAddress string) (*big.Int, error)
+
+	/*
+		get total supply of erc20 token
+	*/
+	TotalSupply(contractAddress string) (*big.Int, error)
+
+	/*
+		get allowance of erc20 token
+	*/
+	Allowance(contractAddress, owner, spender string) (*big.Int, error)
+
+	/*
+		get name of erc20 token
+	*/
+	Name(contractAddress string) (string, error)
+
+	/*
+		get symbol of erc20 token
+	*/
+	Symbol(contractAddress string) (string, error)
+
+	/*
+		get decimals of erc20 token
+	*/
+	Decimals(contractAddress string) (uint8, error)
 }
 
 type walletERC20 struct {
@@ -107,4 +132,44 @@ func (api *walletERC20) BalanceOf(contractAddress string) (*big.Int, error) {
 		contractAddress,
 		api.w.GetAddress(),
 	)
+}
+
+func (api *walletERC20) TotalSupply(contractAddress string) (*big.Int, error) {
+	if api.w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
+	return api.w.erc20.TotalSupply(contractAddress)
+}
+
+func (api *walletERC20) Allowance(contractAddress, owner, spender string) (*big.Int, error) {
+	if api.w.provider == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
+	return api.w.erc20.Allowance(contractAddress, owner, spender)
+}
+
+func (api *walletERC20) Name(contractAddress string) (string, error) {
+	if api.w.provider == nil {
+		return "", constant.ErrWalletIsNotConnected
+	}
+
+	return api.w.erc20.Name(contractAddress)
+}
+
+func (api *walletERC20) Symbol(contractAddress string) (string, error) {
+	if api.w.provider == nil {
+		return "", constant.ErrWalletIsNotConnected
+	}
+
+	return api.w.erc20.Symbol(contractAddress)
+}
+
+func (api *walletERC20) Decimals(contractAddress string) (uint8, error) {
+	if api.w.provider == nil {
+		return 0, constant.ErrWalletIsNotConnected
+	}
+
+	return api.w.erc20.Decimals(contractAddress)
 }
