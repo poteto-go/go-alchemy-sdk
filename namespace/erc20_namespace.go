@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -152,7 +153,7 @@ func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, err
 func (e *ERC20) Name(contractAddress string) (string, error) {
 	hash := sha3.NewLegacyKeccak256()
 	if _, err := hash.Write(constant.NameFnSignature); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to hash name signature: %w", err)
 	}
 	methodID := hash.Sum(nil)[:4]
 
@@ -163,26 +164,18 @@ func (e *ERC20) Name(contractAddress string) (string, error) {
 		Data: methodID,
 	}
 
-	output, err := e.ether.CallContract(
-		msg,
-		"latest",
-	)
+	output, err := e.ether.CallContract(msg, "latest")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to call name: %w", err)
 	}
 
-	// Solidity string returns: offset (32 bytes), length (32 bytes), then the string data
-	if len(output) < 64 {
-		return "", nil
-	}
-	length := new(big.Int).SetBytes(output[32:64]).Int64()
-	return string(output[64 : 64+length]), nil
+	return utils.DecodeABIString(output)
 }
 
 func (e *ERC20) Symbol(contractAddress string) (string, error) {
 	hash := sha3.NewLegacyKeccak256()
 	if _, err := hash.Write(constant.SymbolFnSignature); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to hash symbol signature: %w", err)
 	}
 	methodID := hash.Sum(nil)[:4]
 
@@ -193,20 +186,12 @@ func (e *ERC20) Symbol(contractAddress string) (string, error) {
 		Data: methodID,
 	}
 
-	output, err := e.ether.CallContract(
-		msg,
-		"latest",
-	)
+	output, err := e.ether.CallContract(msg, "latest")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to call symbol: %w", err)
 	}
 
-	// Solidity string returns: offset (32 bytes), length (32 bytes), then the string data
-	if len(output) < 64 {
-		return "", nil
-	}
-	length := new(big.Int).SetBytes(output[32:64]).Int64()
-	return string(output[64 : 64+length]), nil
+	return utils.DecodeABIString(output)
 }
 
 func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
