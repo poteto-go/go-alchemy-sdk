@@ -13,37 +13,25 @@ import (
 )
 
 type IERC20 interface {
-	/*
-		BalanceOf returns the balance of the specified address.
-	*/
+	// BalanceOf returns the balance of the specified address.
 	BalanceOf(
 		contractAddress,
 		walletAddress string,
 	) (*big.Int, error)
 
-	/*
-		TotalSupply returns the total supply of the token.
-	*/
+	// TotalSupply returns the total supply of the token.
 	TotalSupply(contractAddress string) (*big.Int, error)
 
-	/*
-		Allowance returns the amount of tokens the spender is allowed to spend on behalf of the owner.
-	*/
+	// Allowance returns the amount of tokens the spender is allowed to spend on behalf of the owner.
 	Allowance(contractAddress, owner, spender string) (*big.Int, error)
 
-	/*
-		Name returns the name of the token.
-	*/
+	// Name returns the name of the token.
 	Name(contractAddress string) (string, error)
 
-	/*
-		Symbol returns the symbol of the token.
-	*/
+	// Symbol returns the symbol of the token.
 	Symbol(contractAddress string) (string, error)
 
-	/*
-		Decimals returns the number of decimals the token uses.
-	*/
+	// Decimals returns the number of decimals the token uses.
 	Decimals(contractAddress string) (uint8, error)
 }
 
