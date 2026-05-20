@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
-	"golang.org/x/crypto/sha3"
 )
 
 type IERC20 interface {
@@ -49,7 +47,7 @@ func (e *ERC20) BalanceOf(
 	contractAddress,
 	walletAddress string,
 ) (*big.Int, error) {
-	output, err := e.callReadMethod(
+	output, err := e.ether.CallReadMethod(
 		constant.BalanceOfFnSignature,
 		contractAddress,
 		common.LeftPadBytes(common.HexToAddress(walletAddress).Bytes(), 32),
@@ -63,7 +61,7 @@ func (e *ERC20) BalanceOf(
 }
 
 func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
-	output, err := e.callReadMethod(
+	output, err := e.ether.CallReadMethod(
 		constant.TotalSupplyFnSignature,
 		contractAddress,
 	)
@@ -76,7 +74,7 @@ func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
 }
 
 func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, error) {
-	output, err := e.callReadMethod(
+	output, err := e.ether.CallReadMethod(
 		constant.AllowanceFnSignature,
 		contractAddress,
 		common.LeftPadBytes(common.HexToAddress(owner).Bytes(), 32),
@@ -91,7 +89,7 @@ func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, err
 }
 
 func (e *ERC20) Name(contractAddress string) (string, error) {
-	output, err := e.callReadMethod(
+	output, err := e.ether.CallReadMethod(
 		constant.NameFnSignature,
 		contractAddress,
 	)
@@ -103,7 +101,7 @@ func (e *ERC20) Name(contractAddress string) (string, error) {
 }
 
 func (e *ERC20) Symbol(contractAddress string) (string, error) {
-	output, err := e.callReadMethod(
+	output, err := e.ether.CallReadMethod(
 		constant.SymbolFnSignature,
 		contractAddress,
 	)
@@ -115,7 +113,7 @@ func (e *ERC20) Symbol(contractAddress string) (string, error) {
 }
 
 func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
-	output, err := e.callReadMethod(
+	output, err := e.ether.CallReadMethod(
 		constant.DecimalsFnSignature,
 		contractAddress,
 	)
@@ -128,34 +126,4 @@ func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
 		return 0, fmt.Errorf("decimals overflow: %d", decimals)
 	}
 	return uint8(decimals), nil
-}
-
-func (e *ERC20) callReadMethod(
-	method []byte,
-	contractAddress string,
-	args ...[]byte,
-) ([]byte, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(method); err != nil {
-		return nil, err
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	data := make([]byte, 0, 4+len(args)*32)
-	data = append(data, methodID...)
-	for _, arg := range args {
-		data = append(data, arg...)
-	}
-
-	contractAddr := common.HexToAddress(contractAddress)
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: data,
-	}
-
-	output, err := e.ether.CallContract(msg, "latest")
-	if err != nil {
-		return []byte{}, err
-	}
-	return output, nil
 }

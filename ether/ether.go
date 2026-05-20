@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
+	"golang.org/x/crypto/sha3"
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -761,4 +762,34 @@ func (
 	}
 
 	return val, nil
+}
+
+func (ether *Ether) CallReadMethod(
+	method []byte,
+	contractAddress string,
+	args ...[]byte,
+) ([]byte, error) {
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(method); err != nil {
+		return nil, err
+	}
+	methodID := hash.Sum(nil)[:4]
+
+	data := make([]byte, 0, 4+len(args)*32)
+	data = append(data, methodID...)
+	for _, arg := range args {
+		data = append(data, arg...)
+	}
+
+	contractAddr := common.HexToAddress(contractAddress)
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: data,
+	}
+
+	output, err := ether.CallContract(msg, "latest")
+	if err != nil {
+		return []byte{}, err
+	}
+	return output, nil
 }
