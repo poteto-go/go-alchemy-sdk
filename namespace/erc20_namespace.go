@@ -1,6 +1,7 @@
 package namespace
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -230,5 +231,9 @@ func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
 		return 0, err
 	}
 
-	return uint8(new(big.Int).SetBytes(output).Uint64()), nil
+	decimals := new(big.Int).SetBytes(output).Uint64()
+	if decimals > 255 {
+		return 0, fmt.Errorf("decimals overflow: %d", decimals)
+	}
+	return uint8(decimals), nil
 }
