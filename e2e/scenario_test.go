@@ -191,23 +191,26 @@ func TestScenario_ERC20(t *testing.T) {
 			assert.Equal(t, balance.Cmp(big.NewInt(10)), 1)
 		})
 
-		t.Run("transfer & get balance", func(t *testing.T) {
-			_, err := w.ERC20().Transfer(
-				deployedContractAddress.Hex(),
-				otherAddress,
-				big.NewInt(100),
-				nil,
-			)
-
+		t.Run("can get other info", func(t *testing.T) {
+			totalSupply, err := w.ERC20().TotalSupply(contractAddress.Hex())
 			assert.Nil(t, err)
+			assert.Equal(t, totalSupply.Cmp(big.NewInt(1000)), 0)
 
-			balance, err := alchemy.ERC20.BalanceOf(
-				deployedContractAddress.Hex(),
-				otherAddress,
-			)
-
+			name, err := w.ERC20().Name(contractAddress.Hex())
 			assert.Nil(t, err)
-			assert.Equal(t, balance.Cmp(big.NewInt(10)), 1)
+			assert.Equal(t, "Minimal Token", name)
+
+			symbol, err := w.ERC20().Symbol(contractAddress.Hex())
+			assert.Nil(t, err)
+			assert.Equal(t, "MTK", symbol)
+
+			decimals, err := w.ERC20().Decimals(contractAddress.Hex())
+			assert.Nil(t, err)
+			assert.Equal(t, uint8(18), decimals)
+
+			allowance, err := w.ERC20().Allowance(contractAddress.Hex(), initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, allowance.Cmp(big.NewInt(0)), 0)
 		})
 	})
 }

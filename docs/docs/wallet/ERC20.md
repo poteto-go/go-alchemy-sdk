@@ -30,21 +30,18 @@ func main() {
 }
 ```
 
-## BalanceOf
+## Read Methods
 
-Get balance of ERC20 token from wallet.
+You can fetch token metadata and balance information:
 
-ref: [ERC20-BalanceOf](../erc20-namespace/BalanceOf.md)
+- [TotalSupply](./TotalSupply.md)
+- [Allowance](./Allowance.md)
+- [Name](./Name.md)
+- [Symbol](./Symbol.md)
+- [Decimals](./Decimals.md)
+- [BalanceOf](./GetBalance.md)
 
-```go
-func main() {
-    ...
-    alchemy = gas.NewAlchemy(setting)
-    w, err := wallet.New(initPrivateKey)
-    w.Connect(alchemy.GetProvider())
-    balance, err := w.ERC20().BalanceOf(contractAddress.Hex())
-}
-```
+See also: [Namespace Core](../core-namespace/EstimateGas.md) (referencing lower-level implementations).
 
 ## Transfer & TransferNoWait
 

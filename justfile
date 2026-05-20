@@ -19,6 +19,9 @@ ci-e2e-test rpcPort *args="":
 lint:
     @golangci-lint run -c .golangci.yaml
 
+[group("ci")]
+fmt:
+    @go fmt ./...
 
 alias k-up := kurtosis-up
 # local kurtosis network up for e2e testing, or test actual behavior

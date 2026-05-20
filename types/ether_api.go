@@ -108,6 +108,15 @@ type EtherApi interface {
 	SuggestGasPrice() (*big.Int, error)
 
 	/*
+		Read method call for Any Smart Contract
+	*/
+	CallReadMethod(
+		method []byte,
+		contractAddress string,
+		args ...[]byte,
+	) ([]byte, error)
+
+	/*
 		Returns the result of executing the transaction, using call.
 		A call does not require any ether, but cannot change any state.
 		This is useful for calling getters on Contracts.
