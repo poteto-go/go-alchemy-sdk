@@ -198,11 +198,11 @@ func TestScenario_ERC20(t *testing.T) {
 
 			name, err := w.ERC20().Name(contractAddress.Hex())
 			assert.Nil(t, err)
-			assert.Equal(t, "ERC20", name)
+			assert.Equal(t, "Minimal Token", name)
 
 			symbol, err := w.ERC20().Symbol(contractAddress.Hex())
 			assert.Nil(t, err)
-			assert.Equal(t, "ERC20", symbol)
+			assert.Equal(t, "MTK", symbol)
 
 			decimals, err := w.ERC20().Decimals(contractAddress.Hex())
 			assert.Nil(t, err)
