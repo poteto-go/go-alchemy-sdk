@@ -1,0 +1,22 @@
+[
+  {"query": "takibiにctx.Header(key string) stringメソッドを追加したい", "should_trigger": true},
+  {"query": "routerの/users/:idパスパラメータ取得にバグがあるっぽい、直して", "should_trigger": true},
+  {"query": "middlewareのCORS処理にOriginのワイルドカード対応を実装して", "should_trigger": true},
+  {"query": "TestContext_Responseのテストケースが通らないのを修正したい", "should_trigger": true},
+  {"query": "新しいBlowTaskのtrigger typeとして'tick'を追加する実装をお願い", "should_trigger": true},
+  {"query": "cookie/cookie.goにSameSite属性のセッター追加して", "should_trigger": true},
+  {"query": "router.Findでパスパラメータが複数ある場合のテスト書いて", "should_trigger": true},
+  {"query": "takibi_test.goに新しいHTTP統合テスト追加したい", "should_trigger": true},
+  {"query": "context.goのJSON parseエラー時に400を返すように修正", "should_trigger": true},
+  {"query": "このissueの機能を実装して: キャッシュのTTL設定をBindingsから渡せるようにする", "should_trigger": true},
+  {"query": "go.modの依存バージョンを最新に上げておいて", "should_trigger": false},
+  {"query": "READMEのサンプルコードをもっとわかりやすく書き直して", "should_trigger": false},
+  {"query": "このGoコードの仕組みを説明して: sync.Poolってどう動くの?", "should_trigger": false},
+  {"query": "GitHub Actionsのワークフローファイルに lint jobを追加して", "should_trigger": false},
+  {"query": "docs/routing.mdにパスパラメータの使い方を追記して", "should_trigger": false},
+  {"query": "justfileにbenchmarkコマンドを足したい", "should_trigger": false},
+  {"query": "coverage.outを.gitignoreに追加して", "should_trigger": false},
+  {"query": "このPRのdiffをレビューして問題点を教えて", "should_trigger": false},
+  {"query": "Goのinterfaceとstructの違いを教えて", "should_trigger": false},
+  {"query": "syumai-workerのwasm buildコマンドって何だっけ", "should_trigger": false}
+]
