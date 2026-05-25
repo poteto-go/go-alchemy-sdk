@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	abiWordSize      = 32
+	abiWordSize         = 32
 	abiStringHeaderSize = 64 // offset(32) + length(32)
 )
 
