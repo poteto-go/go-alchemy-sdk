@@ -43,7 +43,9 @@ You can fetch token metadata and balance information:
 
 See also: [Namespace Core](../core-namespace/EstimateGas.md) (referencing lower-level implementations).
 
-## Transfer & TransferNoWait
+## Write Methods
+
+### Transfer & TransferNoWait
 
 Transfer ERC20 token from wallet.
 Wait for mined or not.
@@ -62,10 +64,10 @@ func main() {
 	// Create contract instance
 	contractAddress := "0x1234567890123456789012345678901234567890"
 
-	// Execute transaction
+	// Execute transaction (wait for mined)
 	receipt, err := w.ERC20().Transfer(
 		contractAddress,
-		<toAddress>,
+		"<toAddress>",
 		big.NewInt(100),
 		nil,
 	)
@@ -76,9 +78,10 @@ func main() {
 	fmt.Printf("Transaction hash: %s\n", receipt.TxHash)
 	fmt.Printf("Status: %d\n", receipt.Status)
 
-	txHash, err := w.ERC20().Transfer(
+	// Execute transaction (no wait)
+	txHash, err := w.ERC20().TransferNoWait(
 		contractAddress,
-		<toAddress>,
+		"<toAddress>",
 		big.NewInt(100),
 		nil,
 	)
@@ -88,3 +91,15 @@ func main() {
 	fmt.Printf("Transaction hash: %s\n", txHash)
 }
 ```
+
+### Approve & ApproveNoWait
+
+Approve a spender to spend tokens on behalf of the connected wallet.
+
+- [Approve](./Approve.md)
+
+### TransferFrom & TransferFromNoWait
+
+Transfer tokens from another address using a prior allowance.
+
+- [TransferFrom](./TransferFrom.md)
