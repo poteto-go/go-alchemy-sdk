@@ -183,123 +183,108 @@ func TestScenario_ERC20(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
 		deployedContractAddress = contractAddress
+		contractHex := contractAddress.Hex()
 
 		t.Run("can get balance", func(t *testing.T) {
-			balance, err := w.ERC20().BalanceOf(contractAddress.Hex())
+			balance, err := w.ERC20().BalanceOf(contractHex)
 
 			assert.Nil(t, err)
 			assert.Equal(t, balance.Cmp(big.NewInt(10)), 1)
 		})
 
 		t.Run("can get other info", func(t *testing.T) {
-			totalSupply, err := w.ERC20().TotalSupply(contractAddress.Hex())
+			totalSupply, err := w.ERC20().TotalSupply(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, totalSupply.Cmp(big.NewInt(1000)), 0)
 
-			name, err := w.ERC20().Name(contractAddress.Hex())
+			name, err := w.ERC20().Name(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, "Minimal Token", name)
 
-			symbol, err := w.ERC20().Symbol(contractAddress.Hex())
+			symbol, err := w.ERC20().Symbol(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, "MTK", symbol)
 
-			decimals, err := w.ERC20().Decimals(contractAddress.Hex())
+			decimals, err := w.ERC20().Decimals(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, uint8(18), decimals)
 
-			allowance, err := w.ERC20().Allowance(contractAddress.Hex(), initAddress, otherAddress)
+			allowance, err := w.ERC20().Allowance(contractHex, initAddress, otherAddress)
 			assert.Nil(t, err)
 			assert.Equal(t, allowance.Cmp(big.NewInt(0)), 0)
 		})
-	})
-}
 
-func TestScenario_ERC20Write(t *testing.T) {
-	w, err := wallet.New(initPrivateKey)
-	assert.Nil(t, err)
-	w.Connect(alchemy.GetProvider())
+		t.Run("Approve: allowance is set to approved amount", func(t *testing.T) {
+			approveAmount := big.NewInt(100)
 
-	// Copy metadata to avoid mutating the package-level variable across tests
-	erc20Meta := artifacts.ERC20MetaData
-	deployer.BindDeploymentMetadata(&erc20Meta, big.NewInt(1000))
-	contractAddress, err := w.DeployContract(&erc20Meta)
-	assert.Nil(t, err)
-	contractHex := contractAddress.Hex()
+			_, err := w.ERC20().Approve(contractHex, otherAddress, approveAmount, nil)
+			assert.Nil(t, err)
 
-	t.Run("Approve: allowance is set to approved amount", func(t *testing.T) {
-		approveAmount := big.NewInt(100)
+			allowance, err := w.ERC20().Allowance(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, allowance.Cmp(approveAmount))
+		})
 
-		_, err := w.ERC20().Approve(contractHex, otherAddress, approveAmount, nil)
-		assert.Nil(t, err)
+		t.Run("ApproveNoWait: returns txHash, allowance is set after mined", func(t *testing.T) {
+			approveAmount := big.NewInt(200)
 
-		allowance, err := w.ERC20().Allowance(contractHex, initAddress, otherAddress)
-		assert.Nil(t, err)
-		assert.Equal(t, 0, allowance.Cmp(approveAmount))
-	})
+			txHash, err := w.ERC20().ApproveNoWait(contractHex, otherAddress, approveAmount, nil)
+			assert.Nil(t, err)
+			assert.NotEqual(t, txHash.Hex(), "0x0000000000000000000000000000000000000000000000000000000000000000")
 
-	t.Run("ApproveNoWait: returns txHash, allowance is set after mined", func(t *testing.T) {
-		approveAmount := big.NewInt(200)
+			_, err = alchemy.Transact.WaitMined(txHash.Hex())
+			assert.Nil(t, err)
 
-		txHash, err := w.ERC20().ApproveNoWait(contractHex, otherAddress, approveAmount, nil)
-		assert.Nil(t, err)
-		assert.NotEqual(t, txHash.Hex(), "0x0000000000000000000000000000000000000000000000000000000000000000")
+			allowance, err := w.ERC20().Allowance(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, allowance.Cmp(approveAmount))
+		})
 
-		_, err = alchemy.Transact.WaitMined(txHash.Hex())
-		assert.Nil(t, err)
+		t.Run("TransferFrom: otherWallet transfers from initAddress after approval", func(t *testing.T) {
+			transferAmount := big.NewInt(50)
 
-		allowance, err := w.ERC20().Allowance(contractHex, initAddress, otherAddress)
-		assert.Nil(t, err)
-		assert.Equal(t, 0, allowance.Cmp(approveAmount))
-	})
+			_, err := w.ERC20().Approve(contractHex, otherAddress, transferAmount, nil)
+			assert.Nil(t, err)
 
-	t.Run("TransferFrom: otherWallet transfers from initAddress after approval", func(t *testing.T) {
-		transferAmount := big.NewInt(50)
+			balanceBefore, err := w.ERC20().BalanceOf(contractHex)
+			assert.Nil(t, err)
 
-		// initWallet approves otherAddress as spender
-		_, err := w.ERC20().Approve(contractHex, otherAddress, transferAmount, nil)
-		assert.Nil(t, err)
+			otherWallet, err := wallet.New(otherPrivateKey)
+			assert.Nil(t, err)
+			otherWallet.Connect(alchemy.GetProvider())
 
-		balanceBefore, err := w.ERC20().BalanceOf(contractHex)
-		assert.Nil(t, err)
+			_, err = otherWallet.ERC20().TransferFrom(contractHex, initAddress, otherAddress, transferAmount, nil)
+			assert.Nil(t, err)
 
-		// otherWallet executes transferFrom: moves tokens from initAddress to otherAddress
-		otherWallet, err := wallet.New(otherPrivateKey)
-		assert.Nil(t, err)
-		otherWallet.Connect(alchemy.GetProvider())
+			balanceAfter, err := w.ERC20().BalanceOf(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
+		})
 
-		_, err = otherWallet.ERC20().TransferFrom(contractHex, initAddress, otherAddress, transferAmount, nil)
-		assert.Nil(t, err)
+		t.Run("TransferFromNoWait: otherWallet transfers from initAddress, balance decreases after mined", func(t *testing.T) {
+			transferAmount := big.NewInt(30)
 
-		balanceAfter, err := w.ERC20().BalanceOf(contractHex)
-		assert.Nil(t, err)
-		assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
-	})
+			_, err := w.ERC20().Approve(contractHex, otherAddress, transferAmount, nil)
+			assert.Nil(t, err)
 
-	t.Run("TransferFromNoWait: otherWallet transfers from initAddress, balance decreases after mined", func(t *testing.T) {
-		transferAmount := big.NewInt(30)
+			balanceBefore, err := w.ERC20().BalanceOf(contractHex)
+			assert.Nil(t, err)
 
-		// initWallet approves otherAddress as spender
-		_, err := w.ERC20().Approve(contractHex, otherAddress, transferAmount, nil)
-		assert.Nil(t, err)
+			otherWallet, err := wallet.New(otherPrivateKey)
+			assert.Nil(t, err)
+			otherWallet.Connect(alchemy.GetProvider())
 
-		balanceBefore, err := w.ERC20().BalanceOf(contractHex)
-		assert.Nil(t, err)
+			txHash, err := otherWallet.ERC20().TransferFromNoWait(contractHex, initAddress, otherAddress, transferAmount, nil)
+			assert.Nil(t, err)
+			assert.NotEqual(t, txHash.Hex(), "0x0000000000000000000000000000000000000000000000000000000000000000")
 
-		otherWallet, err := wallet.New(otherPrivateKey)
-		assert.Nil(t, err)
-		otherWallet.Connect(alchemy.GetProvider())
+			_, err = alchemy.Transact.WaitMined(txHash.Hex())
+			assert.Nil(t, err)
 
-		txHash, err := otherWallet.ERC20().TransferFromNoWait(contractHex, initAddress, otherAddress, transferAmount, nil)
-		assert.Nil(t, err)
-		assert.NotEqual(t, txHash.Hex(), "0x0000000000000000000000000000000000000000000000000000000000000000")
-
-		_, err = alchemy.Transact.WaitMined(txHash.Hex())
-		assert.Nil(t, err)
-
-		balanceAfter, err := w.ERC20().BalanceOf(contractHex)
-		assert.Nil(t, err)
-		assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
+			balanceAfter, err := w.ERC20().BalanceOf(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
+		})
 	})
 }
 
