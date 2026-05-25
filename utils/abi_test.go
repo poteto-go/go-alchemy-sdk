@@ -11,7 +11,7 @@ func TestDecodeABIString(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		str := "TestToken"
 		encoded := make([]byte, 96)
-		encoded[31] = 0x20 // Offset
+		encoded[31] = 0x20           // Offset
 		encoded[63] = byte(len(str)) // Length
 		copy(encoded[64:], []byte(str))
 
