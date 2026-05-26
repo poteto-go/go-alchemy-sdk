@@ -33,7 +33,8 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 				Fetch:        utils.AlchemyBatchFetch,
 			},
 			types.RequestConfig{
-				Timeout: config.requestTimeout,
+				Timeout:          config.requestTimeout,
+				MaxResponseBytes: config.maxResponseBytes,
 			},
 		)
 	}
@@ -87,7 +88,8 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 	response, err := internal.RequestHttpWithBackoff(
 		*provider.config.backoffConfig,
 		types.RequestConfig{
-			Timeout: provider.config.requestTimeout,
+			Timeout:          provider.config.requestTimeout,
+			MaxResponseBytes: provider.config.maxResponseBytes,
 		},
 		utils.AlchemyFetch,
 		request,

@@ -22,6 +22,7 @@ type AlchemyConfig struct {
 	privateNetworkConfig PrivateNetworkConfig
 	customHeaders        []http.Header
 	jwtSecret            []byte
+	maxResponseBytes     int64
 }
 
 func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
@@ -45,6 +46,7 @@ func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
 		privateNetworkConfig: setting.PrivateNetworkConfig,
 		customHeaders:        setting.CustomHeaders,
 		jwtSecret:            decodedJwt,
+		maxResponseBytes:     setting.MaxResponseBytes,
 	}
 
 	if config.requestTimeout == 0 {
@@ -53,6 +55,10 @@ func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
 
 	if setting.BackoffConfig == nil {
 		config.backoffConfig = &types.DefaultBackoffConfig
+	}
+
+	if config.maxResponseBytes == 0 {
+		config.maxResponseBytes = types.DefaultMaxResponseBytes
 	}
 
 	return config, nil
@@ -99,5 +105,6 @@ func (config *AlchemyConfig) toEtherApiConfig() ether.EtherApiConfig {
 		config.backoffConfig,
 		config.customHeaders,
 		config.jwtSecret,
+		config.maxResponseBytes,
 	)
 }

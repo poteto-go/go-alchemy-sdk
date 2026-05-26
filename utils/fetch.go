@@ -26,7 +26,18 @@ func AlchemyFetch(
 	}
 	defer res.Body.Close()
 
-	resBody, _ := io.ReadAll(res.Body)
+	maxBytes := requestConfig.MaxResponseBytes
+	if maxBytes == 0 {
+		maxBytes = types.DefaultMaxResponseBytes
+	}
+	resBody, err := io.ReadAll(io.LimitReader(res.Body, maxBytes+1))
+	if err != nil {
+		return types.AlchemyResponse{}, constant.ErrFailedToReadResponse
+	}
+	if int64(len(resBody)) > maxBytes {
+		return types.AlchemyResponse{}, constant.ErrFailedToReadResponse
+	}
+
 	result := types.AlchemyResponse{}
 	if err := json.Unmarshal(resBody, &result); err != nil {
 		return types.AlchemyResponse{}, constant.ErrFailedToUnmarshalResponse
@@ -45,6 +56,11 @@ func AlchemyBatchFetch(
 		Timeout: requestConfig.Timeout,
 	}
 
+	maxBytes := requestConfig.MaxResponseBytes
+	if maxBytes == 0 {
+		maxBytes = types.DefaultMaxResponseBytes
+	}
+
 	if len(bodies) == 1 {
 		request.Body = io.NopCloser(bytes.NewBuffer(bodies[0]))
 		res, err := client.Do(request)
@@ -53,7 +69,14 @@ func AlchemyBatchFetch(
 		}
 		defer res.Body.Close()
 
-		body, _ := io.ReadAll(res.Body)
+		body, err := io.ReadAll(io.LimitReader(res.Body, maxBytes+1))
+		if err != nil {
+			return []types.AlchemyResponse{}, constant.ErrFailedToReadResponse
+		}
+		if int64(len(body)) > maxBytes {
+			return []types.AlchemyResponse{}, constant.ErrFailedToReadResponse
+		}
+
 		result := types.AlchemyResponse{}
 		if err := json.Unmarshal(body, &result); err != nil {
 			return []types.AlchemyResponse{}, constant.ErrFailedToUnmarshalResponse
@@ -71,7 +94,14 @@ func AlchemyBatchFetch(
 	}
 	defer res.Body.Close()
 
-	body, _ := io.ReadAll(res.Body)
+	body, err := io.ReadAll(io.LimitReader(res.Body, maxBytes+1))
+	if err != nil {
+		return []types.AlchemyResponse{}, constant.ErrFailedToReadResponse
+	}
+	if int64(len(body)) > maxBytes {
+		return []types.AlchemyResponse{}, constant.ErrFailedToReadResponse
+	}
+
 	results := []types.AlchemyResponse{}
 	if err := json.Unmarshal(body, &results); err != nil {
 		return []types.AlchemyResponse{}, constant.ErrFailedToUnmarshalResponse

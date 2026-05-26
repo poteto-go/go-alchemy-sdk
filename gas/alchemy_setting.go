@@ -33,6 +33,10 @@ type AlchemySetting struct {
 
 	CustomHeaders []http.Header `yaml:"custom_headers"`
 
+	// Maximum bytes to read from an RPC response body (default: 32 MiB).
+	// Set to 0 to use the default.
+	MaxResponseBytes int64 `yaml:"max_response_bytes"`
+
 	/*
 		return true => p8net is selected
 

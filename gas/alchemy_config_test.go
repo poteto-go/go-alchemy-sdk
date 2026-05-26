@@ -69,6 +69,30 @@ func TestNewAlchemyConfig(t *testing.T) {
 	})
 }
 
+func TestNewAlchemyConfig_MaxResponseBytes(t *testing.T) {
+	t.Run("defaults to DefaultMaxResponseBytes when not set", func(t *testing.T) {
+		config, err := NewAlchemyConfig(AlchemySetting{
+			ApiKey:  "api-key",
+			Network: types.MaticMainnet,
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, types.DefaultMaxResponseBytes, config.maxResponseBytes)
+	})
+
+	t.Run("uses configured value when set", func(t *testing.T) {
+		const custom int64 = 1024 * 1024 // 1 MiB
+		config, err := NewAlchemyConfig(AlchemySetting{
+			ApiKey:           "api-key",
+			Network:          types.MaticMainnet,
+			MaxResponseBytes: custom,
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, custom, config.maxResponseBytes)
+	})
+}
+
 func TestAlchemyConfig_GetUrl(t *testing.T) {
 	t.Run("can resolve alchemy rpc url", func(t *testing.T) {
 		// Arrange

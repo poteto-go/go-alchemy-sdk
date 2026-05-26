@@ -139,6 +139,93 @@ func TestAlchemyFetch(t *testing.T) {
 	})
 }
 
+func TestAlchemyFetch_ResponseSizeLimit(t *testing.T) {
+	targetUrl := "example.com"
+
+	body, _ := utils.CreateRequestBodyToBytes(
+		1,
+		"method",
+		types.RequestArgs{},
+	)
+
+	t.Run("response within limit succeeds", func(t *testing.T) {
+		httpmock.Activate(t)
+		defer httpmock.DeactivateAndReset()
+
+		req, _ := http.NewRequest("POST", targetUrl, nil)
+		request := types.AlchemyRequest{Request: req}
+		mockResult := types.AlchemyResponse{Jsonrpc: "2.0", Id: 1, Result: "0x1"}
+		resultJson, _ := json.Marshal(mockResult)
+
+		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, string(resultJson)))
+
+		_, err := utils.AlchemyFetch(request, types.RequestConfig{
+			Timeout:          10 * time.Second,
+			MaxResponseBytes: int64(len(resultJson) + 1),
+		}, body)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("response exceeds limit -> constant.ErrFailedToReadResponse", func(t *testing.T) {
+		httpmock.Activate(t)
+		defer httpmock.DeactivateAndReset()
+
+		req, _ := http.NewRequest("POST", targetUrl, nil)
+		request := types.AlchemyRequest{Request: req}
+		largeBody := string(make([]byte, 100))
+
+		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
+
+		_, err := utils.AlchemyFetch(request, types.RequestConfig{
+			Timeout:          10 * time.Second,
+			MaxResponseBytes: 10,
+		}, body)
+
+		assert.ErrorIs(t, err, constant.ErrFailedToReadResponse)
+	})
+}
+
+func TestAlchemyBatchFetch_ResponseSizeLimit(t *testing.T) {
+	targetUrl := "example.com"
+
+	body1, _ := utils.CreateRequestBodyToBytes(1, "method", types.RequestArgs{})
+	body2, _ := utils.CreateRequestBodyToBytes(2, "method", types.RequestArgs{})
+	req, _ := http.NewRequest("POST", targetUrl, nil)
+
+	t.Run("single body: response exceeds limit -> constant.ErrFailedToReadResponse", func(t *testing.T) {
+		httpmock.Activate(t)
+		defer httpmock.DeactivateAndReset()
+
+		largeBody := string(make([]byte, 100))
+		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
+
+		_, err := utils.AlchemyBatchFetch(
+			[]types.AlchemyRequest{{Request: req}},
+			types.RequestConfig{Timeout: 10 * time.Second, MaxResponseBytes: 10},
+			[][]byte{body1},
+		)
+
+		assert.ErrorIs(t, err, constant.ErrFailedToReadResponse)
+	})
+
+	t.Run("batch body: response exceeds limit -> constant.ErrFailedToReadResponse", func(t *testing.T) {
+		httpmock.Activate(t)
+		defer httpmock.DeactivateAndReset()
+
+		largeBody := string(make([]byte, 100))
+		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
+
+		_, err := utils.AlchemyBatchFetch(
+			[]types.AlchemyRequest{{Request: req}, {Request: req}},
+			types.RequestConfig{Timeout: 10 * time.Second, MaxResponseBytes: 10},
+			[][]byte{body1, body2},
+		)
+
+		assert.ErrorIs(t, err, constant.ErrFailedToReadResponse)
+	})
+}
+
 func TestAlchemyBatchFetch(t *testing.T) {
 	// Arrange
 	targetUrl := "example.com"

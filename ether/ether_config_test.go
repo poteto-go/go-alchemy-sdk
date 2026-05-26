@@ -29,6 +29,7 @@ func TestNewEtherApiConfig(t *testing.T) {
 		&backoffConfig,
 		customHeaders,
 		[]byte(""),
+		0,
 	)
 
 	// Assert
@@ -37,4 +38,5 @@ func TestNewEtherApiConfig(t *testing.T) {
 	assert.Equal(t, config.requestTimeout, requestTimeout)
 	assert.Equal(t, config.backoffConfig, &backoffConfig)
 	assert.Equal(t, config.customHeaders, customHeaders)
+	assert.Equal(t, int64(0), config.maxResponseBytes)
 }
