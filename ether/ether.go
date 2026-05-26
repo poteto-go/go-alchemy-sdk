@@ -3,7 +3,6 @@ package ether
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -467,7 +466,6 @@ func (ether *Ether) CallContract(
 		blockNumber,
 	)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
