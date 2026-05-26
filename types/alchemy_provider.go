@@ -12,8 +12,11 @@ type AlchemyRequest struct {
 	Request *http.Request
 }
 
+const DefaultMaxResponseBytes int64 = 32 * 1024 * 1024 // 32 MiB
+
 type RequestConfig struct {
-	Timeout time.Duration
+	Timeout          time.Duration
+	MaxResponseBytes int64
 }
 
 // for json marshal
