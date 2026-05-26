@@ -105,5 +105,6 @@ func (config *AlchemyConfig) toEtherApiConfig() ether.EtherApiConfig {
 		config.backoffConfig,
 		config.customHeaders,
 		config.jwtSecret,
+		config.maxResponseBytes,
 	)
 }

@@ -109,4 +109,7 @@ func main() {
 }
 ```
 
-If the response body exceeds the limit, `AlchemyFetch` / `AlchemyBatchFetch` return `constant.ErrFailedToReadResponse`.
+The limit is enforced on **all** response paths:
+
+- **Alchemy JSON-RPC** (`AlchemyFetch` / `AlchemyBatchFetch`): returns `constant.ErrFailedToReadResponse` when the body exceeds the limit.
+- **geth `ethclient` methods** (e.g. `BlockNumber`, `CallContract`): the underlying `http.Client` uses a `limitedTransport` that wraps every response body with `io.LimitReader`, so oversized responses are also truncated here.

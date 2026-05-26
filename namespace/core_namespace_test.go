@@ -40,6 +40,7 @@ func newEtherApi() *ether.Ether {
 		nil,
 		[]http.Header{},
 		nil,
+		0,
 	)).(*ether.Ether)
 }
 
