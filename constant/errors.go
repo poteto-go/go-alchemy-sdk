@@ -39,6 +39,7 @@ var (
 	ErrOverFlow                         = errors.New("overflow")
 	ErrWalletIsNotConnected             = errors.New("wallet is not connected")
 	ErrContractInstanceIsNil            = errors.New("contract instance is nil")
+	ErrUnexpectedResponseType           = errors.New("unexpected response type")
 )
 
 var HttpClientErrorCodeList = []int{
