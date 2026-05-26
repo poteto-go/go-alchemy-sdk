@@ -342,6 +342,30 @@ func TestEther_GetBalance(t *testing.T) {
 			// Assert
 			assert.ErrorIs(t, constant.ErrInvalidHexString, err)
 		})
+
+		t.Run("if result is not string -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			balanceProvider := newProviderForTest()
+			balanceEther := newNilEtherApiForTest(balanceProvider)
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(balanceProvider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return nil, nil
+				},
+			)
+
+			// Act
+			_, err := balanceEther.GetBalance("hoge", "latest")
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
+		})
 	})
 }
 
@@ -805,6 +829,49 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			// Assert
 			assert.ErrorIs(t, constant.ErrFailedToMapTokenResponse, err)
 		})
+
+		t.Run("if result is not map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return "unexpected", nil
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
+		})
+
+		t.Run("if tokenBalances is not []map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return map[string]any{
+						"address":       "0x123",
+						"tokenBalances": "not-a-slice",
+					}, nil
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
+		})
 	})
 }
 
@@ -896,6 +963,26 @@ func TestEther_GetTokenMetadata(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, constant.ErrFailedToMapTokenResponse, err)
+		})
+
+		t.Run("if result is not map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return 42, nil
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenMetadata("0x123")
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
 		})
 	})
 }
@@ -1010,6 +1097,46 @@ func TestEther_GetLogs(t *testing.T) {
 			// Assert
 			assert.ErrorIs(t, expectedErr, err)
 		})
+
+		t.Run("if result is not []any -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return "unexpected", nil
+				},
+			)
+
+			// Act
+			_, err := ether.GetLogs(types.Filter{})
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
+		})
+
+		t.Run("if log element is not map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return []any{"not-a-map"}, nil
+				},
+			)
+
+			// Act
+			_, err := ether.GetLogs(types.Filter{})
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
+		})
 	})
 }
 
@@ -1082,6 +1209,26 @@ func TestEther_Call(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, err, expectedErr)
+		})
+
+		t.Run("if result is not string -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return nil, nil
+				},
+			)
+
+			// Act
+			_, err := ether.Call(transaction, "latest")
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
 		})
 	})
 }
@@ -1399,6 +1546,31 @@ func TestEther_GetTransactionReceipts(t *testing.T) {
 
 			// Assert
 			assert.ErrorIs(t, constant.ErrFailedToMapTransactionReceipt, err)
+		})
+
+		t.Run("if result is not map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			txReceiptsArg := types.BlockNumberOrHash{
+				BlockHash: "hash",
+			}
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return "unexpected", nil
+				},
+			)
+
+			// Act
+			_, err := ether.GetTransactionReceipts(txReceiptsArg)
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
 		})
 	})
 }
