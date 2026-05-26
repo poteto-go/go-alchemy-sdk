@@ -3,7 +3,6 @@ package ether
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"math/big"
 	"net/http"
@@ -78,7 +77,7 @@ func (ether *Ether) isClientJwsAlive() bool {
 	}
 
 	now := time.Now().Unix()
-	return ether.clientCreatedAt+(time.Second.Microseconds()*60) >= now
+	return ether.clientCreatedAt+60 >= now
 }
 
 // kill all client
@@ -248,7 +247,11 @@ func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error
 		return nil, err
 	}
 
-	balance, err := utils.FromBigHex(balanceHex.(string))
+	balanceStr, ok := balanceHex.(string)
+	if !ok {
+		return nil, constant.ErrUnexpectedResponseType
+	}
+	balance, err := utils.FromBigHex(balanceStr)
 	if err != nil {
 		return nil, err
 	}
@@ -366,9 +369,16 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 		return types.TokenBalanceResponse{}, err
 	}
 
-	resultMap := result.(map[string]any)
-	if balances, ok := resultMap["tokenBalances"]; ok {
-		for _, balance := range balances.([]map[string]any) {
+	resultMap, ok := result.(map[string]any)
+	if !ok {
+		return types.TokenBalanceResponse{}, constant.ErrUnexpectedResponseType
+	}
+	if balances, exists := resultMap["tokenBalances"]; exists {
+		balanceSlice, ok := balances.([]map[string]any)
+		if !ok {
+			return types.TokenBalanceResponse{}, constant.ErrUnexpectedResponseType
+		}
+		for _, balance := range balanceSlice {
 			if errStr, ok := balance["error"]; ok && errStr != nil {
 				balance["error"] = errors.New(errStr.(string))
 			}
@@ -394,7 +404,10 @@ func (ether *Ether) GetTokenMetadata(address string) (types.TokenMetadataRespons
 		return types.TokenMetadataResponse{}, err
 	}
 
-	resultMap := result.(map[string]any)
+	resultMap, ok := result.(map[string]any)
+	if !ok {
+		return types.TokenMetadataResponse{}, constant.ErrUnexpectedResponseType
+	}
 	var tokenMetadata types.TokenMetadataResponse
 	if err := mapstructure.Decode(resultMap, &tokenMetadata); err != nil {
 		return types.TokenMetadataResponse{}, constant.ErrFailedToMapTokenResponse
@@ -414,10 +427,16 @@ func (ether *Ether) GetLogs(filter types.Filter) ([]types.LogResponse, error) {
 		return []types.LogResponse{}, err
 	}
 
-	resultArr := result.([]any)
+	resultArr, ok := result.([]any)
+	if !ok {
+		return []types.LogResponse{}, constant.ErrUnexpectedResponseType
+	}
 	logs := make([]types.LogResponse, len(resultArr))
 	for i, res := range resultArr {
-		resultMap := res.(map[string]any)
+		resultMap, ok := res.(map[string]any)
+		if !ok {
+			return []types.LogResponse{}, constant.ErrUnexpectedResponseType
+		}
 		var log types.LogResponse
 		if err := mapstructure.Decode(resultMap, &log); err != nil {
 			return []types.LogResponse{}, constant.ErrFailedToMapTokenResponse
@@ -493,7 +512,11 @@ func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, 
 		return "", err
 	}
 
-	return result.(string), nil
+	resultStr, ok := result.(string)
+	if !ok {
+		return "", constant.ErrUnexpectedResponseType
+	}
+	return resultStr, nil
 }
 
 func (ether *Ether) CallContract(
@@ -519,7 +542,6 @@ func (ether *Ether) CallContract(
 		blockNumber,
 	)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
@@ -554,7 +576,10 @@ func (ether *Ether) GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*geth
 		return []*gethTypes.Receipt{}, err
 	}
 
-	resultMap := result.(map[string]any)
+	resultMap, ok := result.(map[string]any)
+	if !ok {
+		return []*gethTypes.Receipt{}, constant.ErrUnexpectedResponseType
+	}
 	var txReceiptsRes types.TransactionReceiptsResponse
 	if err := mapstructure.Decode(resultMap, &txReceiptsRes); err != nil {
 		return []*gethTypes.Receipt{}, constant.ErrFailedToMapTransactionReceipt
