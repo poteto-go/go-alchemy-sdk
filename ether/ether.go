@@ -105,14 +105,14 @@ type limitedTransport struct {
 
 // RoundTrip intercepts every HTTP response from the geth rpc.Client call chain:
 //
-//	gethメソッド呼び出し (e.g. BlockNumber)
+//	geth method call (e.g. BlockNumber)
 //	  └─ ethclient.Client → rpc.Client
 //	       └─ httpConn.doRequest()           [rpc/http.go:229]
-//	            └─ hc.client.Do(req)         ← ここが net/http の http.Client.Do
-//	                 └─ Transport.RoundTrip(req)   ← Go標準の仕組みで自動的に呼ばれる
+//	            └─ hc.client.Do(req)         ← net/http http.Client.Do
+//	                 └─ Transport.RoundTrip(req)   ← called automatically by Go's http.Client
 //	                      └─ limitedTransport.RoundTrip()  [ether/ether.go]
-//	                           ├─ t.underlying.RoundTrip(req)  ← 実際のHTTP通信
-//	                           └─ resp.Body = LimitReader(resp.Body, maxBytes)  ← ここでラップ
+//	                           ├─ t.underlying.RoundTrip(req)  ← actual HTTP communication
+//	                           └─ resp.Body = LimitReader(resp.Body, maxBytes)  ← wrapped here
 func (t *limitedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := t.underlying.RoundTrip(req)
 	if err != nil {
