@@ -76,7 +76,7 @@ func (ether *Ether) isClientJwsAlive() bool {
 	}
 
 	now := time.Now().Unix()
-	return ether.clientCreatedAt+(time.Second.Microseconds()*60) >= now
+	return ether.clientCreatedAt+60 >= now
 }
 
 // kill all client
