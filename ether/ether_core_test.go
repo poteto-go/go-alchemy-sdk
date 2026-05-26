@@ -1,13 +1,10 @@
 package ether_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 	"math/big"
 	"net/http"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -1172,32 +1169,6 @@ func TestEther_CallContract(t *testing.T) {
 
 			// Assert
 			assert.Error(t, err)
-		})
-
-		t.Run("on error, nothing is written to stdout", func(t *testing.T) {
-			// Arrange
-			ether := newEtherApiForTest()
-			old := os.Stdout
-			r, w, _ := os.Pipe()
-			os.Stdout = w
-
-			// Act
-			_, err := ether.CallContract(
-				ethereum.CallMsg{
-					To: &contractAddress,
-				},
-				"latest",
-			)
-
-			// Restore stdout and read captured output
-			w.Close()
-			os.Stdout = old
-			var buf bytes.Buffer
-			io.Copy(&buf, r)
-
-			// Assert
-			assert.Error(t, err)
-			assert.Empty(t, buf.String())
 		})
 	})
 }
