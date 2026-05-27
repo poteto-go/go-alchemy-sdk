@@ -387,7 +387,24 @@ func TestEther_CodeAt(t *testing.T) {
 
 			// Assert
 			assert.NoError(t, err)
-			assert.Equal(t, "608060405234801561001057600080fd5b50", result)
+			assert.Equal(t, "0x608060405234801561001057600080fd5b50", result)
+		})
+
+		t.Run("returns 0x for EOA (empty code)", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponderOnce("eth_getCode", `{"jsonrpc":"2.0","id":1,"result":"0x"}`)
+
+			// Act
+			result, err := ether.CodeAt("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "latest")
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, "0x", result)
 		})
 	})
 
@@ -461,7 +478,24 @@ func TestEther_CodeAtHash(t *testing.T) {
 
 			// Assert
 			assert.NoError(t, err)
-			assert.Equal(t, "608060405234801561001057600080fd5b50", result)
+			assert.Equal(t, "0x608060405234801561001057600080fd5b50", result)
+		})
+
+		t.Run("returns 0x for EOA (empty code)", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponderOnce("eth_getCode", `{"jsonrpc":"2.0","id":1,"result":"0x"}`)
+
+			// Act
+			result, err := ether.CodeAtHash("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "0xbd05b61cc68595a7c30039b2b092ea293c9a2faee20158d578528e399f4d4244")
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, "0x", result)
 		})
 	})
 
