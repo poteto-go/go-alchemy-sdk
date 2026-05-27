@@ -23,6 +23,7 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	provider := &AlchemyProvider{
 		config: config,
 	}
+	provider.id.Store(1)
 
 	if config.maxRetries > 0 {
 		provider.batcher = internal.NewRequestBatcher(
@@ -56,7 +57,8 @@ func (provider *AlchemyProvider) CustomHeaders() []http.Header {
 
 /* Send raw transaction */
 func (provider *AlchemyProvider) Send(method string, params types.RequestArgs) (any, error) {
-	id := provider.id.Add(1)
+	// fetch-and-add: take the current id for this request, then advance the counter atomically.
+	id := provider.id.Add(1) - 1
 	body, err := utils.CreateRequestBodyToBytes(int(id), method, params)
 	if err != nil {
 		return nil, err

@@ -37,7 +37,7 @@ func TestNewAlchemyProvider(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, config, provider.config)
-	assert.Equal(t, int64(0), provider.id.Load())
+	assert.Equal(t, int64(1), provider.id.Load())
 	assert.Equal(t, config.customHeaders, customHeaders)
 }
 
@@ -79,7 +79,7 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			// Assert
 			assert.NoError(t, err)
 			assert.Equal(t, "0x1234", result)
-			assert.Equal(t, int64(1), provider.id.Load())
+			assert.Equal(t, int64(2), provider.id.Load())
 		})
 
 		t.Run("concurrent Send produces unique JSON-RPC ids", func(t *testing.T) {
