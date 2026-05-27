@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sync"
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
@@ -36,7 +37,7 @@ func TestNewAlchemyProvider(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, config, provider.config)
-	assert.Equal(t, 1, provider.id)
+	assert.Equal(t, int64(0), provider.id.Load())
 	assert.Equal(t, config.customHeaders, customHeaders)
 }
 
@@ -78,7 +79,55 @@ func TestAlchemyProvider_Send(t *testing.T) {
 			// Assert
 			assert.NoError(t, err)
 			assert.Equal(t, "0x1234", result)
-			assert.Equal(t, 2, provider.id)
+			assert.Equal(t, int64(1), provider.id.Load())
+		})
+
+		t.Run("concurrent Send produces unique JSON-RPC ids", func(t *testing.T) {
+			provider := newProviderForTest()
+			provider.config.backoffConfig.MaxRetries = 0
+
+			httpmock.Activate(t)
+			defer httpmock.DeactivateAndReset()
+
+			var (
+				mu  sync.Mutex
+				ids []int
+			)
+			httpmock.RegisterResponder(
+				"POST",
+				provider.config.GetUrl(),
+				func(req *http.Request) (*http.Response, error) {
+					var body types.AlchemyRequestBody
+					if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+						return nil, err
+					}
+					mu.Lock()
+					ids = append(ids, body.Id)
+					mu.Unlock()
+					return httpmock.NewStringResponse(
+						200,
+						`{"jsonrpc":"2.0","id":1,"result":"0x1"}`,
+					), nil
+				},
+			)
+
+			const goroutines = 50
+			var wg sync.WaitGroup
+			for i := 0; i < goroutines; i++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					_, _ = provider.Send("hoge", types.RequestArgs{})
+				}()
+			}
+			wg.Wait()
+
+			assert.Len(t, ids, goroutines)
+			seen := map[int]bool{}
+			for _, id := range ids {
+				assert.Falsef(t, seen[id], "duplicate JSON-RPC id %d generated under concurrency", id)
+				seen[id] = true
+			}
 		})
 	})
 

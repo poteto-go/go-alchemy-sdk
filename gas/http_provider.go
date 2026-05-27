@@ -3,6 +3,7 @@ package gas
 import (
 	"context"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/constant"
@@ -13,7 +14,7 @@ import (
 
 type AlchemyProvider struct {
 	config  AlchemyConfig
-	id      int
+	id      atomic.Int64
 	batcher *internal.RequestBatcher
 	eth     types.EtherApi
 }
@@ -21,7 +22,6 @@ type AlchemyProvider struct {
 func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	provider := &AlchemyProvider{
 		config: config,
-		id:     1,
 	}
 
 	if config.maxRetries > 0 {
@@ -56,7 +56,8 @@ func (provider *AlchemyProvider) CustomHeaders() []http.Header {
 
 /* Send raw transaction */
 func (provider *AlchemyProvider) Send(method string, params types.RequestArgs) (any, error) {
-	body, err := utils.CreateRequestBodyToBytes(provider.id, method, params)
+	id := provider.id.Add(1)
+	body, err := utils.CreateRequestBodyToBytes(int(id), method, params)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,6 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 			if err != nil {
 				return "", err
 			}
-			provider.id++
 			return fmt.Sprintf("%v", response.Result), nil
 		}
 	*/
@@ -103,8 +103,6 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 	if result == nil {
 		return nil, constant.ErrResultIsNil
 	}
-
-	provider.id++
 
 	return result, nil
 }
