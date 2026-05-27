@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,6 +35,8 @@ func TestGenerateJws(t *testing.T) {
 		iat, _ := decoded.Claims.GetIssuedAt()
 		assert.True(t, before <= iat.Unix())
 		assert.True(t, after >= iat.Unix())
+		exp, _ := decoded.Claims.GetExpirationTime()
+		assert.Equal(t, iat.Unix()+constant.GethJwsIatWindowSec, exp.Unix())
 	})
 
 	t.Run("fail on invalid jwt secret", func(t *testing.T) {
