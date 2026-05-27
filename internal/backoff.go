@@ -61,5 +61,7 @@ func (b *BackoffManager) calculateExponentialBackOffDelay() float64 {
 		return float64(0)
 	}
 
-	return math.Min(b.lastDelay+(utils.RandomF64(1)-0.5)*b.lastDelay, b.config.MaxDelayMs)
+	base := b.lastDelay * 2
+	jitter := (utils.RandomF64(1) - 0.5) * base
+	return math.Min(base+jitter, b.config.MaxDelayMs)
 }
