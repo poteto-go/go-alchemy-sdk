@@ -69,8 +69,6 @@ func (ether *Ether) SetEthClient() error {
 
 // geth accepts a tight ~60s iat window; recreate before the boundary so
 // clock skew or in-flight latency cannot push a request past 60s.
-const jwsAliveWindowSec int64 = int64(60 * 0.95)
-
 func (ether *Ether) isClientJwsAlive() bool {
 	if ether.client == nil {
 		return false
@@ -81,7 +79,7 @@ func (ether *Ether) isClientJwsAlive() bool {
 	}
 
 	now := time.Now().Unix()
-	return now-ether.clientCreatedAt < jwsAliveWindowSec
+	return now-ether.clientCreatedAt < constant.JwsAliveWindowSec
 }
 
 // kill all client

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 )
 
 // engine api check the range from iat,
@@ -19,7 +21,7 @@ func GenerateJws(secret []byte) (string, error) {
 	iat := time.Now().Unix()
 	claims := jwt.MapClaims{
 		"iat": iat,
-		"exp": iat + 60,
+		"exp": iat + constant.GethJwsIatWindowSec,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

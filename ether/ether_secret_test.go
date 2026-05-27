@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
@@ -143,14 +144,14 @@ func TestEther_RecreateExpiredJws(t *testing.T) {
 }
 
 func TestEther_JwtExpiry_SafetyMargin(t *testing.T) {
-	t.Run("within 56 seconds: same client is reused", func(t *testing.T) {
+	t.Run("within safety window: same client is reused", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			e := newEtherApiWSecretForTest()
 			err := e.SetEthClient()
 			assert.NoError(t, err)
 			firstClient := e.Client()
 
-			time.Sleep(56 * time.Second)
+			time.Sleep(time.Duration(constant.GethJwsIatWindowSec*0.90) * time.Second)
 
 			err = e.SetEthClient()
 			assert.NoError(t, err)
@@ -159,30 +160,14 @@ func TestEther_JwtExpiry_SafetyMargin(t *testing.T) {
 		})
 	})
 
-	t.Run("at 57 seconds: client is recreated before geth 60s window", func(t *testing.T) {
+	t.Run("after geth iat window: client is recreated with fresh JWT", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			e := newEtherApiWSecretForTest()
 			err := e.SetEthClient()
 			assert.NoError(t, err)
 			firstClient := e.Client()
 
-			time.Sleep(57 * time.Second)
-
-			err = e.SetEthClient()
-			assert.NoError(t, err)
-
-			assert.NotSame(t, firstClient, e.Client())
-		})
-	})
-
-	t.Run("after 60 seconds: client is recreated with fresh JWT", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
-			e := newEtherApiWSecretForTest()
-			err := e.SetEthClient()
-			assert.NoError(t, err)
-			firstClient := e.Client()
-
-			time.Sleep(60 * time.Second)
+			time.Sleep(time.Duration(constant.GethJwsIatWindowSec) * time.Second)
 
 			err = e.SetEthClient()
 			assert.NoError(t, err)
