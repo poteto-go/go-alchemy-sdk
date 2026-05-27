@@ -155,17 +155,27 @@ func (w *wallet) GetAddress() string {
 	return common.HexToAddress(address.Hex()).String()
 }
 
-// snapshot returns the current provider and erc20 namespace under read lock.
-// Callers should use the returned values for the remainder of the call so that
+// snapshot returns the current provider under read lock.
+// Callers should use the returned value for the remainder of the call so that
 // a concurrent Connect cannot tear the interface header mid-read.
-func (w *wallet) snapshot() (types.IAlchemyProvider, namespace.IERC20) {
+func (w *wallet) snapshot() types.IAlchemyProvider {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
-	return w.provider, w.erc20
+	return w.provider
+}
+
+// snapshotERC20 returns the current erc20 namespace under read lock.
+// Same rationale as snapshot — keeping it as its own getter so future
+// namespaces (erc721, etc.) can be added without piling tuple returns
+// onto a single helper.
+func (w *wallet) snapshotERC20() namespace.IERC20 {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.erc20
 }
 
 func (w *wallet) GetBalance() (*big.Int, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
@@ -186,7 +196,7 @@ func (w *wallet) Connect(provider types.IAlchemyProvider) {
 }
 
 func (w *wallet) PendingNonceAt() (uint64, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return 0, constant.ErrWalletIsNotConnected
 	}
@@ -201,7 +211,7 @@ func (w *wallet) PendingNonceAt() (uint64, error) {
 
 // sign Transaction by wallet's p8 key
 func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transaction, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
@@ -248,7 +258,7 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 }
 
 func (w *wallet) SendTransaction(txRequest types.TransactionRequest) (common.Hash, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}
@@ -266,7 +276,7 @@ func (w *wallet) SendTransaction(txRequest types.TransactionRequest) (common.Has
 }
 
 func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return common.Address{}, constant.ErrWalletIsNotConnected
 	}
@@ -286,7 +296,7 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 }
 
 func (w *wallet) DeployContractNoWait(metaData *bind.MetaData) (*bind.DeploymentResult, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
@@ -309,7 +319,7 @@ func (w *wallet) ContractTransact(
 	contractAddress string,
 	data []byte,
 ) (*gethTypes.Receipt, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
@@ -331,7 +341,7 @@ func (w *wallet) ContractTransactNoWait(
 	contractAddress string,
 	data []byte,
 ) (*gethTypes.Transaction, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
@@ -356,7 +366,7 @@ func (w *wallet) ContractCall(
 	callData []byte,
 	unpack func([]byte) (any, error),
 ) (any, error) {
-	provider, _ := w.snapshot()
+	provider := w.snapshot()
 	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
