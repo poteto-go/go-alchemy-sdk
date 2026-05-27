@@ -16,8 +16,10 @@ func GenerateJws(secret []byte) (string, error) {
 		return "", errors.New("invalid secret size: expected 32 bytes")
 	}
 
+	iat := time.Now().Unix()
 	claims := jwt.MapClaims{
-		"iat": time.Now().Unix(),
+		"iat": iat,
+		"exp": iat + 60,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

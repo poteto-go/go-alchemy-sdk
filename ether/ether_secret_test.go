@@ -142,15 +142,15 @@ func TestEther_RecreateExpiredJws(t *testing.T) {
 	})
 }
 
-func TestEther_JwtExpiry_60SecondWindow(t *testing.T) {
-	t.Run("within 59 seconds: same client is reused", func(t *testing.T) {
+func TestEther_JwtExpiry_SafetyMargin(t *testing.T) {
+	t.Run("within 56 seconds: same client is reused", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			e := newEtherApiWSecretForTest()
 			err := e.SetEthClient()
 			assert.NoError(t, err)
 			firstClient := e.Client()
 
-			time.Sleep(59 * time.Second)
+			time.Sleep(56 * time.Second)
 
 			err = e.SetEthClient()
 			assert.NoError(t, err)
@@ -159,14 +159,30 @@ func TestEther_JwtExpiry_60SecondWindow(t *testing.T) {
 		})
 	})
 
-	t.Run("after 61 seconds: client is recreated with fresh JWT", func(t *testing.T) {
+	t.Run("at 57 seconds: client is recreated before geth 60s window", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			e := newEtherApiWSecretForTest()
 			err := e.SetEthClient()
 			assert.NoError(t, err)
 			firstClient := e.Client()
 
-			time.Sleep(61 * time.Second)
+			time.Sleep(57 * time.Second)
+
+			err = e.SetEthClient()
+			assert.NoError(t, err)
+
+			assert.NotSame(t, firstClient, e.Client())
+		})
+	})
+
+	t.Run("after 60 seconds: client is recreated with fresh JWT", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			e := newEtherApiWSecretForTest()
+			err := e.SetEthClient()
+			assert.NoError(t, err)
+			firstClient := e.Client()
+
+			time.Sleep(60 * time.Second)
 
 			err = e.SetEthClient()
 			assert.NoError(t, err)

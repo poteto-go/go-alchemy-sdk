@@ -34,6 +34,8 @@ func TestGenerateJws(t *testing.T) {
 		iat, _ := decoded.Claims.GetIssuedAt()
 		assert.True(t, before <= iat.Unix())
 		assert.True(t, after >= iat.Unix())
+		exp, _ := decoded.Claims.GetExpirationTime()
+		assert.Equal(t, iat.Unix()+60, exp.Unix())
 	})
 
 	t.Run("fail on invalid jwt secret", func(t *testing.T) {
