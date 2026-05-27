@@ -88,7 +88,8 @@ type walletERC20 struct {
 }
 
 func (api *walletERC20) Transfer(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
-	if api.w.provider == nil {
+	provider := api.w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
@@ -102,7 +103,7 @@ func (api *walletERC20) Transfer(contractAddress, toAddress string, amount *big.
 		return nil, err
 	}
 
-	return api.w.provider.Eth().WaitMined(txHash)
+	return provider.Eth().WaitMined(txHash)
 }
 
 func buildERC20TxData(signature []byte, params ...[]byte) ([]byte, error) {
@@ -132,7 +133,8 @@ func resolveGasLimit(gasLimit *uint64) uint64 {
 }
 
 func (api *walletERC20) TransferNoWait(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
-	if api.w.provider == nil {
+	provider := api.w.snapshot()
+	if provider == nil {
 		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}
 
@@ -157,7 +159,8 @@ func (api *walletERC20) TransferNoWait(contractAddress, toAddress string, amount
 }
 
 func (api *walletERC20) ApproveNoWait(contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
-	if api.w.provider == nil {
+	provider := api.w.snapshot()
+	if provider == nil {
 		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}
 
@@ -182,7 +185,8 @@ func (api *walletERC20) ApproveNoWait(contractAddress, spenderAddress string, am
 }
 
 func (api *walletERC20) Approve(contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
-	if api.w.provider == nil {
+	provider := api.w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
@@ -191,11 +195,12 @@ func (api *walletERC20) Approve(contractAddress, spenderAddress string, amount *
 		return nil, err
 	}
 
-	return api.w.provider.Eth().WaitMined(txHash)
+	return provider.Eth().WaitMined(txHash)
 }
 
 func (api *walletERC20) TransferFromNoWait(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
-	if api.w.provider == nil {
+	provider := api.w.snapshot()
+	if provider == nil {
 		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}
 
@@ -221,7 +226,8 @@ func (api *walletERC20) TransferFromNoWait(contractAddress, fromAddress, toAddre
 }
 
 func (api *walletERC20) TransferFrom(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
-	if api.w.provider == nil {
+	provider := api.w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
@@ -230,56 +236,62 @@ func (api *walletERC20) TransferFrom(contractAddress, fromAddress, toAddress str
 		return nil, err
 	}
 
-	return api.w.provider.Eth().WaitMined(txHash)
+	return provider.Eth().WaitMined(txHash)
 }
 
 func (api *walletERC20) BalanceOf(contractAddress string) (*big.Int, error) {
-	if api.w.provider == nil {
+	erc20 := api.w.snapshotERC20()
+	if erc20 == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
-	return api.w.erc20.BalanceOf(
+	return erc20.BalanceOf(
 		contractAddress,
 		api.w.GetAddress(),
 	)
 }
 
 func (api *walletERC20) TotalSupply(contractAddress string) (*big.Int, error) {
-	if api.w.provider == nil {
+	erc20 := api.w.snapshotERC20()
+	if erc20 == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
-	return api.w.erc20.TotalSupply(contractAddress)
+	return erc20.TotalSupply(contractAddress)
 }
 
 func (api *walletERC20) Allowance(contractAddress, owner, spender string) (*big.Int, error) {
-	if api.w.provider == nil {
+	erc20 := api.w.snapshotERC20()
+	if erc20 == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
-	return api.w.erc20.Allowance(contractAddress, owner, spender)
+	return erc20.Allowance(contractAddress, owner, spender)
 }
 
 func (api *walletERC20) Name(contractAddress string) (string, error) {
-	if api.w.provider == nil {
+	erc20 := api.w.snapshotERC20()
+	if erc20 == nil {
 		return "", constant.ErrWalletIsNotConnected
 	}
 
-	return api.w.erc20.Name(contractAddress)
+	return erc20.Name(contractAddress)
 }
 
 func (api *walletERC20) Symbol(contractAddress string) (string, error) {
-	if api.w.provider == nil {
+	erc20 := api.w.snapshotERC20()
+	if erc20 == nil {
 		return "", constant.ErrWalletIsNotConnected
 	}
 
-	return api.w.erc20.Symbol(contractAddress)
+	return erc20.Symbol(contractAddress)
 }
 
 func (api *walletERC20) Decimals(contractAddress string) (uint8, error) {
-	if api.w.provider == nil {
+	erc20 := api.w.snapshotERC20()
+	if erc20 == nil {
 		return 0, constant.ErrWalletIsNotConnected
 	}
 
-	return api.w.erc20.Decimals(contractAddress)
+	return erc20.Decimals(contractAddress)
 }
