@@ -155,12 +155,22 @@ func (w *wallet) GetAddress() string {
 	return common.HexToAddress(address.Hex()).String()
 }
 
+// snapshot returns the current provider and erc20 namespace under read lock.
+// Callers should use the returned values for the remainder of the call so that
+// a concurrent Connect cannot tear the interface header mid-read.
+func (w *wallet) snapshot() (types.IAlchemyProvider, namespace.IERC20) {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.provider, w.erc20
+}
+
 func (w *wallet) GetBalance() (*big.Int, error) {
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
-	balance, err := w.provider.Eth().GetBalance(w.GetAddress(), "latest")
+	balance, err := provider.Eth().GetBalance(w.GetAddress(), "latest")
 	if err != nil {
 		return nil, err
 	}
@@ -176,14 +186,12 @@ func (w *wallet) Connect(provider types.IAlchemyProvider) {
 }
 
 func (w *wallet) PendingNonceAt() (uint64, error) {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return 0, constant.ErrWalletIsNotConnected
 	}
 
-	nonce, err := w.provider.Eth().PendingNonceAt(w.GetAddress())
+	nonce, err := provider.Eth().PendingNonceAt(w.GetAddress())
 	if err != nil {
 		return nonce, err
 	}
@@ -193,7 +201,8 @@ func (w *wallet) PendingNonceAt() (uint64, error) {
 
 // sign Transaction by wallet's p8 key
 func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transaction, error) {
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
@@ -204,7 +213,7 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	txRequest.Nonce = nonce
 
 	// just use for check gas limit
-	estimatedGas, err := w.provider.Eth().EstimateGas(txRequest)
+	estimatedGas, err := provider.Eth().EstimateGas(txRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +226,7 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	}
 	txRequest.GasPrice = estimatedGas
 
-	chainID, err := w.provider.Eth().ChainID()
+	chainID, err := provider.Eth().ChainID()
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +248,8 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 }
 
 func (w *wallet) SendTransaction(txRequest types.TransactionRequest) (common.Hash, error) {
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}
 
@@ -248,7 +258,7 @@ func (w *wallet) SendTransaction(txRequest types.TransactionRequest) (common.Has
 		return common.Hash{}, err
 	}
 
-	if err := w.provider.Eth().SendRawTransaction(signedTx); err != nil {
+	if err := provider.Eth().SendRawTransaction(signedTx); err != nil {
 		return common.Hash{}, err
 	}
 
@@ -256,7 +266,8 @@ func (w *wallet) SendTransaction(txRequest types.TransactionRequest) (common.Has
 }
 
 func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error) {
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return common.Address{}, constant.ErrWalletIsNotConnected
 	}
 
@@ -267,7 +278,7 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 
 	tx := deployRes.Txs[metaData.ID]
 	// wait for deployment on chain
-	address, err := w.provider.Eth().WaitDeployed(tx.Hash())
+	address, err := provider.Eth().WaitDeployed(tx.Hash())
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -275,7 +286,8 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 }
 
 func (w *wallet) DeployContractNoWait(metaData *bind.MetaData) (*bind.DeploymentResult, error) {
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
@@ -284,7 +296,7 @@ func (w *wallet) DeployContractNoWait(metaData *bind.MetaData) (*bind.Deployment
 		return nil, err
 	}
 
-	deployRes, err := w.provider.Eth().DeployContract(auth, metaData)
+	deployRes, err := provider.Eth().DeployContract(auth, metaData)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +309,8 @@ func (w *wallet) ContractTransact(
 	contractAddress string,
 	data []byte,
 ) (*gethTypes.Receipt, error) {
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
@@ -310,7 +323,7 @@ func (w *wallet) ContractTransact(
 		return nil, err
 	}
 
-	return w.provider.Eth().WaitMined(tx.Hash())
+	return provider.Eth().WaitMined(tx.Hash())
 }
 
 func (w *wallet) ContractTransactNoWait(
@@ -318,7 +331,8 @@ func (w *wallet) ContractTransactNoWait(
 	contractAddress string,
 	data []byte,
 ) (*gethTypes.Transaction, error) {
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
@@ -327,7 +341,7 @@ func (w *wallet) ContractTransactNoWait(
 		return nil, err
 	}
 
-	tx, err := w.provider.Eth().ContractTransact(auth, contract, contractAddress, data)
+	tx, err := provider.Eth().ContractTransact(auth, contract, contractAddress, data)
 	if err != nil {
 		return nil, err
 	}
@@ -342,12 +356,13 @@ func (w *wallet) ContractCall(
 	callData []byte,
 	unpack func([]byte) (any, error),
 ) (any, error) {
-	if w.provider == nil {
+	provider, _ := w.snapshot()
+	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
 	addr := common.HexToAddress(contractAddress)
-	return w.provider.Eth().ContractCall(contract, addr, opts, callData, unpack)
+	return provider.Eth().ContractCall(contract, addr, opts, callData, unpack)
 }
 
 func (w *wallet) ERC20() WalletERC20 {
