@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net/http"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -143,6 +144,21 @@ func TestEther_SetEthClientAndClose(t *testing.T) {
 		// Assert
 		assert.Nil(t, ether.Client())
 	})
+}
+
+func TestEther_SetEthClientAndClose_Race(t *testing.T) {
+	const goroutines = 10
+	e := newEtherApiForTest()
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func() {
+			defer wg.Done()
+			_ = e.SetEthClient()
+			e.Close()
+		}()
+	}
+	wg.Wait()
 }
 
 func TestEther_BlockNumber(t *testing.T) {
