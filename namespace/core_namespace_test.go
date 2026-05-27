@@ -442,7 +442,7 @@ func TestCore_IsContractAddress(t *testing.T) {
 		assert.False(t, isContractAddress)
 	})
 
-	t.Run("call core.GetCode & if starts w/ 0x is return false", func(t *testing.T) {
+	t.Run("EOA (CodeAt returns \"0x\") returns false", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
@@ -466,7 +466,7 @@ func TestCore_IsContractAddress(t *testing.T) {
 		assert.False(t, isContractAddress)
 	})
 
-	t.Run("call core.GetCode & if not starts w/ 0x is return true", func(t *testing.T) {
+	t.Run("contract (CodeAt returns 0x-prefixed bytecode) returns true", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
@@ -479,7 +479,7 @@ func TestCore_IsContractAddress(t *testing.T) {
 			reflect.TypeOf(api),
 			"CodeAt",
 			func(_ *ether.Ether, _ string, _ string) (string, error) {
-				return "contract", nil
+				return "0x608060405234801561001057600080fd5b50", nil
 			},
 		)
 
