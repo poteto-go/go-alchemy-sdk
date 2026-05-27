@@ -128,7 +128,7 @@ func TestSenario_DeployContract(t *testing.T) {
 			})
 
 			assert.Nil(t, err)
-			assert.Equal(t, code[:8], artifacts.PotetoStorageMetaData.Bin[2:10])
+			assert.Equal(t, code[2:10], artifacts.PotetoStorageMetaData.Bin[2:10])
 
 			block, err := alchemy.Core.GetBlock(types.BlockTagOrHash{
 				BlockTag: "latest",
@@ -142,7 +142,7 @@ func TestSenario_DeployContract(t *testing.T) {
 			})
 
 			assert.Nil(t, err)
-			assert.Equal(t, code[:8], artifacts.PotetoStorageMetaData.Bin[2:10])
+			assert.Equal(t, code[2:10], artifacts.PotetoStorageMetaData.Bin[2:10])
 
 			t.Run("can get transaction & its receipt form deployed block", func(t *testing.T) {
 				txHash := block.Body().Transactions[0].Hash()

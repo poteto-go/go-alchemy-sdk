@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"golang.org/x/crypto/sha3"
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -281,7 +282,7 @@ func (ether *Ether) CodeAt(address string, blockTag string) (string, error) {
 		return "", err
 	}
 
-	return common.Bytes2Hex(code), nil
+	return hexutil.Encode(code), nil
 }
 
 func (ether *Ether) CodeAtHash(address string, blockHash string) (string, error) {
@@ -302,7 +303,7 @@ func (ether *Ether) CodeAtHash(address string, blockHash string) (string, error)
 		return "", err
 	}
 
-	return common.Bytes2Hex(code), nil
+	return hexutil.Encode(code), nil
 }
 
 func (ether *Ether) GetTransaction(hash string) (*gethTypes.Transaction, bool, error) {
