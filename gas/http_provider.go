@@ -17,26 +17,32 @@ type AlchemyProvider struct {
 	id      atomic.Int64
 	batcher *internal.RequestBatcher
 	eth     types.EtherApi
+	client  *http.Client // shared across all Send calls
 }
 
 func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	provider := &AlchemyProvider{
 		config: config,
+		client: utils.NewSharedHTTPClient(config.maxResponseBytes),
 	}
 	provider.id.Store(1)
 
 	if config.maxRetries > 0 {
+		sharedClient := provider.client
+		rc := types.RequestConfig{
+			Timeout:          config.requestTimeout,
+			MaxResponseBytes: config.maxResponseBytes,
+		}
 		provider.batcher = internal.NewRequestBatcher(
 			context.Background(),
 			internal.BatcherConfig{
 				MaxBatchSize: 100,
 				MaxBatchTime: time.Millisecond * 10,
-				Fetch:        utils.AlchemyBatchFetch,
+				Fetch: func(reqs []types.AlchemyRequest, cfg types.RequestConfig, bodies [][]byte) ([]types.AlchemyResponse, error) {
+					return utils.AlchemyBatchFetch(sharedClient, reqs, cfg, bodies)
+				},
 			},
-			types.RequestConfig{
-				Timeout:          config.requestTimeout,
-				MaxResponseBytes: config.maxResponseBytes,
-			},
+			rc,
 		)
 	}
 
@@ -87,13 +93,17 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 		}
 	*/
 
+	sharedClient := provider.client
+	rc := types.RequestConfig{
+		Timeout:          provider.config.requestTimeout,
+		MaxResponseBytes: provider.config.maxResponseBytes,
+	}
 	response, err := internal.RequestHttpWithBackoff(
 		*provider.config.backoffConfig,
-		types.RequestConfig{
-			Timeout:          provider.config.requestTimeout,
-			MaxResponseBytes: provider.config.maxResponseBytes,
+		rc,
+		func(req types.AlchemyRequest, cfg types.RequestConfig, b []byte) (types.AlchemyResponse, error) {
+			return utils.AlchemyFetch(sharedClient, req, cfg, b)
 		},
-		utils.AlchemyFetch,
 		request,
 		body,
 	)

@@ -88,6 +88,18 @@ func newAlchemyMockOnEtherTest(t *testing.T) *alchemymock.AlchemyHttpMock {
 	return alchemymock.NewAlchemyHttpMock(utAlchemySetting, t)
 }
 
+func TestNewEtherApi_SharedHttpClient(t *testing.T) {
+	t.Run("httpClient is initialized at construction", func(t *testing.T) {
+		e := newEtherApiForTest()
+		assert.NotNil(t, e.HttpClient(), "shared http.Client must be non-nil after NewEtherApi")
+	})
+
+	t.Run("same instance is returned on every access", func(t *testing.T) {
+		e := newEtherApiForTest()
+		assert.Same(t, e.HttpClient(), e.HttpClient())
+	})
+}
+
 func TestEther_SetEthClientAndClose(t *testing.T) {
 	t.Run("can create eth client", func(t *testing.T) {
 		// Arrange

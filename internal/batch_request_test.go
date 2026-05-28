@@ -29,10 +29,13 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
+	client := utils.NewSharedHTTPClient(0)
 	config := BatcherConfig{
 		MaxBatchSize: 2,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch:        utils.AlchemyBatchFetch,
+		Fetch: func(reqs []types.AlchemyRequest, cfg types.RequestConfig, bodies [][]byte) ([]types.AlchemyResponse, error) {
+			return utils.AlchemyBatchFetch(client, reqs, cfg, bodies)
+		},
 	}
 
 	requestConfig := types.RequestConfig{
@@ -81,10 +84,13 @@ func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
+	client := utils.NewSharedHTTPClient(0)
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch:        utils.AlchemyBatchFetch,
+		Fetch: func(reqs []types.AlchemyRequest, cfg types.RequestConfig, bodies [][]byte) ([]types.AlchemyResponse, error) {
+			return utils.AlchemyBatchFetch(client, reqs, cfg, bodies)
+		},
 	}
 
 	requestConfig := types.RequestConfig{
@@ -104,10 +110,13 @@ func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
 }
 
 func TestRequestBatcher_Context_Cancel(t *testing.T) {
+	client := utils.NewSharedHTTPClient(0)
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch:        utils.AlchemyBatchFetch,
+		Fetch: func(reqs []types.AlchemyRequest, cfg types.RequestConfig, bodies [][]byte) ([]types.AlchemyResponse, error) {
+			return utils.AlchemyBatchFetch(client, reqs, cfg, bodies)
+		},
 	}
 
 	requestConfig := types.RequestConfig{

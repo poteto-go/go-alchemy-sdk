@@ -56,7 +56,7 @@ func TestAlchemyFetch(t *testing.T) {
 		)
 
 		// Act
-		result, err := utils.AlchemyFetch(request, types.RequestConfig{
+		result, err := utils.AlchemyFetch(&http.Client{}, request, types.RequestConfig{
 			Timeout: 10 * time.Second,
 		}, body)
 
@@ -87,7 +87,7 @@ func TestAlchemyFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyFetch(request, types.RequestConfig{
+			_, err := utils.AlchemyFetch(&http.Client{}, request, types.RequestConfig{
 				Timeout: 10 * time.Second,
 			}, body)
 
@@ -129,7 +129,7 @@ func TestAlchemyFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyFetch(request, types.RequestConfig{
+			_, err := utils.AlchemyFetch(&http.Client{}, request, types.RequestConfig{
 				Timeout: 10 * time.Second,
 			}, body)
 
@@ -159,15 +159,16 @@ func TestAlchemyFetch_ResponseSizeLimit(t *testing.T) {
 
 		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, string(resultJson)))
 
-		_, err := utils.AlchemyFetch(request, types.RequestConfig{
-			Timeout:          10 * time.Second,
-			MaxResponseBytes: int64(len(resultJson) + 1),
+		// Client with limit larger than the response: succeeds.
+		client := utils.NewSharedHTTPClient(int64(len(resultJson) + 1))
+		_, err := utils.AlchemyFetch(client, request, types.RequestConfig{
+			Timeout: 10 * time.Second,
 		}, body)
 
 		assert.Nil(t, err)
 	})
 
-	t.Run("response exceeds limit -> constant.ErrFailedToReadResponse", func(t *testing.T) {
+	t.Run("response exceeds limit -> ErrFailedToUnmarshalResponse (truncated body fails JSON decode)", func(t *testing.T) {
 		httpmock.Activate(t)
 		defer httpmock.DeactivateAndReset()
 
@@ -177,12 +178,13 @@ func TestAlchemyFetch_ResponseSizeLimit(t *testing.T) {
 
 		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
 
-		_, err := utils.AlchemyFetch(request, types.RequestConfig{
-			Timeout:          10 * time.Second,
-			MaxResponseBytes: 10,
+		// Client with a 10-byte limit: transport truncates body, JSON decode fails.
+		client := utils.NewSharedHTTPClient(10)
+		_, err := utils.AlchemyFetch(client, request, types.RequestConfig{
+			Timeout: 10 * time.Second,
 		}, body)
 
-		assert.ErrorIs(t, err, constant.ErrFailedToReadResponse)
+		assert.ErrorIs(t, err, constant.ErrFailedToUnmarshalResponse)
 	})
 }
 
@@ -193,36 +195,40 @@ func TestAlchemyBatchFetch_ResponseSizeLimit(t *testing.T) {
 	body2, _ := utils.CreateRequestBodyToBytes(2, "method", types.RequestArgs{})
 	req, _ := http.NewRequest("POST", targetUrl, nil)
 
-	t.Run("single body: response exceeds limit -> constant.ErrFailedToReadResponse", func(t *testing.T) {
+	t.Run("single body: response exceeds limit -> ErrFailedToUnmarshalResponse", func(t *testing.T) {
 		httpmock.Activate(t)
 		defer httpmock.DeactivateAndReset()
 
 		largeBody := string(make([]byte, 100))
 		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
 
+		client := utils.NewSharedHTTPClient(10)
 		_, err := utils.AlchemyBatchFetch(
+			client,
 			[]types.AlchemyRequest{{Request: req}},
-			types.RequestConfig{Timeout: 10 * time.Second, MaxResponseBytes: 10},
+			types.RequestConfig{Timeout: 10 * time.Second},
 			[][]byte{body1},
 		)
 
-		assert.ErrorIs(t, err, constant.ErrFailedToReadResponse)
+		assert.ErrorIs(t, err, constant.ErrFailedToUnmarshalResponse)
 	})
 
-	t.Run("batch body: response exceeds limit -> constant.ErrFailedToReadResponse", func(t *testing.T) {
+	t.Run("batch body: response exceeds limit -> ErrFailedToUnmarshalResponse", func(t *testing.T) {
 		httpmock.Activate(t)
 		defer httpmock.DeactivateAndReset()
 
 		largeBody := string(make([]byte, 100))
 		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
 
+		client := utils.NewSharedHTTPClient(10)
 		_, err := utils.AlchemyBatchFetch(
+			client,
 			[]types.AlchemyRequest{{Request: req}, {Request: req}},
-			types.RequestConfig{Timeout: 10 * time.Second, MaxResponseBytes: 10},
+			types.RequestConfig{Timeout: 10 * time.Second},
 			[][]byte{body1, body2},
 		)
 
-		assert.ErrorIs(t, err, constant.ErrFailedToReadResponse)
+		assert.ErrorIs(t, err, constant.ErrFailedToUnmarshalResponse)
 	})
 }
 
@@ -277,7 +283,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			result, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+			result, err := utils.AlchemyBatchFetch(&http.Client{}, requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
 			}, bodies)
 
@@ -318,7 +324,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			result, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+			result, err := utils.AlchemyBatchFetch(&http.Client{}, requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
 			}, [][]byte{body1})
 
@@ -368,7 +374,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+			_, err := utils.AlchemyBatchFetch(&http.Client{}, requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
 			}, bodies)
 
@@ -404,7 +410,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+			_, err := utils.AlchemyBatchFetch(&http.Client{}, requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
 			}, [][]byte{body1})
 
@@ -465,7 +471,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+			_, err := utils.AlchemyBatchFetch(&http.Client{}, requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
 			}, bodies)
 
@@ -515,7 +521,7 @@ func TestAlchemyBatchFetch(t *testing.T) {
 			)
 
 			// Act
-			_, err := utils.AlchemyBatchFetch(requests, types.RequestConfig{
+			_, err := utils.AlchemyBatchFetch(&http.Client{}, requests, types.RequestConfig{
 				Timeout: 10 * time.Second,
 			}, [][]byte{body1})
 

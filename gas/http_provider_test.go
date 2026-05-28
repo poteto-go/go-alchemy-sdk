@@ -39,6 +39,16 @@ func TestNewAlchemyProvider(t *testing.T) {
 	assert.Equal(t, config, provider.config)
 	assert.Equal(t, int64(1), provider.id.Load())
 	assert.Equal(t, config.customHeaders, customHeaders)
+	assert.NotNil(t, provider.client, "shared http.Client must be created at construction")
+}
+
+func TestNewAlchemyProvider_SharedClientIsReused(t *testing.T) {
+	config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n"})
+	provider := NewAlchemyProvider(config).(*AlchemyProvider)
+
+	c1 := provider.client
+	c2 := provider.client
+	assert.Same(t, c1, c2, "client field should be the same instance across accesses")
 }
 
 func newProviderForTest() *AlchemyProvider {
