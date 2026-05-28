@@ -52,7 +52,6 @@ var HttpClientErrorCodeList = []int{
 	http.StatusMethodNotAllowed,
 	http.StatusNotAcceptable,
 	http.StatusProxyAuthRequired,
-	http.StatusRequestTimeout,
 	http.StatusConflict,
 	http.StatusGone,
 	http.StatusLengthRequired,
@@ -65,9 +64,6 @@ var HttpClientErrorCodeList = []int{
 	http.StatusTeapot,
 	http.StatusMisdirectedRequest,
 	http.StatusUnprocessableEntity,
-	http.StatusLocked,
-	http.StatusFailedDependency,
-	http.StatusTooEarly,
 	http.StatusUpgradeRequired,
 	http.StatusPreconditionRequired,
 }
