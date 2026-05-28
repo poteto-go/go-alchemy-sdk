@@ -245,4 +245,20 @@ func TestERC20_Decimals(t *testing.T) {
 		_, err := erc20.Decimals(contractAddress)
 		assert.Error(t, err)
 	})
+
+	t.Run("returns error when value overflows uint8 via uint64 truncation", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		// 2^64+5: Uint64() silently truncates to 5, bypassing the >255 check
+		val := new(big.Int).Add(new(big.Int).Lsh(big.NewInt(1), 64), big.NewInt(5))
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return val.Bytes(), nil
+		})
+
+		_, err := erc20.Decimals(contractAddress)
+		assert.Error(t, err)
+	})
 }
