@@ -47,18 +47,19 @@ func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.E
 }
 
 func (ether *Ether) SetEthClient() error {
-	ether.connCount += 1
+	ether.mu.Lock()
+	defer ether.mu.Unlock()
+
+	ether.connCount++
 	if ether.isClientJwsAlive() {
 		return nil
 	}
 
 	ether.kill()
 
-	ether.mu.Lock()
-	defer ether.mu.Unlock()
-
 	rpcClient, err := ether.createRpcClient()
 	if err != nil {
+		ether.connCount--
 		return err
 	}
 
@@ -179,11 +180,14 @@ func (ether *Ether) generateAndSetAuthorization(rpcClient *rpc.Client) error {
 }
 
 func (ether *Ether) Close() {
+	ether.mu.Lock()
+	defer ether.mu.Unlock()
+
 	if ether.client == nil {
 		return
 	}
 
-	ether.connCount -= 1
+	ether.connCount--
 	if ether.connCount > 0 {
 		return
 	}
@@ -192,6 +196,8 @@ func (ether *Ether) Close() {
 }
 
 func (ether *Ether) Client() *ethclient.Client {
+	ether.mu.Lock()
+	defer ether.mu.Unlock()
 	return ether.client
 }
 
