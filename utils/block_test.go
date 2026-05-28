@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"math/big"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,11 +28,33 @@ func TestToBlockNumber(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("if failed to from bigHex, return err", func(t *testing.T) {
+	t.Run("if unrecognised tag, return ErrInvalidBlockTag", func(t *testing.T) {
 		// Act
 		_, err := ToBlockNumber("unxpected")
 
 		// Assert
-		assert.Error(t, err)
+		assert.ErrorIs(t, err, constant.ErrInvalidBlockTag)
+	})
+
+	t.Run("named tags map to rpc.BlockNumber constants", func(t *testing.T) {
+		cases := []struct {
+			tag      string
+			expected *big.Int
+		}{
+			{"safe", big.NewInt(int64(rpc.SafeBlockNumber))},
+			{"finalized", big.NewInt(int64(rpc.FinalizedBlockNumber))},
+			{"pending", big.NewInt(int64(rpc.PendingBlockNumber))},
+			{"earliest", big.NewInt(int64(rpc.EarliestBlockNumber))},
+		}
+		for _, c := range cases {
+			t.Run(c.tag, func(t *testing.T) {
+				// Act
+				res, err := ToBlockNumber(c.tag)
+
+				// Assert
+				assert.Nil(t, err)
+				assert.Equal(t, c.expected, res)
+			})
+		}
 	})
 }

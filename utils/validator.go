@@ -1,19 +1,25 @@
 package utils
 
-import "github.com/poteto-go/go-alchemy-sdk/constant"
+import (
+	"strings"
+
+	"github.com/poteto-go/go-alchemy-sdk/constant"
+)
 
 // https://docs.ethers.org/v5/api/providers/types/
-// just support latest | earliest | pending for now
 func ValidateBlockTag(blockTag string) error {
 	if blockTag == "latest" {
 		return nil
 	}
-
-	if blockTag == "earliest" {
+	if _, ok := namedTagNumbers[blockTag]; ok {
 		return nil
 	}
 
-	if blockTag == "pending" {
+	if strings.HasPrefix(blockTag, "0x") {
+		_, err := FromBigHex(blockTag)
+		if err != nil {
+			return constant.ErrInvalidBlockTag
+		}
 		return nil
 	}
 

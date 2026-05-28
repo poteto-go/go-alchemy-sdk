@@ -41,6 +41,39 @@ func TestValidateBlockTag(t *testing.T) {
 			// Assert
 			assert.NoError(t, err)
 		})
+
+		t.Run("safe", func(t *testing.T) {
+			// Arrange
+			blockTag := "safe"
+
+			// Act
+			err := ValidateBlockTag(blockTag)
+
+			// Assert
+			assert.NoError(t, err)
+		})
+
+		t.Run("finalized", func(t *testing.T) {
+			// Arrange
+			blockTag := "finalized"
+
+			// Act
+			err := ValidateBlockTag(blockTag)
+
+			// Assert
+			assert.NoError(t, err)
+		})
+
+		t.Run("hex block number", func(t *testing.T) {
+			// Arrange
+			blockTag := "0x1234"
+
+			// Act
+			err := ValidateBlockTag(blockTag)
+
+			// Assert
+			assert.NoError(t, err)
+		})
 	})
 
 	t.Run("error case:", func(t *testing.T) {
