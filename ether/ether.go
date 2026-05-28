@@ -183,7 +183,7 @@ func (ether *Ether) Close() {
 	ether.mu.Lock()
 	defer ether.mu.Unlock()
 
-	if ether.client == nil {
+	if ether.connCount <= 0 {
 		return
 	}
 
@@ -192,6 +192,9 @@ func (ether *Ether) Close() {
 		return
 	}
 
+	if ether.client == nil {
+		return
+	}
 	ether.kill()
 }
 
