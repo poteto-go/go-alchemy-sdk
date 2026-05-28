@@ -98,10 +98,10 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 	}, nil
 }
 
-// decodeOptionalHex decodes a 0x-prefixed hex string, returning nil for empty input.
+// decodeOptionalHex decodes a 0x-prefixed hex string, returning []byte("") for empty input.
 func decodeOptionalHex(s string) ([]byte, error) {
 	if s == "" {
-		return nil, nil
+		return []byte(""), nil
 	}
 	return hexutil.Decode(s)
 }
