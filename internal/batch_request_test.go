@@ -32,14 +32,11 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 2,
 		MaxBatchTime: time.Millisecond * 100,
+		Client:       utils.NewSharedHTTPClient(0, time.Second),
 		Fetch:        utils.AlchemyBatchFetch,
 	}
 
-	requestConfig := types.RequestConfig{
-		Timeout: time.Second,
-	}
-
-	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
+	batcher := NewRequestBatcher(context.Background(), config)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -84,14 +81,11 @@ func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
+		Client:       utils.NewSharedHTTPClient(0, time.Second),
 		Fetch:        utils.AlchemyBatchFetch,
 	}
 
-	requestConfig := types.RequestConfig{
-		Timeout: time.Second,
-	}
-
-	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
+	batcher := NewRequestBatcher(context.Background(), config)
 
 	req, _ := http.NewRequest("POST", server.URL, nil)
 	request := types.AlchemyRequest{
@@ -107,15 +101,12 @@ func TestRequestBatcher_Context_Cancel(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
+		Client:       utils.NewSharedHTTPClient(0, time.Second),
 		Fetch:        utils.AlchemyBatchFetch,
 	}
 
-	requestConfig := types.RequestConfig{
-		Timeout: time.Second,
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
-	batcher := NewRequestBatcher(ctx, config, requestConfig)
+	batcher := NewRequestBatcher(ctx, config)
 
 	cancel()
 
@@ -133,16 +124,12 @@ func TestRequestBatcher_Flush_Fetch_Error(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig, bodies [][]byte) ([]types.AlchemyResponse, error) {
+		Fetch: func(_ *http.Client, reqs []types.AlchemyRequest, bodies [][]byte) ([]types.AlchemyResponse, error) {
 			return nil, errors.New("fetch error")
 		},
 	}
 
-	requestConfig := types.RequestConfig{
-		Timeout: time.Second,
-	}
-
-	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
+	batcher := NewRequestBatcher(context.Background(), config)
 
 	req, _ := http.NewRequest("POST", "", nil)
 	request := types.AlchemyRequest{
@@ -158,16 +145,12 @@ func TestRequestBatcher_Flush_No_Response(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig, bodies [][]byte) ([]types.AlchemyResponse, error) {
+		Fetch: func(_ *http.Client, reqs []types.AlchemyRequest, bodies [][]byte) ([]types.AlchemyResponse, error) {
 			return []types.AlchemyResponse{}, nil
 		},
 	}
 
-	requestConfig := types.RequestConfig{
-		Timeout: time.Second,
-	}
-
-	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
+	batcher := NewRequestBatcher(context.Background(), config)
 
 	req, _ := http.NewRequest("POST", "", nil)
 	request := types.AlchemyRequest{
@@ -183,16 +166,12 @@ func TestRequestBatcher_ProcessQueue_Timeout(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 10,
-		Fetch: func(reqs []types.AlchemyRequest, config types.RequestConfig, bodies [][]byte) ([]types.AlchemyResponse, error) {
+		Fetch: func(_ *http.Client, reqs []types.AlchemyRequest, bodies [][]byte) ([]types.AlchemyResponse, error) {
 			return []types.AlchemyResponse{}, nil
 		},
 	}
 
-	requestConfig := types.RequestConfig{
-		Timeout: time.Second,
-	}
-
-	NewRequestBatcher(context.Background(), config, requestConfig)
+	NewRequestBatcher(context.Background(), config)
 
 	time.Sleep(time.Millisecond * 20)
 }

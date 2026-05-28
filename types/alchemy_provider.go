@@ -3,7 +3,6 @@ package types
 import (
 	"errors"
 	"net/http"
-	"time"
 )
 
 var ErrNoResultFound = errors.New("no result found")
@@ -13,11 +12,6 @@ type AlchemyRequest struct {
 }
 
 const DefaultMaxResponseBytes int64 = 32 * 1024 * 1024 // 32 MiB
-
-type RequestConfig struct {
-	Timeout          time.Duration
-	MaxResponseBytes int64
-}
 
 // for json marshal
 type RequestArgs = []any
@@ -45,6 +39,6 @@ type IAlchemyProvider interface {
 	Send(method string, params RequestArgs) (any, error)
 }
 
-type AlchemyFetchHandler func(AlchemyRequest, RequestConfig, []byte) (AlchemyResponse, error)
+type AlchemyFetchHandler func(*http.Client, AlchemyRequest, []byte) (AlchemyResponse, error)
 
-type BatchAlchemyFetchHandler func([]AlchemyRequest, RequestConfig, [][]byte) ([]AlchemyResponse, error)
+type BatchAlchemyFetchHandler func(*http.Client, []AlchemyRequest, [][]byte) ([]AlchemyResponse, error)

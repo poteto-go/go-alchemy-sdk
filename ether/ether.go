@@ -3,7 +3,6 @@ package ether
 import (
 	"context"
 	"errors"
-	"io"
 	"math/big"
 	"net/http"
 	"strings"
@@ -34,16 +33,22 @@ type Ether struct {
 	client          *ethclient.Client
 	clientCreatedAt int64
 	mu              *sync.Mutex
+	httpClient      *http.Client // shared across all rpc.Client creations
 }
 
 func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.EtherApi {
 	return &Ether{
-		provider:  provider,
-		config:    config,
-		connCount: 0,
-		client:    nil,
-		mu:        &sync.Mutex{},
+		provider:   provider,
+		config:     config,
+		connCount:  0,
+		client:     nil,
+		mu:         &sync.Mutex{},
+		httpClient: utils.NewSharedHTTPClient(config.maxResponseBytes, config.requestTimeout),
 	}
+}
+
+func (ether *Ether) HttpClient() *http.Client {
+	return ether.httpClient
 }
 
 func (ether *Ether) SetEthClient() error {
@@ -93,57 +98,11 @@ func (ether *Ether) kill() {
 	ether.client = nil
 }
 
-// limitedReadCloser wraps a limited reader while preserving the original closer.
-type limitedReadCloser struct {
-	io.Reader
-	io.Closer
-}
-
-// limitedTransport wraps http.RoundTripper to cap response bodies at maxBytes.
-type limitedTransport struct {
-	underlying http.RoundTripper
-	maxBytes   int64
-}
-
-// RoundTrip intercepts every HTTP response from the geth rpc.Client call chain:
-//
-//	geth method call (e.g. BlockNumber)
-//	  └─ ethclient.Client → rpc.Client
-//	       └─ httpConn.doRequest()           [rpc/http.go:229]
-//	            └─ hc.client.Do(req)         ← net/http http.Client.Do
-//	                 └─ Transport.RoundTrip(req)   ← called automatically by Go's http.Client
-//	                      └─ limitedTransport.RoundTrip()  [ether/ether.go]
-//	                           ├─ t.underlying.RoundTrip(req)  ← actual HTTP communication
-//	                           └─ resp.Body = LimitReader(resp.Body, maxBytes)  ← wrapped here
-func (t *limitedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	resp, err := t.underlying.RoundTrip(req)
-	if err != nil {
-		return nil, err
-	}
-	resp.Body = limitedReadCloser{
-		Reader: io.LimitReader(resp.Body, t.maxBytes),
-		Closer: resp.Body,
-	}
-	return resp, nil
-}
-
 func (ether *Ether) createRpcClient() (*rpc.Client, error) {
-	maxBytes := ether.config.maxResponseBytes
-	if maxBytes == 0 {
-		maxBytes = types.DefaultMaxResponseBytes
-	}
-
-	httpClient := &http.Client{
-		Transport: &limitedTransport{
-			underlying: http.DefaultTransport,
-			maxBytes:   maxBytes,
-		},
-	}
-
 	rpcClient, err := rpc.DialOptions(
 		context.Background(),
 		ether.config.url,
-		rpc.WithHTTPClient(httpClient),
+		rpc.WithHTTPClient(ether.httpClient),
 	)
 	if err != nil {
 		return nil, err

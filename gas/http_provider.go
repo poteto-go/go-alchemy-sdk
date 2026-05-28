@@ -17,11 +17,13 @@ type AlchemyProvider struct {
 	id      atomic.Int64
 	batcher *internal.RequestBatcher
 	eth     types.EtherApi
+	client  *http.Client // shared across all Send calls
 }
 
 func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	provider := &AlchemyProvider{
 		config: config,
+		client: utils.NewSharedHTTPClient(config.maxResponseBytes, config.requestTimeout),
 	}
 	provider.id.Store(1)
 
@@ -31,11 +33,8 @@ func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 			internal.BatcherConfig{
 				MaxBatchSize: 100,
 				MaxBatchTime: time.Millisecond * 10,
+				Client:       provider.client,
 				Fetch:        utils.AlchemyBatchFetch,
-			},
-			types.RequestConfig{
-				Timeout:          config.requestTimeout,
-				MaxResponseBytes: config.maxResponseBytes,
 			},
 		)
 	}
@@ -89,10 +88,7 @@ func send(provider *AlchemyProvider, body []byte) (any, error) {
 
 	response, err := internal.RequestHttpWithBackoff(
 		*provider.config.backoffConfig,
-		types.RequestConfig{
-			Timeout:          provider.config.requestTimeout,
-			MaxResponseBytes: provider.config.maxResponseBytes,
-		},
+		provider.client,
 		utils.AlchemyFetch,
 		request,
 		body,

@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"sync"
 	"time"
 
@@ -16,27 +17,25 @@ type QueuedRequest struct {
 }
 
 type RequestBatcher struct {
-	config        BatcherConfig
-	requestConfig types.RequestConfig
-	requestQueue  chan QueuedRequest
-	mutex         sync.Mutex
+	config       BatcherConfig
+	requestQueue chan QueuedRequest
+	mutex        sync.Mutex
 }
 
 type BatcherConfig struct {
 	MaxBatchSize int
 	MaxBatchTime time.Duration
+	Client       *http.Client
 	Fetch        types.BatchAlchemyFetchHandler
 }
 
 func NewRequestBatcher(
 	ctx context.Context,
 	config BatcherConfig,
-	requestConfig types.RequestConfig,
 ) *RequestBatcher {
 	batcher := &RequestBatcher{
-		config:        config,
-		requestConfig: requestConfig,
-		requestQueue:  make(chan QueuedRequest, config.MaxBatchSize),
+		config:       config,
+		requestQueue: make(chan QueuedRequest, config.MaxBatchSize),
 	}
 	go batcher.processQueue(ctx)
 	return batcher
@@ -102,7 +101,7 @@ func (b *RequestBatcher) flush(batch []QueuedRequest) {
 		bodies[i] = req.Body
 	}
 
-	responses, err := b.config.Fetch(requests, b.requestConfig, bodies)
+	responses, err := b.config.Fetch(b.config.Client, requests, bodies)
 	if err != nil {
 		for _, req := range batch {
 			req.Response <- types.AlchemyResponse{Error: err}

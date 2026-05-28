@@ -11,30 +11,22 @@ import (
 )
 
 func AlchemyFetch(
+	client *http.Client,
 	req types.AlchemyRequest,
-	requestConfig types.RequestConfig,
 	body []byte,
 ) (types.AlchemyResponse, error) {
-	client := &http.Client{
-		Timeout: requestConfig.Timeout,
-	}
+	httpReq := req.Request
+	httpReq.Body = io.NopCloser(bytes.NewBuffer(body))
 
-	req.Request.Body = io.NopCloser(bytes.NewBuffer(body))
-	res, err := client.Do(req.Request)
+	res, err := client.Do(httpReq)
 	if err != nil {
 		return types.AlchemyResponse{}, constant.ErrFailedToConnect
 	}
 	defer res.Body.Close()
 
-	maxBytes := requestConfig.MaxResponseBytes
-	if maxBytes == 0 {
-		maxBytes = types.DefaultMaxResponseBytes
-	}
-	resBody, err := io.ReadAll(io.LimitReader(res.Body, maxBytes+1))
+	// Response body size is capped by the client's limitedTransport.
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return types.AlchemyResponse{}, constant.ErrFailedToReadResponse
-	}
-	if int64(len(resBody)) > maxBytes {
 		return types.AlchemyResponse{}, constant.ErrFailedToReadResponse
 	}
 
@@ -46,34 +38,24 @@ func AlchemyFetch(
 }
 
 func AlchemyBatchFetch(
+	client *http.Client,
 	reqs []types.AlchemyRequest,
-	requestConfig types.RequestConfig,
 	bodies [][]byte,
 ) ([]types.AlchemyResponse, error) {
 	request := reqs[0].Request
 
-	client := &http.Client{
-		Timeout: requestConfig.Timeout,
-	}
-
-	maxBytes := requestConfig.MaxResponseBytes
-	if maxBytes == 0 {
-		maxBytes = types.DefaultMaxResponseBytes
-	}
-
 	if len(bodies) == 1 {
-		request.Body = io.NopCloser(bytes.NewBuffer(bodies[0]))
-		res, err := client.Do(request)
+		httpReq := request
+		httpReq.Body = io.NopCloser(bytes.NewBuffer(bodies[0]))
+
+		res, err := client.Do(httpReq)
 		if err != nil {
 			return []types.AlchemyResponse{}, constant.ErrFailedToConnect
 		}
 		defer res.Body.Close()
 
-		body, err := io.ReadAll(io.LimitReader(res.Body, maxBytes+1))
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			return []types.AlchemyResponse{}, constant.ErrFailedToReadResponse
-		}
-		if int64(len(body)) > maxBytes {
 			return []types.AlchemyResponse{}, constant.ErrFailedToReadResponse
 		}
 
@@ -85,20 +67,22 @@ func AlchemyBatchFetch(
 		return []types.AlchemyResponse{result}, nil
 	}
 
-	paramJson, _ := json.Marshal(bodies)
+	paramJson, err := json.Marshal(bodies)
+	if err != nil {
+		return []types.AlchemyResponse{}, constant.ErrFailedToMarshalParameter
+	}
 
-	request.Body = io.NopCloser(bytes.NewBuffer(paramJson))
-	res, err := client.Do(request)
+	httpReq := request
+	httpReq.Body = io.NopCloser(bytes.NewBuffer(paramJson))
+
+	res, err := client.Do(httpReq)
 	if err != nil {
 		return []types.AlchemyResponse{}, constant.ErrFailedToConnect
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(res.Body, maxBytes+1))
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return []types.AlchemyResponse{}, constant.ErrFailedToReadResponse
-	}
-	if int64(len(body)) > maxBytes {
 		return []types.AlchemyResponse{}, constant.ErrFailedToReadResponse
 	}
 
