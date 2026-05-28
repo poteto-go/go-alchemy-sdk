@@ -125,5 +125,9 @@ func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
 	if out.BitLen() > 8 {
 		return 0, fmt.Errorf("decimals overflow: %s", out.String())
 	}
-	return uint8(out.Uint64()), nil
+	b := out.Bytes()
+	if len(b) == 0 {
+		return 0, nil
+	}
+	return b[len(b)-1], nil
 }
