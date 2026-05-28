@@ -341,13 +341,21 @@ func (ether *Ether) GetTokenBalances(address string, params ...string) (types.To
 		return types.TokenBalanceResponse{}, constant.ErrUnexpectedResponseType
 	}
 	if balances, exists := resultMap["tokenBalances"]; exists {
-		balanceSlice, ok := balances.([]map[string]any)
+		balancesAny, ok := balances.([]any)
 		if !ok {
 			return types.TokenBalanceResponse{}, constant.ErrUnexpectedResponseType
 		}
-		for _, balance := range balanceSlice {
-			if errStr, ok := balance["error"]; ok && errStr != nil {
-				balance["error"] = errors.New(errStr.(string))
+		for _, b := range balancesAny {
+			bm, ok := b.(map[string]any)
+			if !ok {
+				return types.TokenBalanceResponse{}, constant.ErrUnexpectedResponseType
+			}
+			if errStr, ok := bm["error"]; ok && errStr != nil {
+				s, ok := errStr.(string)
+				if !ok {
+					return types.TokenBalanceResponse{}, constant.ErrUnexpectedResponseType
+				}
+				bm["error"] = errors.New(s)
 			}
 		}
 	}
