@@ -80,7 +80,10 @@ func AlchemyBatchFetch(
 		return []types.AlchemyResponse{result}, nil
 	}
 
-	paramJson, _ := json.Marshal(bodies)
+	paramJson, err := json.Marshal(bodies)
+	if err != nil {
+		return []types.AlchemyResponse{}, constant.ErrFailedToMarshalParameter
+	}
 
 	httpReq := request
 	if requestConfig.Timeout > 0 {
