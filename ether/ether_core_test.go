@@ -155,7 +155,31 @@ func TestEther_SetEthClientAndClose_Race(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			_ = e.SetEthClient()
+			_ = e.Client()
 			e.Close()
+		}()
+	}
+	wg.Wait()
+}
+
+func TestEther_Client_Race(t *testing.T) {
+	e := newEtherApiForTest()
+	var wg sync.WaitGroup
+	const readers = 20
+	const writers = 5
+	wg.Add(writers)
+	for i := 0; i < writers; i++ {
+		go func() {
+			defer wg.Done()
+			_ = e.SetEthClient()
+			e.Close()
+		}()
+	}
+	wg.Add(readers)
+	for i := 0; i < readers; i++ {
+		go func() {
+			defer wg.Done()
+			_ = e.Client()
 		}()
 	}
 	wg.Wait()

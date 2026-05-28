@@ -59,6 +59,7 @@ func (ether *Ether) SetEthClient() error {
 
 	rpcClient, err := ether.createRpcClient()
 	if err != nil {
+		ether.connCount--
 		return err
 	}
 
@@ -195,6 +196,8 @@ func (ether *Ether) Close() {
 }
 
 func (ether *Ether) Client() *ethclient.Client {
+	ether.mu.Lock()
+	defer ether.mu.Unlock()
 	return ether.client
 }
 
