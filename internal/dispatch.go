@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -81,13 +82,13 @@ func requestWithBackoffTuple[T any, O any](
 
 func RequestHttpWithBackoff(
 	backoffConfig types.BackoffConfig,
-	requestConfig types.RequestConfig,
+	client *http.Client,
 	handler types.AlchemyFetchHandler,
 	request types.AlchemyRequest,
 	body []byte,
 ) (types.AlchemyResponse, error) {
 	operation := func() (types.AlchemyResponse, error) {
-		return handler(request, requestConfig, body)
+		return handler(client, request, body)
 	}
 	return requestWithBackoff(backoffConfig, operation)
 }

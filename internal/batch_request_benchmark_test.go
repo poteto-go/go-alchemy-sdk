@@ -18,20 +18,14 @@ func BenchmarkRequestBatcher_QueueRequest(b *testing.B) {
 	}))
 	defer server.Close()
 
-	client := utils.NewSharedHTTPClient(0)
 	config := BatcherConfig{
 		MaxBatchSize: 100,
 		MaxBatchTime: time.Millisecond * 10,
-		Fetch: func(reqs []types.AlchemyRequest, cfg types.RequestConfig, bodies [][]byte) ([]types.AlchemyResponse, error) {
-			return utils.AlchemyBatchFetch(client, reqs, cfg, bodies)
-		},
+		Client:       utils.NewSharedHTTPClient(0, time.Second),
+		Fetch:        utils.AlchemyBatchFetch,
 	}
 
-	requestConfig := types.RequestConfig{
-		Timeout: time.Second,
-	}
-
-	batcher := NewRequestBatcher(context.Background(), config, requestConfig)
+	batcher := NewRequestBatcher(context.Background(), config)
 
 	req, _ := http.NewRequest("POST", server.URL, nil)
 	request := types.AlchemyRequest{

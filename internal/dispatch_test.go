@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"net/http"
 	"net/url"
 	"testing"
 
@@ -171,15 +172,14 @@ func TestRequestHttpWithBackoff(t *testing.T) {
 		backoffConfig := types.BackoffConfig{
 			MaxRetries: 1,
 		}
-		requestConfig := types.RequestConfig{}
-		mockHandler := func(request types.AlchemyRequest, _ types.RequestConfig, _ []byte) (types.AlchemyResponse, error) {
+		mockHandler := func(_ *http.Client, request types.AlchemyRequest, _ []byte) (types.AlchemyResponse, error) {
 			return types.AlchemyResponse{Jsonrpc: "2.0"}, nil
 		}
 		request := types.AlchemyRequest{}
 		body := []byte{}
 
 		// Act
-		response, err := RequestHttpWithBackoff(backoffConfig, requestConfig, mockHandler, request, body)
+		response, err := RequestHttpWithBackoff(backoffConfig, &http.Client{}, mockHandler, request, body)
 
 		// Assert
 		assert.NoError(t, err)

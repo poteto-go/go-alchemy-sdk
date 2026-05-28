@@ -3,6 +3,7 @@ package utils
 import (
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
@@ -27,6 +28,14 @@ type limitedTransport struct {
 	maxBytes   int64
 }
 
+// RoundTrip intercepts every HTTP response and caps the body at maxBytes:
+//
+//	caller (e.g. AlchemyFetch / geth rpc.Client)
+//	  └─ http.Client.Do(req)
+//	       └─ Transport.RoundTrip(req)   ← called automatically by Go's http.Client
+//	            └─ limitedTransport.RoundTrip()  [utils/transport.go]
+//	                 ├─ t.underlying.RoundTrip(req)  ← actual HTTP communication
+//	                 └─ resp.Body = LimitReader(resp.Body, maxBytes)  ← wrapped here
 func (t *limitedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := t.underlying.RoundTrip(req)
 	if err != nil {
@@ -40,14 +49,17 @@ func (t *limitedTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 
 // NewSharedHTTPClient returns an *http.Client with a limitedTransport that caps
-// response bodies at maxBytes. If maxBytes is 0, DefaultMaxResponseBytes is used.
-// The client is intended to be constructed once and reused across requests so
-// that the underlying connection pool (http.DefaultTransport) is shared.
-func NewSharedHTTPClient(maxBytes int64) *http.Client {
+// response bodies at maxBytes and a Timeout set to timeout. If maxBytes is 0,
+// DefaultMaxResponseBytes is used. The client is intended to be constructed once
+// and reused across requests so that the underlying connection pool
+// (http.DefaultTransport) is shared and no TCP/TLS handshake overhead is paid
+// on repeated calls to the same host.
+func NewSharedHTTPClient(maxBytes int64, timeout time.Duration) *http.Client {
 	if maxBytes == 0 {
 		maxBytes = types.DefaultMaxResponseBytes
 	}
 	return &http.Client{
+		Timeout: timeout,
 		Transport: &limitedTransport{
 			underlying: &defaultRoundTripper{},
 			maxBytes:   maxBytes,

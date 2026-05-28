@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -14,15 +13,9 @@ import (
 func AlchemyFetch(
 	client *http.Client,
 	req types.AlchemyRequest,
-	requestConfig types.RequestConfig,
 	body []byte,
 ) (types.AlchemyResponse, error) {
 	httpReq := req.Request
-	if requestConfig.Timeout > 0 {
-		ctx, cancel := context.WithTimeout(httpReq.Context(), requestConfig.Timeout)
-		defer cancel()
-		httpReq = httpReq.WithContext(ctx)
-	}
 	httpReq.Body = io.NopCloser(bytes.NewBuffer(body))
 
 	res, err := client.Do(httpReq)
@@ -47,18 +40,12 @@ func AlchemyFetch(
 func AlchemyBatchFetch(
 	client *http.Client,
 	reqs []types.AlchemyRequest,
-	requestConfig types.RequestConfig,
 	bodies [][]byte,
 ) ([]types.AlchemyResponse, error) {
 	request := reqs[0].Request
 
 	if len(bodies) == 1 {
 		httpReq := request
-		if requestConfig.Timeout > 0 {
-			ctx, cancel := context.WithTimeout(httpReq.Context(), requestConfig.Timeout)
-			defer cancel()
-			httpReq = httpReq.WithContext(ctx)
-		}
 		httpReq.Body = io.NopCloser(bytes.NewBuffer(bodies[0]))
 
 		res, err := client.Do(httpReq)
@@ -86,11 +73,6 @@ func AlchemyBatchFetch(
 	}
 
 	httpReq := request
-	if requestConfig.Timeout > 0 {
-		ctx, cancel := context.WithTimeout(httpReq.Context(), requestConfig.Timeout)
-		defer cancel()
-		httpReq = httpReq.WithContext(ctx)
-	}
 	httpReq.Body = io.NopCloser(bytes.NewBuffer(paramJson))
 
 	res, err := client.Do(httpReq)
