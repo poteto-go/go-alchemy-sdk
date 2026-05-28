@@ -758,8 +758,8 @@ func TestEther_GetTokenBalances(t *testing.T) {
 	ether := newNilEtherApiForTest(provider)
 	expectedResponse := map[string]any{
 		"address": "0x123",
-		"tokenBalances": []map[string]any{
-			{
+		"tokenBalances": []any{
+			map[string]any{
 				"contractAddress": "0x456",
 				"tokenBalance":    "0x0000000000000000000000000000000000000000000000000000000000000000",
 				"error":           nil,
@@ -830,8 +830,8 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			// Arrange
 			expectedErrResponse := map[string]any{
 				"address": "0x123",
-				"tokenBalances": []map[string]any{
-					{
+				"tokenBalances": []any{
+					map[string]any{
 						"contractAddress": "0x456",
 						"tokenBalance":    "0x0000000000000000000000000000000000000000000000000000000000000000",
 						"error":           "error",
@@ -888,7 +888,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			_, err := ether.GetTokenBalances("0x123")
 
 			// Assert
-			assert.ErrorIs(t, expectedErr, err)
+			assert.ErrorIs(t, err, expectedErr)
 		})
 
 		t.Run("mapstructure error, return constant.ErrFailedToMapTokenResponse", func(t *testing.T) {
@@ -915,7 +915,7 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			_, err := ether.GetTokenBalances("0x123")
 
 			// Assert
-			assert.ErrorIs(t, constant.ErrFailedToMapTokenResponse, err)
+			assert.ErrorIs(t, err, constant.ErrFailedToMapTokenResponse)
 		})
 
 		t.Run("if result is not map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
@@ -935,10 +935,10 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			_, err := ether.GetTokenBalances("0x123")
 
 			// Assert
-			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
+			assert.ErrorIs(t, err, constant.ErrUnexpectedResponseType)
 		})
 
-		t.Run("if tokenBalances is not []map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
+		t.Run("if tokenBalances is not []any -> ErrUnexpectedResponseType", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
@@ -958,7 +958,30 @@ func TestEther_GetTokenBalances(t *testing.T) {
 			_, err := ether.GetTokenBalances("0x123")
 
 			// Assert
-			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
+			assert.ErrorIs(t, err, constant.ErrUnexpectedResponseType)
+		})
+
+		t.Run("if tokenBalances element is not map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return map[string]any{
+						"address":       "0x123",
+						"tokenBalances": []any{"not-a-map"},
+					}, nil
+				},
+			)
+
+			// Act
+			_, err := ether.GetTokenBalances("0x123")
+
+			// Assert
+			assert.ErrorIs(t, err, constant.ErrUnexpectedResponseType)
 		})
 	})
 }
