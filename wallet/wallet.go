@@ -222,7 +222,6 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	}
 	txRequest.Nonce = nonce
 
-	// just use for check gas limit
 	estimatedGas, err := provider.Eth().EstimateGas(txRequest)
 	if err != nil {
 		return nil, err
@@ -234,7 +233,18 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 			estimatedGas.Uint64(),
 		)
 	}
-	txRequest.GasPrice = estimatedGas
+
+	// MaxFeePerGas or MaxPriorityFeePerGas being set means the caller intends an
+	// EIP-1559 (DynamicFeeTx) transaction, which uses those fields instead of
+	// GasPrice. Only inject a legacy GasPrice when neither EIP-1559 field is set
+	// and the caller has not supplied their own GasPrice.
+	if txRequest.MaxFeePerGas == nil && txRequest.MaxPriorityFeePerGas == nil && txRequest.GasPrice == nil {
+		gasPrice, err := provider.Eth().SuggestGasPrice()
+		if err != nil {
+			return nil, err
+		}
+		txRequest.GasPrice = gasPrice
+	}
 
 	chainID, err := provider.Eth().ChainID()
 	if err != nil {
