@@ -234,6 +234,10 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 		)
 	}
 
+	// MaxFeePerGas or MaxPriorityFeePerGas being set means the caller intends an
+	// EIP-1559 (DynamicFeeTx) transaction, which uses those fields instead of
+	// GasPrice. Only inject a legacy GasPrice when neither EIP-1559 field is set
+	// and the caller has not supplied their own GasPrice.
 	if txRequest.MaxFeePerGas == nil && txRequest.MaxPriorityFeePerGas == nil && txRequest.GasPrice == nil {
 		gasPrice, err := provider.Eth().SuggestGasPrice()
 		if err != nil {
