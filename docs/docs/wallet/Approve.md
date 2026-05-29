@@ -15,7 +15,7 @@ It requires connected wallet.
 Wait for the transaction to be mined and return the receipt.
 
 ```go
-func Approve(contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (*types.Receipt, error)
+func Approve(ctx context.Context, contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (*types.Receipt, error)
 ```
 
 ```go
@@ -23,6 +23,7 @@ func main() {
 	// ... setup ...
 
 	receipt, err := w.ERC20().Approve(
+		context.Background(),
 		"<contractAddress>",
 		"<spenderAddress>",
 		big.NewInt(100),

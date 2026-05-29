@@ -139,11 +139,38 @@ func TestEther_WaitMined(t *testing.T) {
 		)
 
 		// Act
-		receipt, err := ether.WaitMined(txHash)
+		receipt, err := ether.WaitMined(context.Background(), txHash)
 
 		// Assert
 		assert.NoError(t, err)
 		assert.Equal(t, receipt, expectedReceipt)
+	})
+
+	t.Run("ctx cancelled, return context.Canceled error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		ether := newEtherApiForTest()
+		ctx, cancel := context.WithCancel(context.Background())
+
+		// Mock: block until ctx is done
+		patches.ApplyFunc(
+			bind.WaitMined,
+			func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (*gethTypes.Receipt, error) {
+				<-ctx.Done()
+				return nil, ctx.Err()
+			},
+		)
+
+		cancel()
+
+		// Act
+		receipt, err := ether.WaitMined(ctx, txHash)
+
+		// Assert
+		assert.ErrorIs(t, err, context.Canceled)
+		assert.Nil(t, receipt)
 	})
 
 	t.Run("error case", func(t *testing.T) {
@@ -164,7 +191,7 @@ func TestEther_WaitMined(t *testing.T) {
 			)
 
 			// Act
-			receipt, err := ether.WaitMined(txHash)
+			receipt, err := ether.WaitMined(context.Background(), txHash)
 
 			// Assert
 			assert.Error(t, err)
@@ -187,7 +214,7 @@ func TestEther_WaitMined(t *testing.T) {
 			)
 
 			// Act
-			receipt, err := ether.WaitMined(txHash)
+			receipt, err := ether.WaitMined(context.Background(), txHash)
 
 			// Assert
 			assert.Error(t, err)
@@ -216,11 +243,38 @@ func TestEther_WaitDeployed(t *testing.T) {
 		)
 
 		// Act
-		address, err := ether.WaitDeployed(txHash)
+		address, err := ether.WaitDeployed(context.Background(), txHash)
 
 		// Assert
 		assert.NoError(t, err)
 		assert.Equal(t, address, expectedAddress)
+	})
+
+	t.Run("ctx cancelled, return context.Canceled error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		ether := newEtherApiForTest()
+		ctx, cancel := context.WithCancel(context.Background())
+
+		// Mock: block until ctx is done
+		patches.ApplyFunc(
+			bind.WaitDeployed,
+			func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (common.Address, error) {
+				<-ctx.Done()
+				return common.Address{}, ctx.Err()
+			},
+		)
+
+		cancel()
+
+		// Act
+		address, err := ether.WaitDeployed(ctx, txHash)
+
+		// Assert
+		assert.ErrorIs(t, err, context.Canceled)
+		assert.Equal(t, address, common.Address{})
 	})
 
 	t.Run("error case", func(t *testing.T) {
@@ -241,7 +295,7 @@ func TestEther_WaitDeployed(t *testing.T) {
 			)
 
 			// Act
-			address, err := ether.WaitDeployed(txHash)
+			address, err := ether.WaitDeployed(context.Background(), txHash)
 
 			// Assert
 			assert.Error(t, err)
@@ -264,7 +318,7 @@ func TestEther_WaitDeployed(t *testing.T) {
 			)
 
 			// Act
-			address, err := ether.WaitDeployed(txHash)
+			address, err := ether.WaitDeployed(context.Background(), txHash)
 
 			// Assert
 			assert.Error(t, err)

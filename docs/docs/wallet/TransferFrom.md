@@ -19,7 +19,7 @@ The connected wallet must have been approved as a spender by the `fromAddress` b
 Wait for the transaction to be mined and return the receipt.
 
 ```go
-func TransferFrom(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*types.Receipt, error)
+func TransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*types.Receipt, error)
 ```
 
 ```go
@@ -28,6 +28,7 @@ func main() {
 
 	// Assumes fromAddress has already approved the connected wallet as a spender
 	receipt, err := w.ERC20().TransferFrom(
+		context.Background(),
 		"<contractAddress>",
 		"<fromAddress>",
 		"<toAddress>",

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -205,14 +206,14 @@ type EtherApi interface {
 		returns the transaction receipt when it is mined.
 		It stops waiting when ctx is canceled.
 	*/
-	WaitMined(hash common.Hash) (*gethTypes.Receipt, error)
+	WaitMined(ctx context.Context, hash common.Hash) (*gethTypes.Receipt, error)
 
 	/*
 		WaitDeployed waits for a contract deployment transaction with the provided hash and
-		returns the contract address
+		returns the contract address.
 		It stops waiting when ctx is canceled.
 	*/
-	WaitDeployed(hash common.Hash) (common.Address, error)
+	WaitDeployed(ctx context.Context, hash common.Hash) (common.Address, error)
 
 	/*
 		ContractCall calls a contract.

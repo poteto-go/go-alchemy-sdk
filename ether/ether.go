@@ -761,14 +761,14 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.Con
 }
 
 // TODO: support backoff
-func (ether *Ether) WaitMined(txHash common.Hash) (*gethTypes.Receipt, error) {
+func (ether *Ether) WaitMined(ctx context.Context, txHash common.Hash) (*gethTypes.Receipt, error) {
 	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
 	defer ether.Close()
 
-	tx, err := bind.WaitMined(context.Background(), ether.client, txHash)
+	tx, err := bind.WaitMined(ctx, ether.client, txHash)
 	if err != nil {
 		return nil, err
 	}
@@ -776,14 +776,14 @@ func (ether *Ether) WaitMined(txHash common.Hash) (*gethTypes.Receipt, error) {
 	return tx, nil
 }
 
-func (ether *Ether) WaitDeployed(txHash common.Hash) (common.Address, error) {
+func (ether *Ether) WaitDeployed(ctx context.Context, txHash common.Hash) (common.Address, error) {
 	err := ether.SetEthClient()
 	if err != nil {
 		return common.Address{}, err
 	}
 	defer ether.Close()
 
-	address, err := bind.WaitDeployed(context.Background(), ether.client, txHash)
+	address, err := bind.WaitDeployed(ctx, ether.client, txHash)
 	if err != nil {
 		return common.Address{}, err
 	}
