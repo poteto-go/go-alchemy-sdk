@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -20,7 +22,7 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 				"0x2",
 				"0x3",
 			},
-			Data:             "0x1",
+			Data:             "0x01",
 			BlockNumber:      "0x1",
 			TransactionHash:  "0x1",
 			BlockHash:        "0x1",
@@ -31,6 +33,16 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 	}
 	t.Run("transform alchemy.TransactionReceipt -> geth.Receipt", func(t *testing.T) {
 		// Arrange
+		root := "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+		logsBloom := "0x" +
+			"01000000000000000000000000000000000000000000000000000000000000ff" +
+			"00000000000000000000000000000000000000000000000000000000000000ff" +
+			"00000000000000000000000000000000000000000000000000000000000000ff" +
+			"00000000000000000000000000000000000000000000000000000000000000ff" +
+			"00000000000000000000000000000000000000000000000000000000000000ff" +
+			"00000000000000000000000000000000000000000000000000000000000000ff" +
+			"00000000000000000000000000000000000000000000000000000000000000ff" +
+			"00000000000000000000000000000000000000000000000000000000000000ff"
 		receipt := types.TransactionReceipt{
 			TransactionHash:   "0x504ce587a65bdbdb6414a0c6c16d86a04dd79bfcc4f2950eec9634b30ce5370f",
 			TransactionIndex:  "0x0",
@@ -43,10 +55,11 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 			GasUsed:           "0x1458",
 			BlobGasUsed:       "0x1458",
 			Logs:              validLogs,
-			LogsBloom:         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+			LogsBloom:         logsBloom,
 			EffectiveGasPrice: "0x1",
 			Type:              "0x0",
 			Status:            "0x1",
+			Root:              root,
 		}
 
 		// Act
@@ -66,6 +79,12 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 		assert.Equal(t, gethReceipt.TxHash.Hex(), receipt.TransactionHash)
 		assert.Equal(t, gethReceipt.ContractAddress.Hex(), receipt.ContractAddress)
 		assert.Equal(t, len(gethReceipt.Logs), 1)
+
+		expectedRoot, _ := hexutil.Decode(root)
+		assert.Equal(t, expectedRoot, gethReceipt.PostState)
+
+		expectedBloomBytes, _ := hexutil.Decode(logsBloom)
+		assert.Equal(t, gethTypes.BytesToBloom(expectedBloomBytes), gethReceipt.Bloom)
 	})
 
 	t.Run("error case", func(t *testing.T) {
@@ -262,6 +281,50 @@ func TestTransformAlchemyReceiptToGeth(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 		})
+
+		t.Run("if Root is invalid hex", func(t *testing.T) {
+			// Arrange
+			receipt := types.TransactionReceipt{
+				Status:            "0x1",
+				Logs:              validLogs,
+				Type:              "0x1",
+				CumulativeGasUsed: "0x1",
+				GasUsed:           "0x1",
+				EffectiveGasPrice: "0x1",
+				BlobGasUsed:       "0x1",
+				BlockNumber:       "0x1",
+				TransactionIndex:  "0x0",
+				Root:              "0xzz",
+			}
+
+			// Act
+			_, err := utils.TransformAlchemyReceiptToGeth(receipt)
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if LogsBloom is invalid hex", func(t *testing.T) {
+			// Arrange
+			receipt := types.TransactionReceipt{
+				Status:            "0x1",
+				Logs:              validLogs,
+				Type:              "0x1",
+				CumulativeGasUsed: "0x1",
+				GasUsed:           "0x1",
+				EffectiveGasPrice: "0x1",
+				BlobGasUsed:       "0x1",
+				BlockNumber:       "0x1",
+				TransactionIndex:  "0x0",
+				LogsBloom:         "0xzz",
+			}
+
+			// Act
+			_, err := utils.TransformAlchemyReceiptToGeth(receipt)
+
+			// Assert
+			assert.Error(t, err)
+		})
 	})
 }
 
@@ -301,7 +364,8 @@ func TestTransformAlchemyLogToGeth(t *testing.T) {
 		assert.Equal(t, log.Address.Hex(), address)
 		assert.Equal(t, log.Topics[0].Hex(), topic1)
 		assert.Equal(t, log.Topics[1].Hex(), topic2)
-		assert.Equal(t, string(log.Data), data)
+		expectedData, _ := hexutil.Decode(data)
+		assert.Equal(t, expectedData, log.Data)
 		assert.Equal(t, log.BlockNumber, uint64(1))
 		assert.Equal(t, log.TxHash.Hex(), transactionHash)
 		assert.Equal(t, log.TxIndex, uint(2))
@@ -393,6 +457,19 @@ func TestTransformAlchemyLogToGeth(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 		})
+
+		t.Run("if Data is invalid hex", func(t *testing.T) {
+			// Act
+			_, err := utils.TransformAlchemyLogToGeth(types.LogResponse{
+				BlockNumber:      "0x1",
+				TransactionIndex: "0x1",
+				LogIndex:         "0x1",
+				Data:             "0xzz",
+			})
+
+			// Assert
+			assert.Error(t, err)
+		})
 	})
 }
 
@@ -424,6 +501,10 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 	})
 
 	t.Run("can transform txRequest to geth.DynamicFeeTx", func(t *testing.T) {
+		accessList := []string{
+			"0x0000000000000000000000000000000000000001",
+			"0x0000000000000000000000000000000000000002",
+		}
 		txRequest := types.TransactionRequest{
 			To:                   "0x123",
 			ChainID:              big.NewInt(1),
@@ -433,6 +514,7 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 			GasLimit:             21000,
 			Value:                "0x123",
 			Data:                 []byte("0x123"),
+			AccessList:           &accessList,
 		}
 
 		txData, err := utils.TransformTxRequestToGethTxData(txRequest)
@@ -450,10 +532,15 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 		value, _ := utils.FromBigHex(txRequest.Value)
 		assert.Equal(t, dynamicTx.Value, value)
 		assert.Equal(t, dynamicTx.Data, txRequest.Data)
+		assert.Len(t, dynamicTx.AccessList, 2)
+		assert.Equal(t, common.HexToAddress(accessList[0]), dynamicTx.AccessList[0].Address)
+		assert.Equal(t, common.HexToAddress(accessList[1]), dynamicTx.AccessList[1].Address)
 	})
 
 	t.Run("can transform txRequest to geth.AccessListTx", func(t *testing.T) {
-		accessList := []string{}
+		accessList := []string{
+			"0x0000000000000000000000000000000000000abc",
+		}
 		txRequest := types.TransactionRequest{
 			To:         "0x123",
 			ChainID:    big.NewInt(1),
@@ -479,6 +566,8 @@ func TestTransformTxRequestToGethTxData(t *testing.T) {
 		value, _ := utils.FromBigHex(txRequest.Value)
 		assert.Equal(t, accessListTx.Value, value)
 		assert.Equal(t, accessListTx.Data, txRequest.Data)
+		assert.Len(t, accessListTx.AccessList, 1)
+		assert.Equal(t, common.HexToAddress(accessList[0]), accessListTx.AccessList[0].Address)
 	})
 
 	t.Run("if failed from big hex, return error", func(t *testing.T) {

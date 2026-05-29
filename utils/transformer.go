@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -69,12 +70,22 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 	}
 	txIndex := uint(txIndexU64)
 
+	postState, err := decodeOptionalHex(receipt.Root)
+	if err != nil {
+		return nil, err
+	}
+
+	bloomBytes, err := decodeOptionalHex(receipt.LogsBloom)
+	if err != nil {
+		return nil, err
+	}
+
 	return &gethTypes.Receipt{
 		Type:              typeU8,
-		PostState:         []byte(receipt.Root),
+		PostState:         postState,
 		Status:            status,
 		CumulativeGasUsed: cGasUsed,
-		Bloom:             gethTypes.Bloom([]byte(receipt.LogsBloom)),
+		Bloom:             gethTypes.BytesToBloom(bloomBytes),
 		Logs:              logs,
 		TxHash:            common.HexToHash(receipt.TransactionHash),
 		ContractAddress:   common.HexToAddress(receipt.ContractAddress),
@@ -85,6 +96,14 @@ func TransformAlchemyReceiptToGeth(receipt types.TransactionReceipt) (*gethTypes
 		BlockNumber:       blockNumber,
 		TransactionIndex:  txIndex,
 	}, nil
+}
+
+// decodeOptionalHex decodes a 0x-prefixed hex string, returning []byte("") for empty input.
+func decodeOptionalHex(s string) ([]byte, error) {
+	if s == "" {
+		return []byte(""), nil
+	}
+	return hexutil.Decode(s)
 }
 
 // transform alchemy.LogResponse -> geth.Log
@@ -117,10 +136,15 @@ func TransformAlchemyLogToGeth(log types.LogResponse) (*gethTypes.Log, error) {
 	}
 	logIndex := uint(logIndexU64)
 
+	data, err := decodeOptionalHex(log.Data)
+	if err != nil {
+		return nil, err
+	}
+
 	return &gethTypes.Log{
 		Address:     common.HexToAddress(log.Address),
 		Topics:      topics,
-		Data:        []byte(log.Data),
+		Data:        data,
 		BlockNumber: blockNumber,
 		TxHash:      common.HexToHash(log.TransactionHash),
 		TxIndex:     txIndex,
@@ -137,6 +161,8 @@ func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTyp
 		return nil, err
 	}
 
+	accessList := convertAccessList(txRequest.AccessList)
+
 	// EIP-1559 (DynamicFeeTx)
 	if txRequest.MaxFeePerGas != nil || txRequest.MaxPriorityFeePerGas != nil {
 		return &gethTypes.DynamicFeeTx{
@@ -148,7 +174,7 @@ func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTyp
 			To:         &toAddress,
 			Value:      value,
 			Data:       txRequest.Data,
-			AccessList: gethTypes.AccessList{},
+			AccessList: accessList,
 		}, nil
 	}
 
@@ -162,7 +188,7 @@ func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTyp
 			To:         &toAddress,
 			Value:      value,
 			Data:       txRequest.Data,
-			AccessList: gethTypes.AccessList{},
+			AccessList: accessList,
 		}, nil
 	}
 
@@ -175,4 +201,20 @@ func TransformTxRequestToGethTxData(txRequest types.TransactionRequest) (gethTyp
 		Value:    value,
 		Data:     txRequest.Data,
 	}, nil
+}
+
+// convertAccessList maps the Alchemy `[]string` of addresses to a gethTypes.AccessList.
+// Each entry becomes an AccessTuple with the given address and empty StorageKeys.
+func convertAccessList(list *[]string) gethTypes.AccessList {
+	if list == nil {
+		return gethTypes.AccessList{}
+	}
+	out := make(gethTypes.AccessList, len(*list))
+	for i, addr := range *list {
+		out[i] = gethTypes.AccessTuple{
+			Address:     common.HexToAddress(addr),
+			StorageKeys: []common.Hash{},
+		}
+	}
+	return out
 }
