@@ -7,6 +7,10 @@ import (
 )
 
 func ToBlockNumber(blockTag string) (*big.Int, error) {
+	if blockTag == "" {
+		return nil, constant.ErrInvalidBlockTag
+	}
+
 	if num, ok := constant.BlockTagNumbers[blockTag]; ok {
 		if num == nil {
 			return nil, nil

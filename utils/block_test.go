@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,6 +26,14 @@ func TestToBlockNumber(t *testing.T) {
 		// Assert
 		assert.NotNil(t, res)
 		assert.Nil(t, err)
+	})
+
+	t.Run("if empty string, return ErrInvalidBlockTag", func(t *testing.T) {
+		// Act
+		_, err := ToBlockNumber("")
+
+		// Assert
+		assert.ErrorIs(t, err, constant.ErrInvalidBlockTag)
 	})
 
 	t.Run("if failed to from bigHex, return err", func(t *testing.T) {
