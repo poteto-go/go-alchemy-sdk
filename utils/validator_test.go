@@ -77,13 +77,20 @@ func TestValidateBlockTag(t *testing.T) {
 	})
 
 	t.Run("error case:", func(t *testing.T) {
-		// Arrange
-		blockTag := "unexpected"
+		cases := []string{
+			"unexpected",
+			"",
+			"0x",
+			"0xgg",
+		}
+		for _, blockTag := range cases {
+			t.Run(blockTag, func(t *testing.T) {
+				// Act
+				err := ValidateBlockTag(blockTag)
 
-		// Act
-		err := ValidateBlockTag(blockTag)
-
-		// Assert
-		assert.ErrorIs(t, err, constant.ErrInvalidBlockTag)
+				// Assert
+				assert.ErrorIs(t, err, constant.ErrInvalidBlockTag)
+			})
+		}
 	})
 }
