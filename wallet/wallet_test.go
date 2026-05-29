@@ -236,12 +236,12 @@ func TestWallet_SignTx(t *testing.T) {
 			To:       "0x123",
 			ChainID:  big.NewInt(1),
 			Nonce:    0,
-			GasPrice: big.NewInt(0),
 			GasLimit: 1000,
 			Value:    "0x123",
 			Data:     []byte("0x123"),
 		}
-		estimatedGasPrice := big.NewInt(100)
+		estimatedGas := big.NewInt(100)
+		suggestedGasPrice := big.NewInt(1_000_000_000) // 1 Gwei
 
 		// Mock
 		patches.ApplyMethod(
@@ -256,7 +256,15 @@ func TestWallet_SignTx(t *testing.T) {
 			reflect.TypeOf(w.provider.Eth()),
 			"EstimateGas",
 			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
-				return estimatedGasPrice, nil
+				return estimatedGas, nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return suggestedGasPrice, nil
 			},
 		)
 
@@ -275,13 +283,13 @@ func TestWallet_SignTx(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, txRequest.ChainID, signedTx.ChainId())
 		assert.Equal(t, txRequest.GasLimit, signedTx.Gas())
-		assert.Equal(t, estimatedGasPrice, signedTx.GasPrice())
+		assert.Equal(t, suggestedGasPrice, signedTx.GasPrice())
 		assert.Equal(t, reservedNonce, signedTx.Nonce())
 		assert.Equal(t, "0x0000000000000000000000000000000000000123", signedTx.To().Hex())
 		v, r, s := signedTx.RawSignatureValues()
 		assert.Equal(t, v.Cmp(big.NewInt(3)), 1)
-		assert.Equal(t, common.BigToHash(r).Hex(), "0xe012575d94bd21ee6d854e546ec49356931412ae407f56f52272be71a4445878")
-		assert.Equal(t, common.BigToHash(s).Hex(), "0x113b2384592639614c67532e8216a985e7cac9de6cec00ee44534a2881e42975")
+		assert.Equal(t, common.BigToHash(r).Hex(), "0x8ce09f689d03876053109c577ab06416207bb993a19139ae99058c8eee6b8352")
+		assert.Equal(t, common.BigToHash(s).Hex(), "0x6f10aa204c55c7375e5ce42058fc5f87b09ecf45d2d3c864def6ba6663f388a1")
 	})
 
 	t.Run("if wallet is not connected, return error", func(t *testing.T) {
@@ -388,7 +396,7 @@ func TestWallet_SignTx(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("if gasLimit < gasPrice, return error", func(t *testing.T) {
+	t.Run("if gasLimit < estimatedGas, return error", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
@@ -447,6 +455,14 @@ func TestWallet_SignTx(t *testing.T) {
 
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1_000_000_000), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
 			"ChainID",
 			func(_ *ether.Ether) (*big.Int, error) {
 				return big.NewInt(1), nil
@@ -485,7 +501,7 @@ func TestWallet_SignTx(t *testing.T) {
 			Value:    "0x123",
 			Data:     []byte("0x123"),
 		}
-		estimatedGasPrice := big.NewInt(100)
+		estimatedGas := big.NewInt(100)
 
 		// Mock
 		patches.ApplyMethod(
@@ -499,7 +515,7 @@ func TestWallet_SignTx(t *testing.T) {
 			reflect.TypeOf(w.provider.Eth()),
 			"EstimateGas",
 			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
-				return estimatedGasPrice, nil
+				return estimatedGas, nil
 			},
 		)
 		patches.ApplyMethod(
@@ -538,7 +554,7 @@ func TestWallet_SignTx(t *testing.T) {
 			Value:    "0x123",
 			Data:     []byte("0x123"),
 		}
-		estimatedGasPrice := big.NewInt(100)
+		estimatedGas := big.NewInt(100)
 
 		// Mock
 		patches.ApplyMethod(
@@ -553,7 +569,7 @@ func TestWallet_SignTx(t *testing.T) {
 			reflect.TypeOf(w.provider.Eth()),
 			"EstimateGas",
 			func(_ *ether.Ether, txRequest types.TransactionRequest) (*big.Int, error) {
-				return estimatedGasPrice, nil
+				return estimatedGas, nil
 			},
 		)
 
@@ -569,6 +585,210 @@ func TestWallet_SignTx(t *testing.T) {
 
 		// Assert
 		assert.Error(t, err)
+	})
+
+	t.Run("SignTx sets GasPrice from SuggestGasPrice when GasPrice is nil", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		txRequest := types.TransactionRequest{
+			To:       "0x123",
+			GasLimit: 30000,
+			Value:    "0x0",
+		}
+		estimatedGas := big.NewInt(21000)
+		suggestedGasPrice := big.NewInt(1_000_000_000) // 1 Gwei
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, _ types.TransactionRequest) (*big.Int, error) {
+				return estimatedGas, nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return suggestedGasPrice, nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+
+		// Act
+		signedTx, err := w.SignTx(txRequest)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, suggestedGasPrice, signedTx.GasPrice())
+	})
+
+	t.Run("SignTx does not overwrite caller's GasPrice", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		callerGasPrice := big.NewInt(2_000_000_000) // 2 Gwei
+		txRequest := types.TransactionRequest{
+			To:       "0x123",
+			GasLimit: 30000,
+			GasPrice: callerGasPrice,
+			Value:    "0x0",
+		}
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, _ types.TransactionRequest) (*big.Int, error) {
+				return big.NewInt(21000), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+
+		// Act
+		signedTx, err := w.SignTx(txRequest)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.Equal(t, callerGasPrice, signedTx.GasPrice())
+	})
+
+	t.Run("if error on SuggestGasPrice, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		txRequest := types.TransactionRequest{
+			To:       "0x123",
+			GasLimit: 30000,
+			Value:    "0x0",
+		}
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, _ types.TransactionRequest) (*big.Int, error) {
+				return big.NewInt(21000), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return nil, errors.New("suggest gas price error")
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(txRequest)
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("SignTx does not call SuggestGasPrice for EIP-1559 tx", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		txRequest := types.TransactionRequest{
+			To:                   "0x123",
+			GasLimit:             30000,
+			Value:                "0x0",
+			MaxFeePerGas:         big.NewInt(50_000_000_000), // 50 Gwei
+			MaxPriorityFeePerGas: big.NewInt(2_000_000_000),  // 2 Gwei
+		}
+
+		suggestGasPriceCalled := false
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, _ types.TransactionRequest) (*big.Int, error) {
+				return big.NewInt(21000), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				suggestGasPriceCalled = true
+				return big.NewInt(1_000_000_000), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+
+		// Act
+		_, err := w.SignTx(txRequest)
+
+		// Assert
+		assert.Nil(t, err)
+		assert.False(t, suggestGasPriceCalled, "SuggestGasPrice must not be called for EIP-1559 transactions")
 	})
 }
 

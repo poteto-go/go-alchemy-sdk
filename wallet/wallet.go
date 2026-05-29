@@ -222,7 +222,6 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	}
 	txRequest.Nonce = nonce
 
-	// just use for check gas limit
 	estimatedGas, err := provider.Eth().EstimateGas(txRequest)
 	if err != nil {
 		return nil, err
@@ -234,7 +233,14 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 			estimatedGas.Uint64(),
 		)
 	}
-	txRequest.GasPrice = estimatedGas
+
+	if txRequest.MaxFeePerGas == nil && txRequest.MaxPriorityFeePerGas == nil && txRequest.GasPrice == nil {
+		gasPrice, err := provider.Eth().SuggestGasPrice()
+		if err != nil {
+			return nil, err
+		}
+		txRequest.GasPrice = gasPrice
+	}
 
 	chainID, err := provider.Eth().ChainID()
 	if err != nil {
