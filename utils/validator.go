@@ -3,19 +3,9 @@ package utils
 import "github.com/poteto-go/go-alchemy-sdk/constant"
 
 // https://docs.ethers.org/v5/api/providers/types/
-// just support latest | earliest | pending for now
 func ValidateBlockTag(blockTag string) error {
-	if blockTag == "latest" {
-		return nil
+	if _, err := ToBlockNumber(blockTag); err != nil {
+		return constant.ErrInvalidBlockTag
 	}
-
-	if blockTag == "earliest" {
-		return nil
-	}
-
-	if blockTag == "pending" {
-		return nil
-	}
-
-	return constant.ErrInvalidBlockTag
+	return nil
 }

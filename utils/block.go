@@ -1,10 +1,21 @@
 package utils
 
-import "math/big"
+import (
+	"math/big"
+
+	"github.com/poteto-go/go-alchemy-sdk/constant"
+)
 
 func ToBlockNumber(blockTag string) (*big.Int, error) {
-	if blockTag == "latest" {
-		return nil, nil
+	if blockTag == "" {
+		return nil, constant.ErrInvalidBlockTag
+	}
+
+	if num, ok := constant.BlockTagNumbers[blockTag]; ok {
+		if num == nil {
+			return nil, nil
+		}
+		return new(big.Int).Set(num), nil
 	}
 
 	blockNumber, err := FromBigHex(blockTag)
