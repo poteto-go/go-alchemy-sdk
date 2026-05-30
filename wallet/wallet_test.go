@@ -1601,28 +1601,29 @@ func TestWallet_ContractCall(t *testing.T) {
 	})
 }
 
-func TestWallet_getOrCreateAuth(t *testing.T) {
+func applyChainIDPatch(patches *gomonkey.Patches, w *wallet, id *big.Int) {
+	patches.ApplyMethod(
+		reflect.TypeOf(w.provider.Eth()),
+		"ChainID",
+		func(_ *ether.Ether) (*big.Int, error) { return id, nil },
+	)
+}
+
+func TestWallet_buildAuth(t *testing.T) {
 	t.Run("returns fresh TransactOpts each call so mutations do not bleed across calls", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
 		w := createConnectedWallet()
+		applyChainIDPatch(patches, w, big.NewInt(1))
 
-		patches.ApplyMethod(
-			reflect.TypeOf(w.provider.Eth()),
-			"ChainID",
-			func(_ *ether.Ether) (*big.Int, error) {
-				return big.NewInt(1), nil
-			},
-		)
-
-		auth1, err := w.getOrCreateAuth()
+		auth1, err := w.buildAuth()
 		assert.NoError(t, err)
 
 		// Simulate go-ethereum mutating the nonce field after sending a tx
 		auth1.Nonce = big.NewInt(42)
 
-		auth2, err := w.getOrCreateAuth()
+		auth2, err := w.buildAuth()
 		assert.NoError(t, err)
 
 		assert.Nil(t, auth2.Nonce, "second call must return fresh TransactOpts without the stale Nonce")
@@ -1636,13 +1637,7 @@ func TestWallet_getOrCreateAuth(t *testing.T) {
 		w := createConnectedWallet()
 		suggestCount := 0
 
-		patches.ApplyMethod(
-			reflect.TypeOf(w.provider.Eth()),
-			"ChainID",
-			func(_ *ether.Ether) (*big.Int, error) {
-				return big.NewInt(internal.ChainListNotSupportEIP1559[0]), nil
-			},
-		)
+		applyChainIDPatch(patches, w, big.NewInt(internal.ChainListNotSupportEIP1559[0]))
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"SuggestGasPrice",
@@ -1652,10 +1647,10 @@ func TestWallet_getOrCreateAuth(t *testing.T) {
 			},
 		)
 
-		_, _ = w.getOrCreateAuth()
-		_, _ = w.getOrCreateAuth()
+		_, _ = w.buildAuth()
+		_, _ = w.buildAuth()
 
-		assert.Equal(t, 2, suggestCount, "SuggestGasPrice must be called on every getOrCreateAuth for non-EIP1559 chains")
+		assert.Equal(t, 2, suggestCount, "SuggestGasPrice must be called on every buildAuth for non-EIP1559 chains")
 	})
 
 	t.Run("caches chainID so ChainID RPC is called only once across multiple calls", func(t *testing.T) {
@@ -1674,8 +1669,8 @@ func TestWallet_getOrCreateAuth(t *testing.T) {
 			},
 		)
 
-		_, _ = w.getOrCreateAuth()
-		_, _ = w.getOrCreateAuth()
+		_, _ = w.buildAuth()
+		_, _ = w.buildAuth()
 
 		assert.Equal(t, 1, chainIDCallCount, "ChainID RPC must be called only once (cached)")
 	})
