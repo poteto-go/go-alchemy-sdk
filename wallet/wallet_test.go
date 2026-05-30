@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"math/big"
@@ -951,6 +952,7 @@ func TestWallet_DeployContract(t *testing.T) {
 			"WaitDeployed",
 			func(
 				_ *ether.Ether,
+				_ context.Context,
 				_ common.Hash,
 			) (common.Address, error) {
 				return expectedAddr, nil
@@ -958,7 +960,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		)
 
 		// Act
-		addr, err := w.DeployContract(&metaData)
+		addr, err := w.DeployContract(context.Background(), &metaData)
 
 		// Assert
 		assert.Nil(t, err)
@@ -991,6 +993,7 @@ func TestWallet_DeployContract(t *testing.T) {
 			"WaitDeployed",
 			func(
 				_ *ether.Ether,
+				_ context.Context,
 				_ common.Hash,
 			) (common.Address, error) {
 				return common.Address{}, errors.New("error")
@@ -998,7 +1001,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.DeployContract(&metaData)
+		_, err := w.DeployContract(context.Background(), &metaData)
 
 		// Assert
 		assert.Error(t, err)
@@ -1008,7 +1011,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.DeployContract(&metaData)
+		_, err := w.DeployContract(context.Background(), &metaData)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -1038,7 +1041,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.DeployContract(&metaData)
+		_, err := w.DeployContract(context.Background(), &metaData)
 
 		// Assert
 		assert.Error(t, err)
@@ -1287,13 +1290,13 @@ func TestWallet_ContractTransact(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"WaitMined",
-			func(_ *ether.Ether, _ common.Hash) (*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
 				return expectedReceipt, nil
 			},
 		)
 
 		// Act
-		txReceipt, err := w.ContractTransact(contract, contractAddress, data)
+		txReceipt, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
 
 		//Assert
 		assert.Nil(t, err)
@@ -1304,7 +1307,7 @@ func TestWallet_ContractTransact(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.ContractTransact(contract, contractAddress, data)
+		_, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -1339,7 +1342,7 @@ func TestWallet_ContractTransact(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.ContractTransact(contract, contractAddress, data)
+		_, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
 
 		//Assert
 		assert.Error(t, err)
@@ -1384,13 +1387,13 @@ func TestWallet_ContractTransact(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"WaitMined",
-			func(_ *ether.Ether, _ common.Hash) (*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
 				return nil, errors.New("error")
 			},
 		)
 
 		// Act
-		_, err := w.ContractTransact(contract, contractAddress, data)
+		_, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
 
 		// Assert
 		assert.Error(t, err)

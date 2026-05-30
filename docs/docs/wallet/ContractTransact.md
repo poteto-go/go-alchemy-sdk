@@ -18,6 +18,7 @@ cf.) [`wallet.ContractTransactNoWait`](./ContractTransactNoWait.md)
 
 ```go
 func ContractTransact(
+	ctx context.Context,
 	contract types.ContractInstance,
 	contractAddress string,
 	data []byte,
@@ -43,7 +44,7 @@ func main() {
 	data := abi.PackXXX(<data>)
 
 	// Execute transaction
-	receipt, err := w.ContractTransact(contract, contractAddress, data)
+	receipt, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
 	if err != nil {
 		panic(err)
 	}

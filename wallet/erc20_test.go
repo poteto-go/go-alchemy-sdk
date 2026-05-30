@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"context"
 	"errors"
 	"math/big"
 	"reflect"
@@ -83,13 +84,14 @@ func TestWallet_ERC20Transfer(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"WaitMined",
-			func(_ *ether.Ether, _ common.Hash) (*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
 				return &gethTypes.Receipt{}, nil
 			},
 		)
 
 		// Act
 		_, err := w.ERC20().Transfer(
+			context.Background(),
 			contractAddress,
 			otherAddress,
 			big.NewInt(1),
@@ -118,6 +120,7 @@ func TestWallet_ERC20Transfer(t *testing.T) {
 
 		// Act
 		_, err := w.ERC20().Transfer(
+			context.Background(),
 			contractAddress,
 			otherAddress,
 			big.NewInt(1),
@@ -134,6 +137,7 @@ func TestWallet_ERC20Transfer(t *testing.T) {
 
 		// Act
 		_, err := w.ERC20().Transfer(
+			context.Background(),
 			contractAddress,
 			otherAddress,
 			big.NewInt(1),
@@ -195,12 +199,14 @@ func TestWallet_ERC20TransferNoWait(t *testing.T) {
 			},
 		)
 
+		gasLimit := uint64(1)
+
 		// Act
 		txHash, err := w.ERC20().TransferNoWait(
 			contractAddress,
 			otherAddress,
 			big.NewInt(1),
-			new(uint64(1)),
+			&gasLimit,
 		)
 
 		// Assert
@@ -242,6 +248,7 @@ func TestWallet_ERC20TransferNoWait(t *testing.T) {
 
 		// Act
 		_, err := w.ERC20().Transfer(
+			context.Background(),
 			contractAddress,
 			otherAddress,
 			big.NewInt(1),
@@ -274,12 +281,12 @@ func TestWallet_ERC20Approve(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"WaitMined",
-			func(_ *ether.Ether, _ common.Hash) (*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
 				return &gethTypes.Receipt{}, nil
 			},
 		)
 
-		_, err := w.ERC20().Approve(contractAddress, spenderAddress, big.NewInt(1), nil)
+		_, err := w.ERC20().Approve(context.Background(), contractAddress, spenderAddress, big.NewInt(1), nil)
 
 		assert.Nil(t, err)
 	})
@@ -298,7 +305,7 @@ func TestWallet_ERC20Approve(t *testing.T) {
 			},
 		)
 
-		_, err := w.ERC20().Approve(contractAddress, spenderAddress, big.NewInt(1), nil)
+		_, err := w.ERC20().Approve(context.Background(), contractAddress, spenderAddress, big.NewInt(1), nil)
 
 		assert.Error(t, err)
 	})
@@ -306,7 +313,7 @@ func TestWallet_ERC20Approve(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.ERC20().Approve(contractAddress, spenderAddress, big.NewInt(1), nil)
+		_, err := w.ERC20().Approve(context.Background(), contractAddress, spenderAddress, big.NewInt(1), nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -389,12 +396,12 @@ func TestWallet_ERC20TransferFrom(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"WaitMined",
-			func(_ *ether.Ether, _ common.Hash) (*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
 				return &gethTypes.Receipt{}, nil
 			},
 		)
 
-		_, err := w.ERC20().TransferFrom(contractAddress, fromAddress, toAddress, big.NewInt(1), nil)
+		_, err := w.ERC20().TransferFrom(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(1), nil)
 
 		assert.Nil(t, err)
 	})
@@ -413,7 +420,7 @@ func TestWallet_ERC20TransferFrom(t *testing.T) {
 			},
 		)
 
-		_, err := w.ERC20().TransferFrom(contractAddress, fromAddress, toAddress, big.NewInt(1), nil)
+		_, err := w.ERC20().TransferFrom(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(1), nil)
 
 		assert.Error(t, err)
 	})
@@ -421,7 +428,7 @@ func TestWallet_ERC20TransferFrom(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.ERC20().TransferFrom(contractAddress, fromAddress, toAddress, big.NewInt(1), nil)
+		_, err := w.ERC20().TransferFrom(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(1), nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})

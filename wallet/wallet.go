@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
@@ -58,8 +59,9 @@ type Wallet interface {
 		or an error if the creation failed.
 
 		It does not work on non-Ethernet compatible networks.
+		The operation stops waiting when ctx is canceled.
 	*/
-	DeployContract(metaData *bind.MetaData) (common.Address, error)
+	DeployContract(ctx context.Context, metaData *bind.MetaData) (common.Address, error)
 
 	/*
 		transact of Deployment Contract to tx pool.
@@ -75,8 +77,10 @@ type Wallet interface {
 	/*
 		ContractTransact executes a transaction on a deployed contract.
 		It waits for the transaction to be mined and returns the transaction receipt.
+		The operation stops waiting when ctx is canceled.
 	*/
 	ContractTransact(
+		ctx context.Context,
 		contract types.ContractInstance,
 		contractAddress string,
 		data []byte,
@@ -285,7 +289,7 @@ func (w *wallet) SendTransaction(txRequest types.TransactionRequest) (common.Has
 	return signedTx.Hash(), nil
 }
 
-func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error) {
+func (w *wallet) DeployContract(ctx context.Context, metaData *bind.MetaData) (common.Address, error) {
 	provider := w.snapshot()
 	if provider == nil {
 		return common.Address{}, constant.ErrWalletIsNotConnected
@@ -297,8 +301,7 @@ func (w *wallet) DeployContract(metaData *bind.MetaData) (common.Address, error)
 	}
 
 	tx := deployRes.Txs[metaData.ID]
-	// wait for deployment on chain
-	address, err := provider.Eth().WaitDeployed(tx.Hash())
+	address, err := provider.Eth().WaitDeployed(ctx, tx.Hash())
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -325,6 +328,7 @@ func (w *wallet) DeployContractNoWait(metaData *bind.MetaData) (*bind.Deployment
 }
 
 func (w *wallet) ContractTransact(
+	ctx context.Context,
 	contract types.ContractInstance,
 	contractAddress string,
 	data []byte,
@@ -343,7 +347,7 @@ func (w *wallet) ContractTransact(
 		return nil, err
 	}
 
-	return provider.Eth().WaitMined(tx.Hash())
+	return provider.Eth().WaitMined(ctx, tx.Hash())
 }
 
 func (w *wallet) ContractTransactNoWait(

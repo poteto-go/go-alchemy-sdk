@@ -1,6 +1,7 @@
 package namespace_test
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
@@ -41,14 +42,14 @@ func Test_WaitMined(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"WaitMined",
-			func(_ *ether.Ether, txHash common.Hash) (*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, ctx context.Context, txHash common.Hash) (*gethTypes.Receipt, error) {
 				assert.Equal(t, txHash, hash)
 				return &gethTypes.Receipt{}, nil
 			},
 		)
 
 		// Act
-		_, err := transact.WaitMined(hexHash)
+		_, err := transact.WaitMined(context.Background(), hexHash)
 
 		// Assert
 		assert.NoError(t, err)
@@ -67,14 +68,14 @@ func Test_WaitMined(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"WaitMined",
-			func(_ *ether.Ether, txHash common.Hash) (*gethTypes.Receipt, error) {
+			func(_ *ether.Ether, ctx context.Context, txHash common.Hash) (*gethTypes.Receipt, error) {
 				assert.Equal(t, txHash, hash)
 				return &gethTypes.Receipt{}, expectedErr
 			},
 		)
 
 		// Act
-		_, err := transact.WaitMined(hexHash)
+		_, err := transact.WaitMined(context.Background(), hexHash)
 
 		// Assert
 		assert.ErrorIs(t, err, expectedErr)
@@ -98,14 +99,14 @@ func Test_WaitDeployed(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"WaitDeployed",
-			func(_ *ether.Ether, txHash common.Hash) (common.Address, error) {
+			func(_ *ether.Ether, ctx context.Context, txHash common.Hash) (common.Address, error) {
 				assert.Equal(t, txHash, hash)
 				return common.Address{}, nil
 			},
 		)
 
 		// Act
-		_, err := transact.WaitDeployed(hexHash)
+		_, err := transact.WaitDeployed(context.Background(), hexHash)
 
 		// Assert
 		assert.NoError(t, err)
@@ -124,14 +125,14 @@ func Test_WaitDeployed(t *testing.T) {
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
 			"WaitDeployed",
-			func(_ *ether.Ether, txHash common.Hash) (common.Address, error) {
+			func(_ *ether.Ether, ctx context.Context, txHash common.Hash) (common.Address, error) {
 				assert.Equal(t, txHash, hash)
 				return common.Address{}, expectedErr
 			},
 		)
 
 		// Act
-		_, err := transact.WaitDeployed(hexHash)
+		_, err := transact.WaitDeployed(context.Background(), hexHash)
 
 		// Assert
 		assert.ErrorIs(t, err, expectedErr)

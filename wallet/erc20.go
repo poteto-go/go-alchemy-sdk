@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"context"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,8 +18,9 @@ type WalletERC20 interface {
 		transfer erc20 token by provided wallet
 			- wait for mined
 			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
 	*/
-	Transfer(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
+	Transfer(ctx context.Context, contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
 
 	/*
 		transfer erc20 token by provided wallet
@@ -30,8 +32,9 @@ type WalletERC20 interface {
 		transfer erc20 token from another address (requires prior approval)
 			- wait for mined
 			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
 	*/
-	TransferFrom(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
+	TransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
 
 	/*
 		transfer erc20 token from another address (requires prior approval)
@@ -43,8 +46,9 @@ type WalletERC20 interface {
 		approve spender to spend erc20 token
 			- wait for mined
 			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
 	*/
-	Approve(contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
+	Approve(ctx context.Context, contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
 
 	/*
 		approve spender to spend erc20 token
@@ -87,23 +91,22 @@ type walletERC20 struct {
 	w *wallet
 }
 
-func (api *walletERC20) Transfer(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
+func (api *walletERC20) waitMined(ctx context.Context, send func() (common.Hash, error)) (*gethTypes.Receipt, error) {
 	provider := api.w.snapshot()
 	if provider == nil {
 		return nil, constant.ErrWalletIsNotConnected
 	}
-
-	txHash, err := api.TransferNoWait(
-		contractAddress,
-		toAddress,
-		amount,
-		gasLimit,
-	)
+	txHash, err := send()
 	if err != nil {
 		return nil, err
 	}
+	return provider.Eth().WaitMined(ctx, txHash)
+}
 
-	return provider.Eth().WaitMined(txHash)
+func (api *walletERC20) Transfer(ctx context.Context, contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.TransferNoWait(contractAddress, toAddress, amount, gasLimit)
+	})
 }
 
 func buildERC20TxData(signature []byte, params ...[]byte) ([]byte, error) {
@@ -184,18 +187,10 @@ func (api *walletERC20) ApproveNoWait(contractAddress, spenderAddress string, am
 	return api.w.SendTransaction(txRequest)
 }
 
-func (api *walletERC20) Approve(contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
-	provider := api.w.snapshot()
-	if provider == nil {
-		return nil, constant.ErrWalletIsNotConnected
-	}
-
-	txHash, err := api.ApproveNoWait(contractAddress, spenderAddress, amount, gasLimit)
-	if err != nil {
-		return nil, err
-	}
-
-	return provider.Eth().WaitMined(txHash)
+func (api *walletERC20) Approve(ctx context.Context, contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.ApproveNoWait(contractAddress, spenderAddress, amount, gasLimit)
+	})
 }
 
 func (api *walletERC20) TransferFromNoWait(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
@@ -225,18 +220,10 @@ func (api *walletERC20) TransferFromNoWait(contractAddress, fromAddress, toAddre
 	return api.w.SendTransaction(txRequest)
 }
 
-func (api *walletERC20) TransferFrom(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
-	provider := api.w.snapshot()
-	if provider == nil {
-		return nil, constant.ErrWalletIsNotConnected
-	}
-
-	txHash, err := api.TransferFromNoWait(contractAddress, fromAddress, toAddress, amount, gasLimit)
-	if err != nil {
-		return nil, err
-	}
-
-	return provider.Eth().WaitMined(txHash)
+func (api *walletERC20) TransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.TransferFromNoWait(contractAddress, fromAddress, toAddress, amount, gasLimit)
+	})
 }
 
 func (api *walletERC20) BalanceOf(contractAddress string) (*big.Int, error) {

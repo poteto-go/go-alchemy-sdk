@@ -19,7 +19,7 @@ cf.) [`wallet.DeployContractNoWait`](./DeployContractNoWait.md)
 :::
 
 ```go
-func DeployContract(metaData *bind.MetaData) (deployedAddr common.Address, err error)
+func DeployContract(ctx context.Context, metaData *bind.MetaData) (deployedAddr common.Address, err error)
 ```
 
 ```go
@@ -33,7 +33,7 @@ func main() {
 	w, _ := wallet.New("<privateKey>")
 	w.Connect(alchemy.GetProvider())
 
-	address, err := w.DeployContract(&<your-metaData>)
+	address, err := w.DeployContract(context.Background(), &<your-metaData>)
 	if err != nil {
 		panic(err)
 	}

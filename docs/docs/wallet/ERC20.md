@@ -66,6 +66,7 @@ func main() {
 
 	// Execute transaction (wait for mined)
 	receipt, err := w.ERC20().Transfer(
+		context.Background(),
 		contractAddress,
 		"<toAddress>",
 		big.NewInt(100),
