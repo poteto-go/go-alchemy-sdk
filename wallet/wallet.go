@@ -130,9 +130,9 @@ type wallet struct {
 	provider   types.IAlchemyProvider
 	mu         sync.RWMutex
 
-	// Cache for performance
+	// Cache for performance (chainID and legacy-chain flag are immutable per network)
 	cachedChainID *big.Int
-	cachedAuth    *bind.TransactOpts
+	legacyChain   bool
 
 	// for ERC20
 	erc20 namespace.IERC20
@@ -314,7 +314,7 @@ func (w *wallet) DeployContractNoWait(metaData *bind.MetaData) (*bind.Deployment
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
-	auth, err := w.getOrCreateAuth()
+	auth, err := w.buildAuth()
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +360,7 @@ func (w *wallet) ContractTransactNoWait(
 		return nil, constant.ErrWalletIsNotConnected
 	}
 
-	auth, err := w.getOrCreateAuth()
+	auth, err := w.buildAuth()
 	if err != nil {
 		return nil, err
 	}
@@ -393,31 +393,30 @@ func (w *wallet) ERC20() WalletERC20 {
 	return &walletERC20{w: w}
 }
 
-func (w *wallet) getOrCreateAuth() (*bind.TransactOpts, error) {
+func (w *wallet) buildAuth() (*bind.TransactOpts, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.cachedAuth != nil {
-		return w.cachedAuth, nil
+	if w.cachedChainID == nil {
+		chainID, err := w.provider.Eth().ChainID()
+		if err != nil {
+			return nil, err
+		}
+		w.cachedChainID = chainID
+		w.legacyChain = slices.Contains(internal.ChainListNotSupportEIP1559, chainID.Int64())
 	}
-	chainID, err := w.provider.Eth().ChainID()
-	if err != nil {
-		return nil, err
-	}
-	w.cachedChainID = chainID
 
-	w.cachedAuth = bind.NewKeyedTransactor(w.privateKey, chainID)
+	auth := bind.NewKeyedTransactor(w.privateKey, w.cachedChainID)
 
-	// for chain not support `EIP-1559`
-	if slices.Contains(internal.ChainListNotSupportEIP1559, chainID.Int64()) {
+	if w.legacyChain {
 		gasPrice, err := w.provider.Eth().SuggestGasPrice()
 		if err != nil {
 			return nil, err
 		}
-		w.cachedAuth.GasPrice = gasPrice
-		return w.cachedAuth, nil
+		auth.GasPrice = gasPrice
 	}
-	return w.cachedAuth, nil
+
+	return auth, nil
 }
 
 func (w *wallet) ResetPool() {
@@ -425,5 +424,5 @@ func (w *wallet) ResetPool() {
 	defer w.mu.Unlock()
 
 	w.cachedChainID = nil
-	w.cachedAuth = nil
+	w.legacyChain = false
 }
