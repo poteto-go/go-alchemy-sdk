@@ -1601,6 +1601,86 @@ func TestWallet_ContractCall(t *testing.T) {
 	})
 }
 
+func TestWallet_getOrCreateAuth(t *testing.T) {
+	t.Run("returns fresh TransactOpts each call so mutations do not bleed across calls", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+
+		auth1, err := w.getOrCreateAuth()
+		assert.NoError(t, err)
+
+		// Simulate go-ethereum mutating the nonce field after sending a tx
+		auth1.Nonce = big.NewInt(42)
+
+		auth2, err := w.getOrCreateAuth()
+		assert.NoError(t, err)
+
+		assert.Nil(t, auth2.Nonce, "second call must return fresh TransactOpts without the stale Nonce")
+		assert.NotSame(t, auth1, auth2, "each call must return a distinct TransactOpts pointer")
+	})
+
+	t.Run("refreshes GasPrice on every call for non-EIP1559 chains", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		suggestCount := 0
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(internal.ChainListNotSupportEIP1559[0]), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				suggestCount++
+				return big.NewInt(1_000_000_000), nil
+			},
+		)
+
+		_, _ = w.getOrCreateAuth()
+		_, _ = w.getOrCreateAuth()
+
+		assert.Equal(t, 2, suggestCount, "SuggestGasPrice must be called on every getOrCreateAuth for non-EIP1559 chains")
+	})
+
+	t.Run("caches chainID so ChainID RPC is called only once across multiple calls", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		chainIDCallCount := 0
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				chainIDCallCount++
+				return big.NewInt(1), nil
+			},
+		)
+
+		_, _ = w.getOrCreateAuth()
+		_, _ = w.getOrCreateAuth()
+
+		assert.Equal(t, 1, chainIDCallCount, "ChainID RPC must be called only once (cached)")
+	})
+}
+
 func TestWallet_ResetPool(t *testing.T) {
 	txData := &gethTypes.AccessListTx{
 		To:       &common.Address{},
@@ -1666,7 +1746,7 @@ func TestWallet_ResetPool(t *testing.T) {
 		assert.Equal(t, 2, callCount, "ChainID should be called again after reset")
 	})
 
-	t.Run("clears both chainID and auth", func(t *testing.T) {
+	t.Run("clears cachedChainID", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
@@ -1701,13 +1781,11 @@ func TestWallet_ResetPool(t *testing.T) {
 		// Act - Create cache
 		_, _ = w.ContractTransactNoWait(contract, contractAddress, data)
 		assert.NotNil(t, w.cachedChainID, "ChainID should be cached")
-		assert.NotNil(t, w.cachedAuth, "Auth should be cached")
 
 		// Act - Reset
 		w.ResetPool()
 
 		// Assert
 		assert.Nil(t, w.cachedChainID, "ChainID should be cleared")
-		assert.Nil(t, w.cachedAuth, "Auth should be cleared")
 	})
 }
