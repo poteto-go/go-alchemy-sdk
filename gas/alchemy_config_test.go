@@ -2,6 +2,7 @@ package gas
 
 import (
 	"testing"
+	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -145,4 +146,27 @@ func TestAlchemyConfig_toEtherApiConfig(t *testing.T) {
 
 	// Assert
 	assert.IsType(t, etherConfig, ether.EtherApiConfig{})
+}
+
+func TestNewAlchemyConfig_WaitingTimeout(t *testing.T) {
+	t.Run("defaults to 300s when not set", func(t *testing.T) {
+		config, err := NewAlchemyConfig(AlchemySetting{
+			ApiKey:  "api-key",
+			Network: types.MaticMainnet,
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 300*time.Second, config.waitingTimeout)
+	})
+
+	t.Run("uses configured value when set", func(t *testing.T) {
+		config, err := NewAlchemyConfig(AlchemySetting{
+			ApiKey:         "api-key",
+			Network:        types.MaticMainnet,
+			WaitingTimeout: 60 * time.Second,
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 60*time.Second, config.waitingTimeout)
+	})
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"math/big"
 	"strings"
@@ -17,6 +18,10 @@ import (
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/stretchr/testify/assert"
 )
+
+func newEtherApiWithWaitingTimeoutForTest(timeout time.Duration) *eth.Ether {
+	return newEtherApiForTestWithTimeout(timeout)
+}
 
 type mockContract struct {
 	abi abi.ABI
@@ -324,5 +329,59 @@ func TestEther_WaitDeployed(t *testing.T) {
 			assert.Error(t, err)
 			assert.Equal(t, address, common.Address{})
 		})
+	})
+}
+
+func TestEther_WaitMined_WithWaitingTimeout(t *testing.T) {
+	txHash := common.HexToHash("0x123")
+
+	t.Run("WaitingTimeout fires when bind.WaitMined blocks", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange: very short timeout so the test doesn't actually wait long
+		ether := newEtherApiWithWaitingTimeoutForTest(10 * time.Millisecond)
+
+		patches.ApplyFunc(
+			bind.WaitMined,
+			func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (*gethTypes.Receipt, error) {
+				<-ctx.Done()
+				return nil, ctx.Err()
+			},
+		)
+
+		// Act
+		receipt, err := ether.WaitMined(context.Background(), txHash)
+
+		// Assert: context deadline exceeded from the waitingTimeout
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Nil(t, receipt)
+	})
+}
+
+func TestEther_WaitDeployed_WithWaitingTimeout(t *testing.T) {
+	txHash := common.HexToHash("0x123")
+
+	t.Run("WaitingTimeout fires when bind.WaitDeployed blocks", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange: very short timeout so the test doesn't actually wait long
+		ether := newEtherApiWithWaitingTimeoutForTest(10 * time.Millisecond)
+
+		patches.ApplyFunc(
+			bind.WaitDeployed,
+			func(ctx context.Context, b bind.DeployBackend, hash common.Hash) (common.Address, error) {
+				<-ctx.Done()
+				return common.Address{}, ctx.Err()
+			},
+		)
+
+		// Act
+		address, err := ether.WaitDeployed(context.Background(), txHash)
+
+		// Assert: context deadline exceeded from the waitingTimeout
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Equal(t, address, common.Address{})
 	})
 }

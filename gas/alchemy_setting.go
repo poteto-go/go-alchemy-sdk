@@ -37,6 +37,10 @@ type AlchemySetting struct {
 	// Set to 0 to use the default.
 	MaxResponseBytes int64 `yaml:"max_response_bytes"`
 
+	// Safety-net timeout for WaitMined/WaitDeployed (default: 300s).
+	// Set to 0 to use the default. Composes with per-call ctx deadlines.
+	WaitingTimeout time.Duration `yaml:"waiting_timeout"`
+
 	/*
 		return true => p8net is selected
 

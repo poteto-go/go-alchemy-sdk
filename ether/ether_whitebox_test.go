@@ -12,7 +12,7 @@ import (
 // SetEthClient does not permanently inflate connCount (issue #324).
 func TestEther_SetEthClient_ConnCountRollbackOnError(t *testing.T) {
 	e := &Ether{
-		config: NewEtherApiConfig("", 0, time.Duration(0), nil, nil, []byte(""), 0),
+		config: NewEtherApiConfig("", 0, time.Duration(0), nil, nil, []byte(""), 0, 0),
 		mu:     &sync.Mutex{},
 	}
 

@@ -760,6 +760,13 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.Con
 	// return ether.WaitMined(tx.Hash())
 }
 
+func (ether *Ether) withWaitingTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	if ether.config.waitingTimeout > 0 {
+		return context.WithTimeout(ctx, ether.config.waitingTimeout)
+	}
+	return ctx, func() {}
+}
+
 // TODO: support backoff
 func (ether *Ether) WaitMined(ctx context.Context, txHash common.Hash) (*gethTypes.Receipt, error) {
 	err := ether.SetEthClient()
@@ -767,6 +774,9 @@ func (ether *Ether) WaitMined(ctx context.Context, txHash common.Hash) (*gethTyp
 		return nil, err
 	}
 	defer ether.Close()
+
+	ctx, cancel := ether.withWaitingTimeout(ctx)
+	defer cancel()
 
 	tx, err := bind.WaitMined(ctx, ether.client, txHash)
 	if err != nil {
@@ -782,6 +792,9 @@ func (ether *Ether) WaitDeployed(ctx context.Context, txHash common.Hash) (commo
 		return common.Address{}, err
 	}
 	defer ether.Close()
+
+	ctx, cancel := ether.withWaitingTimeout(ctx)
+	defer cancel()
 
 	address, err := bind.WaitDeployed(ctx, ether.client, txHash)
 	if err != nil {

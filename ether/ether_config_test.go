@@ -20,6 +20,7 @@ func TestNewEtherApiConfig(t *testing.T) {
 	customHeaders := []http.Header{
 		{"hello": []string{"world"}},
 	}
+	waitingTimeout := 300 * time.Second
 
 	// Act
 	config := NewEtherApiConfig(
@@ -30,6 +31,7 @@ func TestNewEtherApiConfig(t *testing.T) {
 		customHeaders,
 		[]byte(""),
 		0,
+		waitingTimeout,
 	)
 
 	// Assert
@@ -39,4 +41,5 @@ func TestNewEtherApiConfig(t *testing.T) {
 	assert.Equal(t, config.backoffConfig, &backoffConfig)
 	assert.Equal(t, config.customHeaders, customHeaders)
 	assert.Equal(t, int64(0), config.maxResponseBytes)
+	assert.Equal(t, waitingTimeout, config.waitingTimeout)
 }

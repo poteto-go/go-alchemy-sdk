@@ -113,3 +113,22 @@ The limit is enforced on **all** response paths:
 
 - **Alchemy JSON-RPC** (`AlchemyFetch` / `AlchemyBatchFetch`): returns `constant.ErrFailedToReadResponse` when the body exceeds the limit.
 - **geth `ethclient` methods** (e.g. `BlockNumber`, `CallContract`): the underlying `http.Client` uses a `limitedTransport` that wraps every response body with `io.LimitReader`, so oversized responses are also truncated here.
+
+### WaitMined / WaitDeployed Timeout
+
+`WaitingTimeout` sets a safety-net deadline for `WaitMined` and `WaitDeployed` so they never hang indefinitely. The default is **300 seconds**. Set to `0` to keep the default.
+
+```go
+func main() {
+	setting := gas.AlchemySetting{
+		ApiKey:  "<alchemy-api-key>",
+		Network: types.EthSepolia,
+		// Override to 60 seconds
+		WaitingTimeout: 60 * time.Second,
+	}
+
+	alchemy := gas.NewAlchemy(setting)
+}
+```
+
+The timeout composes with any per-call `context.Context` deadline — whichever fires first wins. Users who pass their own `ctx` with `context.WithTimeout` continue to get that behaviour unchanged.
