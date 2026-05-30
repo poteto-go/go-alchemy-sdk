@@ -7,12 +7,13 @@ import (
 )
 
 type Alchemy struct {
-	config   AlchemyConfig
-	Core     namespace.ICore
-	Transact namespace.ITransact
-	Nft      namespace.INft
-	ERC20    namespace.IERC20
-	provider types.IAlchemyProvider
+	config     AlchemyConfig
+	Core       namespace.ICore
+	Transact   namespace.ITransact
+	Nft        namespace.INft
+	ERC20      namespace.IERC20
+	StableCoin namespace.IStableCoin
+	provider   types.IAlchemyProvider
 }
 
 func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
@@ -31,14 +32,16 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 	transactNamespace := namespace.NewTransactNamespace(ether)
 	nftNamespace := namespace.NewNftNamespace(ether)
 	erc20Namespace := namespace.NewERC20Namespace(ether)
+	stableCoinNamespace := namespace.NewStableCoinNamespace(ether)
 
 	return Alchemy{
-		config:   alchemyConfig,
-		Core:     coreNamespace,
-		Transact: transactNamespace,
-		Nft:      nftNamespace,
-		ERC20:    erc20Namespace,
-		provider: alchemyProvider,
+		config:     alchemyConfig,
+		Core:       coreNamespace,
+		Transact:   transactNamespace,
+		Nft:        nftNamespace,
+		ERC20:      erc20Namespace,
+		StableCoin: stableCoinNamespace,
+		provider:   alchemyProvider,
 	}, nil
 }
 
