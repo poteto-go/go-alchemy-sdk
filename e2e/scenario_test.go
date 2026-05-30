@@ -169,6 +169,53 @@ func TestSenario_DeployContract(t *testing.T) {
 	})
 }
 
+func TestScenario_StableCoin(t *testing.T) {
+	t.Run("1. can create wallet 2. connect wallet 3. can deploy erc20 contract as stablecoin", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		erc20Metadata := &artifacts.ERC20MetaData
+		deployer.BindDeploymentMetadata(erc20Metadata, big.NewInt(1000))
+		contractAddress, err := w.DeployContract(context.Background(), erc20Metadata)
+
+		assert.Nil(t, err)
+		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+		contractHex := contractAddress.Hex()
+
+		t.Run("can get balance via StableCoin", func(t *testing.T) {
+			balance, err := w.StableCoin().BalanceOf(contractHex)
+
+			assert.Nil(t, err)
+			assert.Equal(t, balance.Cmp(big.NewInt(10)), 1)
+		})
+
+		t.Run("can get other info via StableCoin", func(t *testing.T) {
+			totalSupply, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, totalSupply.Cmp(big.NewInt(1000)), 0)
+
+			name, err := w.StableCoin().Name(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "Minimal Token", name)
+
+			symbol, err := w.StableCoin().Symbol(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "MTK", symbol)
+
+			decimals, err := w.StableCoin().Decimals(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, uint8(18), decimals)
+
+			allowance, err := w.StableCoin().Allowance(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, allowance.Cmp(big.NewInt(0)), 0)
+		})
+	})
+}
+
 func TestScenario_ERC20(t *testing.T) {
 	t.Run("1. can create wallet 2. connect wallet 3. can deploy erc20 contract", func(t *testing.T) {
 		w, err := wallet.New(initPrivateKey)

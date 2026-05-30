@@ -115,6 +115,9 @@ type Wallet interface {
 	/* ERC20 support */
 	ERC20() WalletERC20
 
+	/* StableCoin support */
+	StableCoin() WalletStableCoin
+
 	/*
 		ResetPool clears the cached ChainID and TransactOpts.
 		Call this when you need to refresh the cached values.
@@ -391,6 +394,10 @@ func (w *wallet) ContractCall(
 
 func (w *wallet) ERC20() WalletERC20 {
 	return &walletERC20{w: w}
+}
+
+func (w *wallet) StableCoin() WalletStableCoin {
+	return &walletStableCoin{walletERC20{w: w}}
 }
 
 func (w *wallet) buildAuth() (*bind.TransactOpts, error) {
