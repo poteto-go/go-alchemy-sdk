@@ -690,6 +690,41 @@ func TestWallet_StableCoin_Paused(t *testing.T) {
 	})
 }
 
+func TestWallet_StableCoin_Owner(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	ownerAddress := common.HexToAddress("0xE25583099BA105D9ec0A67f5Ae86D90e50036425")
+
+	t.Run("returns owner address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		copy(expected[12:], ownerAddress.Bytes())
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().Owner(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, ownerAddress, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Owner(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
 func TestWallet_StableCoin_TransferOwnershipNoWait(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	newOwnerAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"

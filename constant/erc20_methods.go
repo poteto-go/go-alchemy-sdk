@@ -19,4 +19,5 @@ var (
 	UnpauseFnSignature           = []byte("unpause()")
 	PausedFnSignature            = []byte("paused()")
 	TransferOwnershipFnSignature = []byte("transferOwnership(address)")
+	OwnerFnSignature             = []byte("owner()")
 )

@@ -107,6 +107,11 @@ type WalletStableCoin interface {
 	IsBlacklisted(contractAddress, address string) (bool, error)
 
 	/*
+		return the current owner address of the contract
+	*/
+	Owner(contractAddress string) (common.Address, error)
+
+	/*
 		transfer contract ownership to a new address (requires owner role)
 			- wait for mined
 			- gas limit is 300000 for default
@@ -180,6 +185,14 @@ func (api *walletStableCoin) IsBlacklisted(contractAddress, address string) (boo
 		return false, constant.ErrWalletIsNotConnected
 	}
 	return sc.IsBlacklisted(contractAddress, address)
+}
+
+func (api *walletStableCoin) Owner(contractAddress string) (common.Address, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return common.Address{}, constant.ErrWalletIsNotConnected
+	}
+	return sc.Owner(contractAddress)
 }
 
 func (api *walletStableCoin) PauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error) {
