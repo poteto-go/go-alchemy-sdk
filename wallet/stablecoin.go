@@ -103,10 +103,14 @@ func (api *walletStableCoin) Burn(ctx context.Context, contractAddress string, a
 	})
 }
 
-func (api *walletStableCoin) BlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
-	return api.sendERC20Tx(contractAddress, gasLimit, constant.BlacklistFnSignature,
+func (api *walletStableCoin) blacklistOp(contractAddress, address string, gasLimit *uint64, sig []byte) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, sig,
 		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
 	)
+}
+
+func (api *walletStableCoin) BlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
+	return api.blacklistOp(contractAddress, address, gasLimit, constant.BlacklistFnSignature)
 }
 
 func (api *walletStableCoin) Blacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*gethTypes.Receipt, error) {
@@ -116,9 +120,7 @@ func (api *walletStableCoin) Blacklist(ctx context.Context, contractAddress, add
 }
 
 func (api *walletStableCoin) UnBlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
-	return api.sendERC20Tx(contractAddress, gasLimit, constant.UnBlacklistFnSignature,
-		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
-	)
+	return api.blacklistOp(contractAddress, address, gasLimit, constant.UnBlacklistFnSignature)
 }
 
 func (api *walletStableCoin) UnBlacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*gethTypes.Receipt, error) {
