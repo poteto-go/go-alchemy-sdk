@@ -336,6 +336,60 @@ func TestScenario_ERC20(t *testing.T) {
 	})
 }
 
+func TestScenario_StableCoin_FiatToken(t *testing.T) {
+	t.Run("1. can create wallet 2. connect wallet 3. can deploy fiat token contract as stablecoin", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		ownerAddr := common.HexToAddress(initAddress)
+		fiatTokenMetadata := &artifacts.FiatTokenMetaData
+		err = deployer.BindDeploymentMetadata(fiatTokenMetadata,
+			"USD Coin",
+			"USDC",
+			"USD",
+			uint8(6),
+			ownerAddr,
+			ownerAddr,
+			ownerAddr,
+			ownerAddr,
+		)
+		assert.Nil(t, err)
+
+		contractAddress, err := w.DeployContract(context.Background(), fiatTokenMetadata)
+
+		assert.Nil(t, err)
+		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+		contractHex := contractAddress.Hex()
+
+		t.Run("IsContractAddress is true", func(t *testing.T) {
+			isContractAddress := alchemy.Core.IsContractAddress(contractHex)
+
+			assert.True(t, isContractAddress)
+		})
+
+		t.Run("can read stablecoin metadata via StableCoin", func(t *testing.T) {
+			name, err := w.StableCoin().Name(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "USD Coin", name)
+
+			symbol, err := w.StableCoin().Symbol(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "USDC", symbol)
+
+			decimals, err := w.StableCoin().Decimals(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, uint8(6), decimals)
+
+			totalSupply, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, totalSupply.Cmp(big.NewInt(0)))
+		})
+	})
+}
+
 func TestScenario_SendTransaction(t *testing.T) {
 	w, err := wallet.New(initPrivateKey)
 
