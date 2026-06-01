@@ -105,6 +105,20 @@ type WalletStableCoin interface {
 		check if an address is blacklisted
 	*/
 	IsBlacklisted(contractAddress, address string) (bool, error)
+
+	/*
+		transfer contract ownership to a new address (requires owner role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	TransferOwnership(ctx context.Context, contractAddress, newOwner string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		transfer contract ownership to a new address (requires owner role)
+			- gas limit is 300000 for default
+	*/
+	TransferOwnershipNoWait(contractAddress, newOwner string, gasLimit *uint64) (common.Hash, error)
 }
 
 type walletStableCoin struct {
@@ -194,4 +208,16 @@ func (api *walletStableCoin) Paused(contractAddress string) (bool, error) {
 		return false, constant.ErrWalletIsNotConnected
 	}
 	return sc.Paused(contractAddress)
+}
+
+func (api *walletStableCoin) TransferOwnershipNoWait(contractAddress, newOwner string, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferOwnershipFnSignature,
+		common.LeftPadBytes(common.HexToAddress(newOwner).Bytes(), 32),
+	)
+}
+
+func (api *walletStableCoin) TransferOwnership(ctx context.Context, contractAddress, newOwner string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.TransferOwnershipNoWait(contractAddress, newOwner, gasLimit)
+	})
 }
