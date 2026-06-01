@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var fiatTokenContractAddress common.Address
+
 // These are Kurtosis ethereum-package genesis accounts (public test keys, not credentials)
 var initPrivateKey = "bcdf20249abf0ed6d944c0288fad489e33f66b3960d9e6229c1cd214ed3bbe31"
 var initAddress = "0x8943545177806ED17B9F23F0a21ee5948eCaa776"
@@ -332,6 +334,42 @@ func TestScenario_ERC20(t *testing.T) {
 			balanceAfter, err := w.ERC20().BalanceOf(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
+		})
+	})
+}
+
+func TestScenario_FiatToken(t *testing.T) {
+	t.Run("1. can create wallet 2. connect wallet 3. can deploy fiat token contract", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		ownerAddr := common.HexToAddress(initAddress)
+		fiatTokenMetadata := &artifacts.FiatTokenMetaData
+		err = deployer.BindDeploymentMetadata(fiatTokenMetadata,
+			"USD Coin",
+			"USDC",
+			"USD",
+			uint8(6),
+			ownerAddr,
+			ownerAddr,
+			ownerAddr,
+			ownerAddr,
+		)
+		assert.Nil(t, err)
+
+		contractAddress, err := w.DeployContract(context.Background(), fiatTokenMetadata)
+
+		assert.Nil(t, err)
+		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+		fiatTokenContractAddress = contractAddress
+
+		t.Run("IsContractAddress is true", func(t *testing.T) {
+			isContractAddress := alchemy.Core.IsContractAddress(fiatTokenContractAddress.Hex())
+
+			assert.True(t, isContractAddress)
 		})
 	})
 }
