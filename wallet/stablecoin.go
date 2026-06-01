@@ -136,14 +136,10 @@ func (api *walletStableCoin) Burn(ctx context.Context, contractAddress string, a
 	})
 }
 
-func (api *walletStableCoin) blacklistOp(contractAddress, address string, gasLimit *uint64, sig []byte) (common.Hash, error) {
-	return api.sendERC20Tx(contractAddress, gasLimit, sig,
+func (api *walletStableCoin) BlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.BlacklistFnSignature,
 		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
 	)
-}
-
-func (api *walletStableCoin) BlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
-	return api.blacklistOp(contractAddress, address, gasLimit, constant.BlacklistFnSignature)
 }
 
 func (api *walletStableCoin) Blacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*gethTypes.Receipt, error) {
@@ -153,7 +149,9 @@ func (api *walletStableCoin) Blacklist(ctx context.Context, contractAddress, add
 }
 
 func (api *walletStableCoin) UnBlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
-	return api.blacklistOp(contractAddress, address, gasLimit, constant.UnBlacklistFnSignature)
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.UnBlacklistFnSignature,
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+	)
 }
 
 func (api *walletStableCoin) UnBlacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*gethTypes.Receipt, error) {
@@ -170,12 +168,8 @@ func (api *walletStableCoin) IsBlacklisted(contractAddress, address string) (boo
 	return sc.IsBlacklisted(contractAddress, address)
 }
 
-func (api *walletStableCoin) pauseOp(contractAddress string, gasLimit *uint64, sig []byte) (common.Hash, error) {
-	return api.sendERC20Tx(contractAddress, gasLimit, sig)
-}
-
 func (api *walletStableCoin) PauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error) {
-	return api.pauseOp(contractAddress, gasLimit, constant.PauseFnSignature)
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.PauseFnSignature)
 }
 
 func (api *walletStableCoin) Pause(ctx context.Context, contractAddress string, gasLimit *uint64) (*gethTypes.Receipt, error) {
@@ -185,7 +179,7 @@ func (api *walletStableCoin) Pause(ctx context.Context, contractAddress string, 
 }
 
 func (api *walletStableCoin) UnpauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error) {
-	return api.pauseOp(contractAddress, gasLimit, constant.UnpauseFnSignature)
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.UnpauseFnSignature)
 }
 
 func (api *walletStableCoin) Unpause(ctx context.Context, contractAddress string, gasLimit *uint64) (*gethTypes.Receipt, error) {
