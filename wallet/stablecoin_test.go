@@ -452,3 +452,240 @@ func TestWallet_StableCoin_IsBlacklisted(t *testing.T) {
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
 }
+
+func TestWallet_StableCoin_PauseNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can pause contract", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		hash, err := w.StableCoin().PauseNoWait(contractAddress, nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("handle error on pause", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.StableCoin().PauseNoWait(contractAddress, nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().PauseNoWait(contractAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Pause(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can pause contract and wait", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.StableCoin().Pause(context.Background(), contractAddress, nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Pause(context.Background(), contractAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_UnpauseNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can unpause contract", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		hash, err := w.StableCoin().UnpauseNoWait(contractAddress, nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("handle error on unpause", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.StableCoin().UnpauseNoWait(contractAddress, nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().UnpauseNoWait(contractAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Unpause(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can unpause contract and wait", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.StableCoin().Unpause(context.Background(), contractAddress, nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Unpause(context.Background(), contractAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Paused(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+
+	t.Run("returns true when contract is paused", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		expected[31] = 1
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().Paused(contractAddress)
+
+		assert.Nil(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("returns false when contract is not paused", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().Paused(contractAddress)
+
+		assert.Nil(t, err)
+		assert.False(t, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Paused(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
