@@ -185,3 +185,41 @@ func IsBlacklisted(contractAddress, address string) (bool, error)
 ```go
 isBlacklisted, err := w.StableCoin().IsBlacklisted(contractAddress, "<targetAddress>")
 ```
+
+### Pause & PauseNoWait
+
+Pause all token transfers. Requires the caller to have the pauser role (FiatToken/USDC behavior).
+
+```go
+func Pause(ctx context.Context, contractAddress string, gasLimit *uint64) (*types.Receipt, error)
+func PauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().Pause(context.Background(), contractAddress, nil)
+```
+
+### Unpause & UnpauseNoWait
+
+Resume token transfers. Requires the caller to have the pauser role (FiatToken/USDC behavior).
+
+```go
+func Unpause(ctx context.Context, contractAddress string, gasLimit *uint64) (*types.Receipt, error)
+func UnpauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().Unpause(context.Background(), contractAddress, nil)
+```
+
+### Paused
+
+Check whether the contract is currently paused.
+
+```go
+func Paused(contractAddress string) (bool, error)
+```
+
+```go
+paused, err := w.StableCoin().Paused(contractAddress)
+```

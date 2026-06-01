@@ -472,6 +472,90 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 	})
 }
 
+func TestScenario_StableCoin_FiatToken_Pause(t *testing.T) {
+	t.Run("pause prevents transfer and unpause restores it", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+		assert.Nil(t, err)
+		w.Connect(alchemy.GetProvider())
+
+		ownerAddr := common.HexToAddress(initAddress)
+		fiatTokenMetadata := &artifacts.FiatTokenMetaData
+		err = deployer.BindDeploymentMetadata(fiatTokenMetadata,
+			"USD Coin",
+			"USDC",
+			"USD",
+			uint8(6),
+			ownerAddr,
+			ownerAddr,
+			ownerAddr,
+			ownerAddr,
+		)
+		assert.Nil(t, err)
+
+		contractAddress, err := w.DeployContract(context.Background(), fiatTokenMetadata)
+		assert.Nil(t, err)
+		contractHex := contractAddress.Hex()
+
+		// configure minter and mint tokens for transfer test
+		fiatToken := artifacts.NewFiatToken()
+		configureMinterData := fiatToken.PackConfigureMinter(ownerAddr, big.NewInt(1_000_000))
+		txHash, err := w.SendTransaction(types.TransactionRequest{
+			From:     initAddress,
+			To:       contractHex,
+			Value:    "0x0",
+			GasLimit: 300000,
+			Data:     configureMinterData,
+		})
+		assert.Nil(t, err)
+		_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+		assert.Nil(t, err)
+
+		_, err = w.StableCoin().Mint(context.Background(), contractHex, initAddress, big.NewInt(500_000), nil)
+		assert.Nil(t, err)
+
+		// contract should not be paused initially
+		paused, err := w.StableCoin().Paused(contractHex)
+		assert.Nil(t, err)
+		assert.False(t, paused)
+
+		// pause the contract (initAddress is the pauser in this test setup)
+		receipt, err := w.StableCoin().Pause(context.Background(), contractHex, nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, receipt)
+
+		// contract should now be paused
+		paused, err = w.StableCoin().Paused(contractHex)
+		assert.Nil(t, err)
+		assert.True(t, paused)
+
+		// transfer should fail while paused
+		_, err = w.StableCoin().Transfer(context.Background(), contractHex, otherAddress, big.NewInt(100), nil)
+		assert.Error(t, err, "transfer should fail when contract is paused")
+
+		// unpause the contract
+		receipt, err = w.StableCoin().Unpause(context.Background(), contractHex, nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, receipt)
+
+		// contract should no longer be paused
+		paused, err = w.StableCoin().Paused(contractHex)
+		assert.Nil(t, err)
+		assert.False(t, paused)
+
+		// transfer should succeed after unpause
+		balanceBefore, err := w.StableCoin().BalanceOf(contractHex)
+		assert.Nil(t, err)
+
+		transferAmount := big.NewInt(100)
+		_, err = w.StableCoin().Transfer(context.Background(), contractHex, otherAddress, transferAmount, nil)
+		assert.Nil(t, err)
+
+		balanceAfter, err := w.StableCoin().BalanceOf(contractHex)
+		assert.Nil(t, err)
+		assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
+	})
+}
+
 func TestScenario_SendTransaction(t *testing.T) {
 	w, err := wallet.New(initPrivateKey)
 
