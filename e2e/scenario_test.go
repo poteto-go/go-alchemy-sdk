@@ -387,6 +387,61 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, 0, totalSupply.Cmp(big.NewInt(0)))
 		})
+
+		t.Run("can configure minter and mint tokens", func(t *testing.T) {
+			fiatToken := artifacts.NewFiatToken()
+
+			// configure minter allowance (owner == initAddress in this test setup)
+			configureMinterData := fiatToken.PackConfigureMinter(
+				common.HexToAddress(initAddress),
+				big.NewInt(1_000_000),
+			)
+			txHash, err := w.SendTransaction(types.TransactionRequest{
+				From:     initAddress,
+				To:       contractHex,
+				Value:    "0x0",
+				GasLimit: 300000,
+				Data:     configureMinterData,
+			})
+			assert.Nil(t, err)
+			_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+			assert.Nil(t, err)
+
+			mintAmount := big.NewInt(500_000)
+			receipt, err := w.StableCoin().Mint(
+				context.Background(),
+				contractHex,
+				initAddress,
+				mintAmount,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			totalSupply, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, totalSupply.Cmp(mintAmount))
+		})
+
+		t.Run("can burn tokens", func(t *testing.T) {
+			burnAmount := big.NewInt(100_000)
+
+			supplyBefore, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+
+			receipt, err := w.StableCoin().Burn(
+				context.Background(),
+				contractHex,
+				burnAmount,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			supplyAfter, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, new(big.Int).Sub(supplyBefore, burnAmount).Cmp(supplyAfter))
+		})
 	})
 }
 

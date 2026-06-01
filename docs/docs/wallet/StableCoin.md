@@ -100,3 +100,40 @@ receipt, err := w.StableCoin().TransferFrom(
 	nil,
 )
 ```
+
+### Mint & MintNoWait
+
+Mint StableCoin tokens to an address. Requires the caller to have the minter role (e.g. configured via `configureMinter` on FiatToken/USDC).
+
+```go
+func Mint(ctx context.Context, contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*types.Receipt, error)
+func MintNoWait(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().Mint(
+	context.Background(),
+	contractAddress,
+	"<toAddress>",
+	big.NewInt(100),
+	nil,
+)
+```
+
+### Burn & BurnNoWait
+
+Burn StableCoin tokens from the caller's own balance. Requires the caller to have the minter role (FiatToken/USDC behavior).
+
+```go
+func Burn(ctx context.Context, contractAddress string, amount *big.Int, gasLimit *uint64) (*types.Receipt, error)
+func BurnNoWait(contractAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().Burn(
+	context.Background(),
+	contractAddress,
+	big.NewInt(100),
+	nil,
+)
+```
