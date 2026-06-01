@@ -86,7 +86,6 @@ contract FiatToken {
         pauser = _pauser;
         blacklister = _blacklister;
         owner = _owner;
-        paused = false;
     }
 
     function configureMinter(address minter, uint256 minterAllowedAmount)

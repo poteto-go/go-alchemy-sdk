@@ -16,8 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var fiatTokenContractAddress common.Address
-
 // These are Kurtosis ethereum-package genesis accounts (public test keys, not credentials)
 var initPrivateKey = "bcdf20249abf0ed6d944c0288fad489e33f66b3960d9e6229c1cd214ed3bbe31"
 var initAddress = "0x8943545177806ED17B9F23F0a21ee5948eCaa776"
@@ -364,10 +362,9 @@ func TestScenario_FiatToken(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
-		fiatTokenContractAddress = contractAddress
 
 		t.Run("IsContractAddress is true", func(t *testing.T) {
-			isContractAddress := alchemy.Core.IsContractAddress(fiatTokenContractAddress.Hex())
+			isContractAddress := alchemy.Core.IsContractAddress(contractAddress.Hex())
 
 			assert.True(t, isContractAddress)
 		})
