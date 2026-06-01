@@ -10,4 +10,6 @@ var (
 	NameFnSignature         = []byte("name()")
 	SymbolFnSignature       = []byte("symbol()")
 	DecimalsFnSignature     = []byte("decimals()")
+	MintFnSignature         = []byte("mint(address,uint256)")
+	BurnFnSignature         = []byte("burn(uint256)")
 )
