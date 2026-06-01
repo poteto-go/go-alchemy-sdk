@@ -135,56 +135,35 @@ func resolveGasLimit(gasLimit *uint64) uint64 {
 	return *gasLimit
 }
 
-func (api *walletERC20) TransferNoWait(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
-	provider := api.w.snapshot()
-	if provider == nil {
+func (api *walletERC20) sendERC20Tx(contractAddress string, gasLimit *uint64, sig []byte, params ...[]byte) (common.Hash, error) {
+	if api.w.snapshot() == nil {
 		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}
+	data, err := buildERC20TxData(sig, params...)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	return api.w.SendTransaction(types.TransactionRequest{
+		From:     api.w.GetAddress(),
+		To:       contractAddress,
+		Value:    "0x0",
+		GasLimit: resolveGasLimit(gasLimit),
+		Data:     data,
+	})
+}
 
-	data, err := buildERC20TxData(
-		constant.TransferFnSignature,
+func (api *walletERC20) TransferNoWait(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferFnSignature,
 		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), 32),
 		common.LeftPadBytes(amount.Bytes(), 32),
 	)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	txRequest := types.TransactionRequest{
-		From:     api.w.GetAddress(),
-		To:       contractAddress,
-		Value:    "0x0",
-		GasLimit: resolveGasLimit(gasLimit),
-		Data:     data,
-	}
-
-	return api.w.SendTransaction(txRequest)
 }
 
 func (api *walletERC20) ApproveNoWait(contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
-	provider := api.w.snapshot()
-	if provider == nil {
-		return common.Hash{}, constant.ErrWalletIsNotConnected
-	}
-
-	data, err := buildERC20TxData(
-		constant.ApproveFnSignature,
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.ApproveFnSignature,
 		common.LeftPadBytes(common.HexToAddress(spenderAddress).Bytes(), 32),
 		common.LeftPadBytes(amount.Bytes(), 32),
 	)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	txRequest := types.TransactionRequest{
-		From:     api.w.GetAddress(),
-		To:       contractAddress,
-		Value:    "0x0",
-		GasLimit: resolveGasLimit(gasLimit),
-		Data:     data,
-	}
-
-	return api.w.SendTransaction(txRequest)
 }
 
 func (api *walletERC20) Approve(ctx context.Context, contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
@@ -194,30 +173,11 @@ func (api *walletERC20) Approve(ctx context.Context, contractAddress, spenderAdd
 }
 
 func (api *walletERC20) TransferFromNoWait(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
-	provider := api.w.snapshot()
-	if provider == nil {
-		return common.Hash{}, constant.ErrWalletIsNotConnected
-	}
-
-	data, err := buildERC20TxData(
-		constant.TransferFromFnSignature,
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferFromFnSignature,
 		common.LeftPadBytes(common.HexToAddress(fromAddress).Bytes(), 32),
 		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), 32),
 		common.LeftPadBytes(amount.Bytes(), 32),
 	)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	txRequest := types.TransactionRequest{
-		From:     api.w.GetAddress(),
-		To:       contractAddress,
-		Value:    "0x0",
-		GasLimit: resolveGasLimit(gasLimit),
-		Data:     data,
-	}
-
-	return api.w.SendTransaction(txRequest)
 }
 
 func (api *walletERC20) TransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {

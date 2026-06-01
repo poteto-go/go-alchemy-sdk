@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
-	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 type WalletStableCoin interface {
@@ -47,29 +46,10 @@ type walletStableCoin struct {
 }
 
 func (api *walletStableCoin) MintNoWait(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
-	provider := api.w.snapshot()
-	if provider == nil {
-		return common.Hash{}, constant.ErrWalletIsNotConnected
-	}
-
-	data, err := buildERC20TxData(
-		constant.MintFnSignature,
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.MintFnSignature,
 		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), 32),
 		common.LeftPadBytes(amount.Bytes(), 32),
 	)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	txRequest := types.TransactionRequest{
-		From:     api.w.GetAddress(),
-		To:       contractAddress,
-		Value:    "0x0",
-		GasLimit: resolveGasLimit(gasLimit),
-		Data:     data,
-	}
-
-	return api.w.SendTransaction(txRequest)
 }
 
 func (api *walletStableCoin) Mint(ctx context.Context, contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
@@ -79,28 +59,9 @@ func (api *walletStableCoin) Mint(ctx context.Context, contractAddress, toAddres
 }
 
 func (api *walletStableCoin) BurnNoWait(contractAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
-	provider := api.w.snapshot()
-	if provider == nil {
-		return common.Hash{}, constant.ErrWalletIsNotConnected
-	}
-
-	data, err := buildERC20TxData(
-		constant.BurnFnSignature,
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.BurnFnSignature,
 		common.LeftPadBytes(amount.Bytes(), 32),
 	)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	txRequest := types.TransactionRequest{
-		From:     api.w.GetAddress(),
-		To:       contractAddress,
-		Value:    "0x0",
-		GasLimit: resolveGasLimit(gasLimit),
-		Data:     data,
-	}
-
-	return api.w.SendTransaction(txRequest)
 }
 
 func (api *walletStableCoin) Burn(ctx context.Context, contractAddress string, amount *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
