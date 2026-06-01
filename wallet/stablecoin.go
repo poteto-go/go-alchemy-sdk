@@ -39,6 +39,39 @@ type WalletStableCoin interface {
 			- gas limit is 300000 for default
 	*/
 	BurnNoWait(contractAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		blacklist an address (requires blacklister role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	Blacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		blacklist an address (requires blacklister role)
+			- gas limit is 300000 for default
+	*/
+	BlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		remove an address from the blacklist (requires blacklister role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	UnBlacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		remove an address from the blacklist (requires blacklister role)
+			- gas limit is 300000 for default
+	*/
+	UnBlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		check if an address is blacklisted
+	*/
+	IsBlacklisted(contractAddress, address string) (bool, error)
 }
 
 type walletStableCoin struct {
@@ -68,4 +101,38 @@ func (api *walletStableCoin) Burn(ctx context.Context, contractAddress string, a
 	return api.waitMined(ctx, func() (common.Hash, error) {
 		return api.BurnNoWait(contractAddress, amount, gasLimit)
 	})
+}
+
+func (api *walletStableCoin) blacklistOp(contractAddress, address string, gasLimit *uint64, sig []byte) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, sig,
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+	)
+}
+
+func (api *walletStableCoin) BlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
+	return api.blacklistOp(contractAddress, address, gasLimit, constant.BlacklistFnSignature)
+}
+
+func (api *walletStableCoin) Blacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.BlacklistNoWait(contractAddress, address, gasLimit)
+	})
+}
+
+func (api *walletStableCoin) UnBlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
+	return api.blacklistOp(contractAddress, address, gasLimit, constant.UnBlacklistFnSignature)
+}
+
+func (api *walletStableCoin) UnBlacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.UnBlacklistNoWait(contractAddress, address, gasLimit)
+	})
+}
+
+func (api *walletStableCoin) IsBlacklisted(contractAddress, address string) (bool, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return false, constant.ErrWalletIsNotConnected
+	}
+	return sc.IsBlacklisted(contractAddress, address)
 }

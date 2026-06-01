@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
@@ -205,6 +206,248 @@ func TestWallet_StableCoin_Burn(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		_, err := w.StableCoin().Burn(context.Background(), contractAddress, big.NewInt(50), nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_BlacklistNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	targetAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can blacklist address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		hash, err := w.StableCoin().BlacklistNoWait(contractAddress, targetAddress, nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("handle error on blacklist", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.StableCoin().BlacklistNoWait(contractAddress, targetAddress, nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().BlacklistNoWait(contractAddress, targetAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Blacklist(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	targetAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can blacklist address and wait", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.StableCoin().Blacklist(context.Background(), contractAddress, targetAddress, nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Blacklist(context.Background(), contractAddress, targetAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_UnBlacklistNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	targetAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can unBlacklist address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		hash, err := w.StableCoin().UnBlacklistNoWait(contractAddress, targetAddress, nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("handle error on unBlacklist", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.StableCoin().UnBlacklistNoWait(contractAddress, targetAddress, nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().UnBlacklistNoWait(contractAddress, targetAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_UnBlacklist(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	targetAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can unBlacklist address and wait", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.StableCoin().UnBlacklist(context.Background(), contractAddress, targetAddress, nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().UnBlacklist(context.Background(), contractAddress, targetAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_IsBlacklisted(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	targetAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+
+	t.Run("returns true when address is blacklisted", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		expected[31] = 1
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().IsBlacklisted(contractAddress, targetAddress)
+
+		assert.Nil(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("returns false when address is not blacklisted", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().IsBlacklisted(contractAddress, targetAddress)
+
+		assert.Nil(t, err)
+		assert.False(t, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().IsBlacklisted(contractAddress, targetAddress)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})

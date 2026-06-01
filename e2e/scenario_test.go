@@ -442,6 +442,33 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, 0, new(big.Int).Sub(supplyBefore, burnAmount).Cmp(supplyAfter))
 		})
+
+		t.Run("can blacklist and unBlacklist an address", func(t *testing.T) {
+			// address should not be blacklisted initially
+			isBlacklisted, err := w.StableCoin().IsBlacklisted(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isBlacklisted)
+
+			// blacklist the address (initAddress is the blacklister in this test setup)
+			receipt, err := w.StableCoin().Blacklist(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should now be blacklisted
+			isBlacklisted, err = w.StableCoin().IsBlacklisted(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.True(t, isBlacklisted)
+
+			// unBlacklist the address
+			receipt, err = w.StableCoin().UnBlacklist(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should no longer be blacklisted
+			isBlacklisted, err = w.StableCoin().IsBlacklisted(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isBlacklisted)
+		})
 	})
 }
 

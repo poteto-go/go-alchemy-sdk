@@ -1,9 +1,16 @@
 package namespace
 
-import "github.com/poteto-go/go-alchemy-sdk/types"
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/types"
+)
 
 type IStableCoin interface {
 	IERC20
+
+	// IsBlacklisted returns true if the address is blacklisted on the contract.
+	IsBlacklisted(contractAddress, address string) (bool, error)
 }
 
 type stableCoin struct {
@@ -12,4 +19,16 @@ type stableCoin struct {
 
 func NewStableCoinNamespace(ether types.EtherApi) IStableCoin {
 	return &stableCoin{ERC20: &ERC20{ether: ether}}
+}
+
+func (s *stableCoin) IsBlacklisted(contractAddress, address string) (bool, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.IsBlacklistedFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+	)
+	if err != nil {
+		return false, err
+	}
+	return len(output) > 0 && output[len(output)-1] == 1, nil
 }

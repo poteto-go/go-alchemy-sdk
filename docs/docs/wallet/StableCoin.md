@@ -137,3 +137,51 @@ receipt, err := w.StableCoin().Burn(
 	nil,
 )
 ```
+
+### Blacklist & BlacklistNoWait
+
+Add an address to the blacklist. Requires the caller to have the blacklister role (FiatToken/USDC behavior).
+
+```go
+func Blacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*types.Receipt, error)
+func BlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().Blacklist(
+	context.Background(),
+	contractAddress,
+	"<targetAddress>",
+	nil,
+)
+```
+
+### UnBlacklist & UnBlacklistNoWait
+
+Remove an address from the blacklist. Requires the caller to have the blacklister role (FiatToken/USDC behavior).
+
+```go
+func UnBlacklist(ctx context.Context, contractAddress, address string, gasLimit *uint64) (*types.Receipt, error)
+func UnBlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().UnBlacklist(
+	context.Background(),
+	contractAddress,
+	"<targetAddress>",
+	nil,
+)
+```
+
+### IsBlacklisted
+
+Check whether an address is blacklisted on the contract.
+
+```go
+func IsBlacklisted(contractAddress, address string) (bool, error)
+```
+
+```go
+isBlacklisted, err := w.StableCoin().IsBlacklisted(contractAddress, "<targetAddress>")
+```
