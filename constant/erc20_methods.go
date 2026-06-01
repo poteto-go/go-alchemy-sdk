@@ -15,4 +15,7 @@ var (
 	BlacklistFnSignature     = []byte("blacklist(address)")
 	UnBlacklistFnSignature   = []byte("unBlacklist(address)")
 	IsBlacklistedFnSignature = []byte("isBlacklisted(address)")
+	PauseFnSignature         = []byte("pause()")
+	UnpauseFnSignature       = []byte("unpause()")
+	PausedFnSignature        = []byte("paused()")
 )

@@ -13,6 +13,39 @@ type WalletStableCoin interface {
 	WalletERC20
 
 	/*
+		pause all token transfers (requires pauser role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	Pause(ctx context.Context, contractAddress string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		pause all token transfers (requires pauser role)
+			- gas limit is 300000 for default
+	*/
+	PauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		resume token transfers (requires pauser role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	Unpause(ctx context.Context, contractAddress string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		resume token transfers (requires pauser role)
+			- gas limit is 300000 for default
+	*/
+	UnpauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		check if the contract is currently paused
+	*/
+	Paused(contractAddress string) (bool, error)
+
+	/*
 		mint stablecoin tokens to an address (requires minter role)
 			- wait for mined
 			- gas limit is 300000 for default
@@ -135,4 +168,32 @@ func (api *walletStableCoin) IsBlacklisted(contractAddress, address string) (boo
 		return false, constant.ErrWalletIsNotConnected
 	}
 	return sc.IsBlacklisted(contractAddress, address)
+}
+
+func (api *walletStableCoin) PauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.PauseFnSignature)
+}
+
+func (api *walletStableCoin) Pause(ctx context.Context, contractAddress string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.PauseNoWait(contractAddress, gasLimit)
+	})
+}
+
+func (api *walletStableCoin) UnpauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.UnpauseFnSignature)
+}
+
+func (api *walletStableCoin) Unpause(ctx context.Context, contractAddress string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.UnpauseNoWait(contractAddress, gasLimit)
+	})
+}
+
+func (api *walletStableCoin) Paused(contractAddress string) (bool, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return false, constant.ErrWalletIsNotConnected
+	}
+	return sc.Paused(contractAddress)
 }

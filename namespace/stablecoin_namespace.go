@@ -11,6 +11,9 @@ type IStableCoin interface {
 
 	// IsBlacklisted returns true if the address is blacklisted on the contract.
 	IsBlacklisted(contractAddress, address string) (bool, error)
+
+	// Paused returns the current pause state of the contract.
+	Paused(contractAddress string) (bool, error)
 }
 
 type stableCoin struct {
@@ -26,6 +29,17 @@ func (s *stableCoin) IsBlacklisted(contractAddress, address string) (bool, error
 		constant.IsBlacklistedFnSignature,
 		contractAddress,
 		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+	)
+	if err != nil {
+		return false, err
+	}
+	return len(output) > 0 && output[len(output)-1] == 1, nil
+}
+
+func (s *stableCoin) Paused(contractAddress string) (bool, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.PausedFnSignature,
+		contractAddress,
 	)
 	if err != nil {
 		return false, err
