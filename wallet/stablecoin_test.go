@@ -689,3 +689,131 @@ func TestWallet_StableCoin_Paused(t *testing.T) {
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
 }
+
+func TestWallet_StableCoin_Owner(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	ownerAddress := common.HexToAddress("0xE25583099BA105D9ec0A67f5Ae86D90e50036425")
+
+	t.Run("returns owner address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		copy(expected[12:], ownerAddress.Bytes())
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().Owner(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, ownerAddress, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Owner(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_TransferOwnershipNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	newOwnerAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can transfer ownership", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		hash, err := w.StableCoin().TransferOwnershipNoWait(contractAddress, newOwnerAddress, nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("handle error on transfer ownership", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.StableCoin().TransferOwnershipNoWait(contractAddress, newOwnerAddress, nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().TransferOwnershipNoWait(contractAddress, newOwnerAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_TransferOwnership(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	newOwnerAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can transfer ownership and wait", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.StableCoin().TransferOwnership(context.Background(), contractAddress, newOwnerAddress, nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().TransferOwnership(context.Background(), contractAddress, newOwnerAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}

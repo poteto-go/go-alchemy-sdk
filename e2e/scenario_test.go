@@ -512,6 +512,20 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
 		})
+
+		t.Run("transferOwnership transfers owner to new address", func(t *testing.T) {
+			ownerBefore, err := alchemy.StableCoin.Owner(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), ownerBefore)
+
+			receipt, err := w.StableCoin().TransferOwnership(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			ownerAfter, err := alchemy.StableCoin.Owner(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(otherAddress), ownerAfter)
+		})
 	})
 }
 
