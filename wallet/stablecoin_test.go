@@ -463,16 +463,11 @@ func TestWallet_StableCoin_Currency(t *testing.T) {
 		w := createConnectedWallet()
 		expected := "USD"
 
-		encoded := make([]byte, 96)
-		encoded[31] = 0x20
-		encoded[63] = byte(len(expected))
-		copy(encoded[64:], []byte(expected))
-
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"CallContract",
 			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-				return encoded, nil
+				return encodeABIString(expected), nil
 			},
 		)
 
@@ -501,16 +496,11 @@ func TestWallet_StableCoin_Version(t *testing.T) {
 		w := createConnectedWallet()
 		expected := "1"
 
-		encoded := make([]byte, 96)
-		encoded[31] = 0x20
-		encoded[63] = byte(len(expected))
-		copy(encoded[64:], []byte(expected))
-
 		patches.ApplyMethod(
 			reflect.TypeOf(w.provider.Eth()),
 			"CallContract",
 			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-				return encoded, nil
+				return encodeABIString(expected), nil
 			},
 		)
 

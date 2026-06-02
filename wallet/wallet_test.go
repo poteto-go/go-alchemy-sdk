@@ -28,6 +28,14 @@ var testAddrHexTo = "970e8128ab834e8eac17ab8e3812f010678cf792"
 var testPrivHex = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 var testPrivHexForNew = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232030"
 
+func encodeABIString(s string) []byte {
+	b := make([]byte, 96)
+	b[31] = 0x20
+	b[63] = byte(len(s))
+	copy(b[64:], s)
+	return b
+}
+
 func createConnectedWallet() *wallet {
 	w, _ := New(testPrivHex)
 

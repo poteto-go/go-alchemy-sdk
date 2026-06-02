@@ -143,14 +143,8 @@ func TestERC20_Name(t *testing.T) {
 		erc20 := namespace.NewERC20Namespace(eth)
 		expected := "TestToken"
 
-		// ABI encoded string: offset (32) + length + data
-		encoded := make([]byte, 96)
-		encoded[31] = 0x20
-		encoded[63] = byte(len(expected))
-		copy(encoded[64:], []byte(expected))
-
 		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-			return encoded, nil
+			return encodeABIString(expected), nil
 		})
 
 		res, err := erc20.Name(contractAddress)
@@ -183,14 +177,8 @@ func TestERC20_Symbol(t *testing.T) {
 		erc20 := namespace.NewERC20Namespace(eth)
 		expected := "TEST"
 
-		// ABI encoded string
-		encoded := make([]byte, 96)
-		encoded[31] = 0x20
-		encoded[63] = byte(len(expected))
-		copy(encoded[64:], []byte(expected))
-
 		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-			return encoded, nil
+			return encodeABIString(expected), nil
 		})
 
 		res, err := erc20.Symbol(contractAddress)
