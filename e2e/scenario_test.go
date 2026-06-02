@@ -550,6 +550,40 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, common.HexToAddress(otherAddress), ownerAfter)
 		})
+
+		t.Run("can configure minter, check allowance, and remove minter", func(t *testing.T) {
+			allowance := big.NewInt(5_000_000)
+
+			// address should not be a minter initially
+			isMinter, err := alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isMinter)
+
+			// configure minter with allowance (initAddress is the masterMinter in this test setup)
+			receipt, err := w.StableCoin().ConfigureMinter(context.Background(), contractHex, otherAddress, allowance, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should now be a minter
+			isMinter, err = alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.True(t, isMinter)
+
+			// allowance should match what was configured
+			minterAllowance, err := alchemy.StableCoin.MinterAllowance(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, allowance.Cmp(minterAllowance))
+
+			// remove the minter
+			receipt, err = w.StableCoin().RemoveMinter(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should no longer be a minter
+			isMinter, err = alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isMinter)
+		})
 	})
 }
 
