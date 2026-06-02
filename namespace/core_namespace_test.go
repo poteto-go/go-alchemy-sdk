@@ -44,14 +44,6 @@ func newEtherApi() *ether.Ether {
 	)).(*ether.Ether)
 }
 
-func encodeABIString(s string) []byte {
-	b := make([]byte, 96)
-	b[31] = 0x20
-	b[63] = byte(len(s))
-	copy(b[64:], s)
-	return b
-}
-
 func TestNewCore(t *testing.T) {
 	// Arrange
 	ether := newEtherApi()

@@ -10,6 +10,17 @@ const (
 	abiStringHeaderSize = 64 // offset(32) + length(32)
 )
 
+// EncodeABIString encodes a string into ABI format (offset + length + data).
+func EncodeABIString(s string) []byte {
+	dataLen := len(s)
+	paddedDataLen := ((dataLen + abiWordSize - 1) / abiWordSize) * abiWordSize
+	b := make([]byte, abiStringHeaderSize+paddedDataLen)
+	b[abiWordSize-1] = byte(abiWordSize)     // offset pointing to length field
+	b[abiStringHeaderSize-1] = byte(dataLen) // string length
+	copy(b[abiStringHeaderSize:], s)
+	return b
+}
+
 // DecodeABIString decodes an ABI-encoded string (offset, length, data).
 func DecodeABIString(output []byte) (string, error) {
 	if len(output) < abiStringHeaderSize {

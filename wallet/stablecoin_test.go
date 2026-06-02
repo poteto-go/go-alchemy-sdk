@@ -14,6 +14,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -467,7 +468,7 @@ func TestWallet_StableCoin_Currency(t *testing.T) {
 			reflect.TypeOf(w.provider.Eth()),
 			"CallContract",
 			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-				return encodeABIString(expected), nil
+				return utils.EncodeABIString(expected), nil
 			},
 		)
 
@@ -500,7 +501,7 @@ func TestWallet_StableCoin_Version(t *testing.T) {
 			reflect.TypeOf(w.provider.Eth()),
 			"CallContract",
 			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-				return encodeABIString(expected), nil
+				return utils.EncodeABIString(expected), nil
 			},
 		)
 

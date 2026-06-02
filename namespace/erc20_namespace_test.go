@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -144,7 +145,7 @@ func TestERC20_Name(t *testing.T) {
 		expected := "TestToken"
 
 		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-			return encodeABIString(expected), nil
+			return utils.EncodeABIString(expected), nil
 		})
 
 		res, err := erc20.Name(contractAddress)
@@ -178,7 +179,7 @@ func TestERC20_Symbol(t *testing.T) {
 		expected := "TEST"
 
 		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-			return encodeABIString(expected), nil
+			return utils.EncodeABIString(expected), nil
 		})
 
 		res, err := erc20.Symbol(contractAddress)
