@@ -62,8 +62,8 @@ func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
-	if len(output) < 32 {
+	if len(output) < constant.ABIWordSize {
 		return common.Address{}, nil
 	}
-	return common.BytesToAddress(output[12:32]), nil
+	return common.BytesToAddress(output[constant.ABIAddressOffset:constant.ABIWordSize]), nil
 }
