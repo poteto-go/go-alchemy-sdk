@@ -14,6 +14,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -448,6 +449,72 @@ func TestWallet_StableCoin_IsBlacklisted(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		_, err := w.StableCoin().IsBlacklisted(contractAddress, targetAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Currency(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+
+	t.Run("returns currency string", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := "USD"
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return utils.EncodeABIString(expected), nil
+			},
+		)
+
+		result, err := w.StableCoin().Currency(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Currency(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Version(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+
+	t.Run("returns version string", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := "1"
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return utils.EncodeABIString(expected), nil
+			},
+		)
+
+		result, err := w.StableCoin().Version(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Version(contractAddress)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})

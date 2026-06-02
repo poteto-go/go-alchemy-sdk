@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,6 +77,84 @@ func TestStableCoin_IsBlacklisted(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.False(t, result)
+	})
+}
+
+func TestStableCoin_Currency(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+
+	t.Run("returns currency string", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := "USD"
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return utils.EncodeABIString(expected), nil
+		})
+
+		result, err := sc.Currency(contractAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.Currency(contractAddress)
+
+		assert.Error(t, err)
+		assert.Empty(t, result)
+	})
+}
+
+func TestStableCoin_Version(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+
+	t.Run("returns version string", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := "1"
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return utils.EncodeABIString(expected), nil
+		})
+
+		result, err := sc.Version(contractAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.Version(contractAddress)
+
+		assert.Error(t, err)
+		assert.Empty(t, result)
 	})
 }
 

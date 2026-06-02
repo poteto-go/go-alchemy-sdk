@@ -55,6 +55,8 @@ You can fetch token metadata and balance information:
 - Symbol
 - Decimals
 - BalanceOf
+- Currency
+- Version
 
 ## Write Methods
 
@@ -252,4 +254,28 @@ func Owner(contractAddress string) (common.Address, error)
 
 ```go
 owner, err := w.StableCoin().Owner(contractAddress)
+```
+
+### Currency
+
+Get the currency identifier of the token (e.g. `"USD"`). FiatToken/USDC compatibility.
+
+```go
+func Currency(contractAddress string) (string, error)
+```
+
+```go
+currency, err := w.StableCoin().Currency(contractAddress)
+```
+
+### Version
+
+Get the contract version string. FiatToken/USDC compatibility.
+
+```go
+func Version(contractAddress string) (string, error)
+```
+
+```go
+version, err := w.StableCoin().Version(contractAddress)
 ```

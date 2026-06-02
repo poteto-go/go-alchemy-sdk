@@ -124,6 +124,16 @@ type WalletStableCoin interface {
 			- gas limit is 300000 for default
 	*/
 	TransferOwnershipNoWait(contractAddress, newOwner string, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		get the currency identifier (e.g. "USD")
+	*/
+	Currency(contractAddress string) (string, error)
+
+	/*
+		get the contract version string
+	*/
+	Version(contractAddress string) (string, error)
 }
 
 type walletStableCoin struct {
@@ -233,4 +243,20 @@ func (api *walletStableCoin) TransferOwnership(ctx context.Context, contractAddr
 	return api.waitMined(ctx, func() (common.Hash, error) {
 		return api.TransferOwnershipNoWait(contractAddress, newOwner, gasLimit)
 	})
+}
+
+func (api *walletStableCoin) Currency(contractAddress string) (string, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return "", constant.ErrWalletIsNotConnected
+	}
+	return sc.Currency(contractAddress)
+}
+
+func (api *walletStableCoin) Version(contractAddress string) (string, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return "", constant.ErrWalletIsNotConnected
+	}
+	return sc.Version(contractAddress)
 }
