@@ -16,6 +16,9 @@ type IStableCoin interface {
 	// Paused returns the current pause state of the contract.
 	Paused(contractAddress string) (bool, error)
 
+	// Owner returns the current owner address of the contract.
+	Owner(contractAddress string) (common.Address, error)
+
 	// Currency returns the currency identifier of the token (e.g. "USD").
 	Currency(contractAddress string) (string, error)
 
@@ -78,4 +81,18 @@ func (s *stableCoin) Paused(contractAddress string) (bool, error) {
 		return false, err
 	}
 	return decodeBoolOutput(output), nil
+}
+
+func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.OwnerFnSignature,
+		contractAddress,
+	)
+	if err != nil {
+		return common.Address{}, err
+	}
+	if len(output) < constant.ABIWordSize {
+		return common.Address{}, nil
+	}
+	return common.BytesToAddress(output[constant.ABIAddressOffset:constant.ABIWordSize]), nil
 }

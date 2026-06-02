@@ -226,6 +226,36 @@ func Paused(contractAddress string) (bool, error)
 paused, err := w.StableCoin().Paused(contractAddress)
 ```
 
+### TransferOwnership & TransferOwnershipNoWait
+
+Transfer contract ownership to a new address. Requires the caller to be the current owner (FiatToken/USDC behavior).
+
+```go
+func TransferOwnership(ctx context.Context, contractAddress, newOwner string, gasLimit *uint64) (*types.Receipt, error)
+func TransferOwnershipNoWait(contractAddress, newOwner string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().TransferOwnership(
+	context.Background(),
+	contractAddress,
+	"<newOwnerAddress>",
+	nil,
+)
+```
+
+### Owner
+
+Read the current owner address of the contract.
+
+```go
+func Owner(contractAddress string) (common.Address, error)
+```
+
+```go
+owner, err := w.StableCoin().Owner(contractAddress)
+```
+
 ### Currency
 
 Get the currency identifier of the token (e.g. `"USD"`). FiatToken/USDC compatibility.

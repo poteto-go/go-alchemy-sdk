@@ -107,6 +107,25 @@ type WalletStableCoin interface {
 	IsBlacklisted(contractAddress, address string) (bool, error)
 
 	/*
+		return the current owner address of the contract
+	*/
+	Owner(contractAddress string) (common.Address, error)
+
+	/*
+		transfer contract ownership to a new address (requires owner role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	TransferOwnership(ctx context.Context, contractAddress, newOwner string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		transfer contract ownership to a new address (requires owner role)
+			- gas limit is 300000 for default
+	*/
+	TransferOwnershipNoWait(contractAddress, newOwner string, gasLimit *uint64) (common.Hash, error)
+
+	/*
 		get the currency identifier (e.g. "USD")
 	*/
 	Currency(contractAddress string) (string, error)
@@ -178,6 +197,14 @@ func (api *walletStableCoin) IsBlacklisted(contractAddress, address string) (boo
 	return sc.IsBlacklisted(contractAddress, address)
 }
 
+func (api *walletStableCoin) Owner(contractAddress string) (common.Address, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return common.Address{}, constant.ErrWalletIsNotConnected
+	}
+	return sc.Owner(contractAddress)
+}
+
 func (api *walletStableCoin) PauseNoWait(contractAddress string, gasLimit *uint64) (common.Hash, error) {
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.PauseFnSignature)
 }
@@ -204,6 +231,18 @@ func (api *walletStableCoin) Paused(contractAddress string) (bool, error) {
 		return false, constant.ErrWalletIsNotConnected
 	}
 	return sc.Paused(contractAddress)
+}
+
+func (api *walletStableCoin) TransferOwnershipNoWait(contractAddress, newOwner string, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferOwnershipFnSignature,
+		common.LeftPadBytes(common.HexToAddress(newOwner).Bytes(), 32),
+	)
+}
+
+func (api *walletStableCoin) TransferOwnership(ctx context.Context, contractAddress, newOwner string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.TransferOwnershipNoWait(contractAddress, newOwner, gasLimit)
+	})
 }
 
 func (api *walletStableCoin) Currency(contractAddress string) (string, error) {
