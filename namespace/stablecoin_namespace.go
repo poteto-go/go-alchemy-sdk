@@ -4,6 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
 
 type IStableCoin interface {
@@ -14,6 +15,12 @@ type IStableCoin interface {
 
 	// Paused returns the current pause state of the contract.
 	Paused(contractAddress string) (bool, error)
+
+	// Currency returns the currency identifier of the token (e.g. "USD").
+	Currency(contractAddress string) (string, error)
+
+	// Version returns the contract version string.
+	Version(contractAddress string) (string, error)
 }
 
 type stableCoin struct {
@@ -38,6 +45,28 @@ func (s *stableCoin) IsBlacklisted(contractAddress, address string) (bool, error
 		return false, err
 	}
 	return decodeBoolOutput(output), nil
+}
+
+func (s *stableCoin) Currency(contractAddress string) (string, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.CurrencyFnSignature,
+		contractAddress,
+	)
+	if err != nil {
+		return "", err
+	}
+	return utils.DecodeABIString(output)
+}
+
+func (s *stableCoin) Version(contractAddress string) (string, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.VersionFnSignature,
+		contractAddress,
+	)
+	if err != nil {
+		return "", err
+	}
+	return utils.DecodeABIString(output)
 }
 
 func (s *stableCoin) Paused(contractAddress string) (bool, error) {

@@ -78,6 +78,94 @@ func TestStableCoin_IsBlacklisted(t *testing.T) {
 	})
 }
 
+func TestStableCoin_Currency(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+
+	t.Run("returns currency string", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := "USD"
+
+		encoded := make([]byte, 96)
+		encoded[31] = 0x20
+		encoded[63] = byte(len(expected))
+		copy(encoded[64:], []byte(expected))
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return encoded, nil
+		})
+
+		result, err := sc.Currency(contractAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.Currency(contractAddress)
+
+		assert.Error(t, err)
+		assert.Empty(t, result)
+	})
+}
+
+func TestStableCoin_Version(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+
+	t.Run("returns version string", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := "1"
+
+		encoded := make([]byte, 96)
+		encoded[31] = 0x20
+		encoded[63] = byte(len(expected))
+		copy(encoded[64:], []byte(expected))
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return encoded, nil
+		})
+
+		result, err := sc.Version(contractAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.Version(contractAddress)
+
+		assert.Error(t, err)
+		assert.Empty(t, result)
+	})
+}
+
 func TestStableCoin_Paused(t *testing.T) {
 	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
 

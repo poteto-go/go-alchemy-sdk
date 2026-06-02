@@ -228,4 +228,8 @@ contract FiatToken {
         require(newBlacklister != address(0), "FiatToken: new blacklister is the zero address");
         blacklister = newBlacklister;
     }
+
+    function version() public pure returns (string memory) {
+        return "1";
+    }
 }

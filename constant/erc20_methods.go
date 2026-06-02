@@ -18,4 +18,6 @@ var (
 	PauseFnSignature         = []byte("pause()")
 	UnpauseFnSignature       = []byte("unpause()")
 	PausedFnSignature        = []byte("paused()")
+	CurrencyFnSignature      = []byte("currency()")
+	VersionFnSignature       = []byte("version()")
 )
