@@ -397,15 +397,17 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 		})
 
 		t.Run("can read role addresses via StableCoin", func(t *testing.T) {
-			masterMinter, err := w.StableCoin().MasterMinter(contractHex)
+			sc := w.StableCoin()
+
+			masterMinter, err := sc.MasterMinter(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, common.HexToAddress(initAddress), masterMinter)
 
-			pauser, err := w.StableCoin().Pauser(contractHex)
+			pauser, err := sc.Pauser(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, common.HexToAddress(initAddress), pauser)
 
-			blacklister, err := w.StableCoin().Blacklister(contractHex)
+			blacklister, err := sc.Blacklister(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, common.HexToAddress(initAddress), blacklister)
 		})

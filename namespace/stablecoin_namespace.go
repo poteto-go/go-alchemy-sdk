@@ -92,19 +92,12 @@ func (s *stableCoin) Paused(contractAddress string) (bool, error) {
 	return decodeBoolOutput(output), nil
 }
 
-func (s *stableCoin) decodeAddressOutput(output []byte) (common.Address, error) {
-	if len(output) < constant.ABIWordSize {
-		return common.Address{}, nil
-	}
-	return common.BytesToAddress(output[constant.ABIAddressOffset:constant.ABIWordSize]), nil
-}
-
 func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
 	output, err := s.ether.CallReadMethod(constant.OwnerFnSignature, contractAddress)
 	if err != nil {
 		return common.Address{}, err
 	}
-	return s.decodeAddressOutput(output)
+	return utils.DecodeABIAddress(output), nil
 }
 
 func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error) {
@@ -112,7 +105,7 @@ func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error
 	if err != nil {
 		return common.Address{}, err
 	}
-	return s.decodeAddressOutput(output)
+	return utils.DecodeABIAddress(output), nil
 }
 
 func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
@@ -120,7 +113,7 @@ func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
-	return s.decodeAddressOutput(output)
+	return utils.DecodeABIAddress(output), nil
 }
 
 func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error) {
@@ -128,5 +121,5 @@ func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error)
 	if err != nil {
 		return common.Address{}, err
 	}
-	return s.decodeAddressOutput(output)
+	return utils.DecodeABIAddress(output), nil
 }
