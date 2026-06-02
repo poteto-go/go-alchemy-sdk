@@ -521,6 +521,24 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
 		})
 
+		t.Run("can update master minter", func(t *testing.T) {
+			receipt, err := w.StableCoin().UpdateMasterMinter(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+		})
+
+		t.Run("can update blacklister", func(t *testing.T) {
+			receipt, err := w.StableCoin().UpdateBlacklister(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+		})
+
+		t.Run("can update pauser", func(t *testing.T) {
+			receipt, err := w.StableCoin().UpdatePauser(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+		})
+
 		t.Run("transferOwnership transfers owner to new address", func(t *testing.T) {
 			ownerBefore, err := alchemy.StableCoin.Owner(contractHex)
 			assert.Nil(t, err)
