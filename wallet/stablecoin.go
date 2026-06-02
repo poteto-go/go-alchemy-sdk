@@ -105,6 +105,16 @@ type WalletStableCoin interface {
 		check if an address is blacklisted
 	*/
 	IsBlacklisted(contractAddress, address string) (bool, error)
+
+	/*
+		get the currency identifier (e.g. "USD")
+	*/
+	Currency(contractAddress string) (string, error)
+
+	/*
+		get the contract version string
+	*/
+	Version(contractAddress string) (string, error)
 }
 
 type walletStableCoin struct {
@@ -194,4 +204,20 @@ func (api *walletStableCoin) Paused(contractAddress string) (bool, error) {
 		return false, constant.ErrWalletIsNotConnected
 	}
 	return sc.Paused(contractAddress)
+}
+
+func (api *walletStableCoin) Currency(contractAddress string) (string, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return "", constant.ErrWalletIsNotConnected
+	}
+	return sc.Currency(contractAddress)
+}
+
+func (api *walletStableCoin) Version(contractAddress string) (string, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return "", constant.ErrWalletIsNotConnected
+	}
+	return sc.Version(contractAddress)
 }

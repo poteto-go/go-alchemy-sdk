@@ -453,6 +453,82 @@ func TestWallet_StableCoin_IsBlacklisted(t *testing.T) {
 	})
 }
 
+func TestWallet_StableCoin_Currency(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+
+	t.Run("returns currency string", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := "USD"
+
+		encoded := make([]byte, 96)
+		encoded[31] = 0x20
+		encoded[63] = byte(len(expected))
+		copy(encoded[64:], []byte(expected))
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return encoded, nil
+			},
+		)
+
+		result, err := w.StableCoin().Currency(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Currency(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Version(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+
+	t.Run("returns version string", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := "1"
+
+		encoded := make([]byte, 96)
+		encoded[31] = 0x20
+		encoded[63] = byte(len(expected))
+		copy(encoded[64:], []byte(expected))
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return encoded, nil
+			},
+		)
+
+		result, err := w.StableCoin().Version(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Version(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
 func TestWallet_StableCoin_PauseNoWait(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	expectedHash := common.HexToHash("0x123")
