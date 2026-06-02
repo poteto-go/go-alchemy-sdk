@@ -375,3 +375,103 @@ func TestStableCoin_Owner(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestStableCoin_IsMinter(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+	minterAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
+
+	t.Run("returns true when address is a minter", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+		expected[31] = 1
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.IsMinter(contractAddress, minterAddress)
+
+		assert.NoError(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("returns false when address is not a minter", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.IsMinter(contractAddress, minterAddress)
+
+		assert.NoError(t, err)
+		assert.False(t, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.IsMinter(contractAddress, minterAddress)
+
+		assert.Error(t, err)
+		assert.False(t, result)
+	})
+}
+
+func TestStableCoin_MinterAllowance(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+	minterAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
+
+	t.Run("returns minter allowance", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+		expected[31] = 100
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.MinterAllowance(contractAddress, minterAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, int64(100), result.Int64())
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.MinterAllowance(contractAddress, minterAddress)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}

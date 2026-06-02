@@ -25,4 +25,8 @@ var (
 	MasterMinterFnSignature      = []byte("masterMinter()")
 	PauserFnSignature            = []byte("pauser()")
 	BlacklisterFnSignature       = []byte("blacklister()")
+	ConfigureMinterFnSignature   = []byte("configureMinter(address,uint256)")
+	RemoveMinterFnSignature      = []byte("removeMinter(address)")
+	MinterAllowanceFnSignature   = []byte("minterAllowance(address)")
+	IsMinterFnSignature          = []byte("isMinter(address)")
 )

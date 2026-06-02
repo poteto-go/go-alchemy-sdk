@@ -1,6 +1,8 @@
 package namespace
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -33,6 +35,12 @@ type IStableCoin interface {
 
 	// Version returns the contract version string.
 	Version(contractAddress string) (string, error)
+
+	// IsMinter returns true if the address is a configured minter.
+	IsMinter(contractAddress, address string) (bool, error)
+
+	// MinterAllowance returns the remaining mint allowance for the given minter.
+	MinterAllowance(contractAddress, address string) (*big.Int, error)
 }
 
 type stableCoin struct {
@@ -122,4 +130,28 @@ func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error)
 		return common.Address{}, err
 	}
 	return utils.DecodeABIAddress(output)
+}
+
+func (s *stableCoin) IsMinter(contractAddress, address string) (bool, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.IsMinterFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+	)
+	if err != nil {
+		return false, err
+	}
+	return decodeBoolOutput(output), nil
+}
+
+func (s *stableCoin) MinterAllowance(contractAddress, address string) (*big.Int, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.MinterAllowanceFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return new(big.Int).SetBytes(output), nil
 }
