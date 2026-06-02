@@ -216,6 +216,126 @@ func TestStableCoin_Paused(t *testing.T) {
 	})
 }
 
+func TestStableCoin_MasterMinter(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+	masterMinterAddress := common.HexToAddress("0xabcdef1234567890abcdef1234567890abcdef12")
+
+	t.Run("returns master minter address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+		copy(expected[12:], masterMinterAddress.Bytes())
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.MasterMinter(contractAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, masterMinterAddress, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		_, err := sc.MasterMinter(contractAddress)
+
+		assert.Error(t, err)
+	})
+}
+
+func TestStableCoin_Pauser(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+	pauserAddress := common.HexToAddress("0xabcdef1234567890abcdef1234567890abcdef12")
+
+	t.Run("returns pauser address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+		copy(expected[12:], pauserAddress.Bytes())
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.Pauser(contractAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, pauserAddress, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		_, err := sc.Pauser(contractAddress)
+
+		assert.Error(t, err)
+	})
+}
+
+func TestStableCoin_Blacklister(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+	blacklisterAddress := common.HexToAddress("0xabcdef1234567890abcdef1234567890abcdef12")
+
+	t.Run("returns blacklister address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+		copy(expected[12:], blacklisterAddress.Bytes())
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.Blacklister(contractAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, blacklisterAddress, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		_, err := sc.Blacklister(contractAddress)
+
+		assert.Error(t, err)
+	})
+}
+
 func TestStableCoin_Owner(t *testing.T) {
 	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
 	ownerAddress := common.HexToAddress("0xabcdef1234567890abcdef1234567890abcdef12")

@@ -22,4 +22,7 @@ var (
 	OwnerFnSignature             = []byte("owner()")
 	CurrencyFnSignature          = []byte("currency()")
 	VersionFnSignature           = []byte("version()")
+	MasterMinterFnSignature      = []byte("masterMinter()")
+	PauserFnSignature            = []byte("pauser()")
+	BlacklisterFnSignature       = []byte("blacklister()")
 )
