@@ -57,6 +57,10 @@ You can fetch token metadata and balance information:
 - BalanceOf
 - Currency
 - Version
+- MasterMinter
+- Pauser
+- Blacklister
+- Owner
 
 ## Write Methods
 
@@ -242,6 +246,42 @@ receipt, err := w.StableCoin().TransferOwnership(
 	"<newOwnerAddress>",
 	nil,
 )
+```
+
+### MasterMinter
+
+Get the master minter address of the contract. FiatToken/USDC compatibility.
+
+```go
+func MasterMinter(contractAddress string) (common.Address, error)
+```
+
+```go
+masterMinter, err := w.StableCoin().MasterMinter(contractAddress)
+```
+
+### Pauser
+
+Get the pauser address of the contract. FiatToken/USDC compatibility.
+
+```go
+func Pauser(contractAddress string) (common.Address, error)
+```
+
+```go
+pauser, err := w.StableCoin().Pauser(contractAddress)
+```
+
+### Blacklister
+
+Get the blacklister address of the contract. FiatToken/USDC compatibility.
+
+```go
+func Blacklister(contractAddress string) (common.Address, error)
+```
+
+```go
+blacklister, err := w.StableCoin().Blacklister(contractAddress)
 ```
 
 ### Owner

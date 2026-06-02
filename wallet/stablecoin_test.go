@@ -757,6 +757,111 @@ func TestWallet_StableCoin_Paused(t *testing.T) {
 	})
 }
 
+func TestWallet_StableCoin_MasterMinter(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	masterMinterAddress := common.HexToAddress("0xE25583099BA105D9ec0A67f5Ae86D90e50036425")
+
+	t.Run("returns master minter address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		copy(expected[12:], masterMinterAddress.Bytes())
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().MasterMinter(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, masterMinterAddress, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().MasterMinter(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Pauser(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	pauserAddress := common.HexToAddress("0xE25583099BA105D9ec0A67f5Ae86D90e50036425")
+
+	t.Run("returns pauser address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		copy(expected[12:], pauserAddress.Bytes())
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().Pauser(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, pauserAddress, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Pauser(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Blacklister(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	blacklisterAddress := common.HexToAddress("0xE25583099BA105D9ec0A67f5Ae86D90e50036425")
+
+	t.Run("returns blacklister address", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		copy(expected[12:], blacklisterAddress.Bytes())
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().Blacklister(contractAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, blacklisterAddress, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Blacklister(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
 func TestWallet_StableCoin_Owner(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	ownerAddress := common.HexToAddress("0xE25583099BA105D9ec0A67f5Ae86D90e50036425")

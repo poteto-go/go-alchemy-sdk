@@ -19,6 +19,15 @@ type IStableCoin interface {
 	// Owner returns the current owner address of the contract.
 	Owner(contractAddress string) (common.Address, error)
 
+	// MasterMinter returns the master minter address of the contract.
+	MasterMinter(contractAddress string) (common.Address, error)
+
+	// Pauser returns the pauser address of the contract.
+	Pauser(contractAddress string) (common.Address, error)
+
+	// Blacklister returns the blacklister address of the contract.
+	Blacklister(contractAddress string) (common.Address, error)
+
 	// Currency returns the currency identifier of the token (e.g. "USD").
 	Currency(contractAddress string) (string, error)
 
@@ -84,15 +93,33 @@ func (s *stableCoin) Paused(contractAddress string) (bool, error) {
 }
 
 func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
-	output, err := s.ether.CallReadMethod(
-		constant.OwnerFnSignature,
-		contractAddress,
-	)
+	output, err := s.ether.CallReadMethod(constant.OwnerFnSignature, contractAddress)
 	if err != nil {
 		return common.Address{}, err
 	}
-	if len(output) < constant.ABIWordSize {
-		return common.Address{}, nil
+	return utils.DecodeABIAddress(output)
+}
+
+func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error) {
+	output, err := s.ether.CallReadMethod(constant.MasterMinterFnSignature, contractAddress)
+	if err != nil {
+		return common.Address{}, err
 	}
-	return common.BytesToAddress(output[constant.ABIAddressOffset:constant.ABIWordSize]), nil
+	return utils.DecodeABIAddress(output)
+}
+
+func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
+	output, err := s.ether.CallReadMethod(constant.PauserFnSignature, contractAddress)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return utils.DecodeABIAddress(output)
+}
+
+func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error) {
+	output, err := s.ether.CallReadMethod(constant.BlacklisterFnSignature, contractAddress)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return utils.DecodeABIAddress(output)
 }

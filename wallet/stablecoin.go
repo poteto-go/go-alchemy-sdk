@@ -107,6 +107,21 @@ type WalletStableCoin interface {
 	IsBlacklisted(contractAddress, address string) (bool, error)
 
 	/*
+		return the master minter address of the contract
+	*/
+	MasterMinter(contractAddress string) (common.Address, error)
+
+	/*
+		return the pauser address of the contract
+	*/
+	Pauser(contractAddress string) (common.Address, error)
+
+	/*
+		return the blacklister address of the contract
+	*/
+	Blacklister(contractAddress string) (common.Address, error)
+
+	/*
 		return the current owner address of the contract
 	*/
 	Owner(contractAddress string) (common.Address, error)
@@ -195,6 +210,30 @@ func (api *walletStableCoin) IsBlacklisted(contractAddress, address string) (boo
 		return false, constant.ErrWalletIsNotConnected
 	}
 	return sc.IsBlacklisted(contractAddress, address)
+}
+
+func (api *walletStableCoin) MasterMinter(contractAddress string) (common.Address, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return common.Address{}, constant.ErrWalletIsNotConnected
+	}
+	return sc.MasterMinter(contractAddress)
+}
+
+func (api *walletStableCoin) Pauser(contractAddress string) (common.Address, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return common.Address{}, constant.ErrWalletIsNotConnected
+	}
+	return sc.Pauser(contractAddress)
+}
+
+func (api *walletStableCoin) Blacklister(contractAddress string) (common.Address, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return common.Address{}, constant.ErrWalletIsNotConnected
+	}
+	return sc.Blacklister(contractAddress)
 }
 
 func (api *walletStableCoin) Owner(contractAddress string) (common.Address, error) {
