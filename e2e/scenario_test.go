@@ -386,6 +386,14 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			totalSupply, err := w.StableCoin().TotalSupply(contractHex)
 			assert.Nil(t, err)
 			assert.Equal(t, 0, totalSupply.Cmp(big.NewInt(0)))
+
+			currency, err := w.StableCoin().Currency(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "USD", currency)
+
+			version, err := w.StableCoin().Version(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "1", version)
 		})
 
 		t.Run("can configure minter and mint tokens", func(t *testing.T) {
