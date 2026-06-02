@@ -134,6 +134,48 @@ type WalletStableCoin interface {
 		get the contract version string
 	*/
 	Version(contractAddress string) (string, error)
+
+	/*
+		update the master minter address (requires owner role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	UpdateMasterMinter(ctx context.Context, contractAddress, newMasterMinter string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		update the master minter address (requires owner role)
+			- gas limit is 300000 for default
+	*/
+	UpdateMasterMinterNoWait(contractAddress, newMasterMinter string, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		update the blacklister address (requires owner role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	UpdateBlacklister(ctx context.Context, contractAddress, newBlacklister string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		update the blacklister address (requires owner role)
+			- gas limit is 300000 for default
+	*/
+	UpdateBlacklisterNoWait(contractAddress, newBlacklister string, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		update the pauser address (requires owner role)
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	UpdatePauser(ctx context.Context, contractAddress, newPauser string, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		update the pauser address (requires owner role)
+			- gas limit is 300000 for default
+	*/
+	UpdatePauserNoWait(contractAddress, newPauser string, gasLimit *uint64) (common.Hash, error)
 }
 
 type walletStableCoin struct {
@@ -259,4 +301,40 @@ func (api *walletStableCoin) Version(contractAddress string) (string, error) {
 		return "", constant.ErrWalletIsNotConnected
 	}
 	return sc.Version(contractAddress)
+}
+
+func (api *walletStableCoin) UpdateMasterMinterNoWait(contractAddress, newMasterMinter string, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.UpdateMasterMinterFnSignature,
+		common.LeftPadBytes(common.HexToAddress(newMasterMinter).Bytes(), 32),
+	)
+}
+
+func (api *walletStableCoin) UpdateMasterMinter(ctx context.Context, contractAddress, newMasterMinter string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.UpdateMasterMinterNoWait(contractAddress, newMasterMinter, gasLimit)
+	})
+}
+
+func (api *walletStableCoin) UpdateBlacklisterNoWait(contractAddress, newBlacklister string, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.UpdateBlacklisterFnSignature,
+		common.LeftPadBytes(common.HexToAddress(newBlacklister).Bytes(), 32),
+	)
+}
+
+func (api *walletStableCoin) UpdateBlacklister(ctx context.Context, contractAddress, newBlacklister string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.UpdateBlacklisterNoWait(contractAddress, newBlacklister, gasLimit)
+	})
+}
+
+func (api *walletStableCoin) UpdatePauserNoWait(contractAddress, newPauser string, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.UpdatePauserFnSignature,
+		common.LeftPadBytes(common.HexToAddress(newPauser).Bytes(), 32),
+	)
+}
+
+func (api *walletStableCoin) UpdatePauser(ctx context.Context, contractAddress, newPauser string, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.UpdatePauserNoWait(contractAddress, newPauser, gasLimit)
+	})
 }
