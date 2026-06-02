@@ -20,11 +20,11 @@ func EncodeABIString(s string) []byte {
 }
 
 // DecodeABIAddress decodes an ABI-encoded address (left-padded 32-byte word).
-func DecodeABIAddress(output []byte) common.Address {
+func DecodeABIAddress(output []byte) (common.Address, error) {
 	if len(output) < constant.ABIWordSize {
-		return common.Address{}
+		return common.Address{}, fmt.Errorf("invalid ABI address: output too short, got %d bytes", len(output))
 	}
-	return common.BytesToAddress(output[constant.ABIAddressOffset:constant.ABIWordSize])
+	return common.BytesToAddress(output[constant.ABIAddressOffset:constant.ABIWordSize]), nil
 }
 
 // DecodeABIString decodes an ABI-encoded string (offset, length, data).

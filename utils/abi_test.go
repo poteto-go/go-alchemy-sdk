@@ -16,15 +16,16 @@ func TestDecodeABIAddress(t *testing.T) {
 		input := make([]byte, 32)
 		copy(input[12:], addr.Bytes())
 
-		result := utils.DecodeABIAddress(input)
+		result, err := utils.DecodeABIAddress(input)
 
+		assert.NoError(t, err)
 		assert.Equal(t, addr, result)
 	})
 
-	t.Run("returns zero address for short input", func(t *testing.T) {
-		result := utils.DecodeABIAddress([]byte{0x01})
+	t.Run("returns error for short input", func(t *testing.T) {
+		_, err := utils.DecodeABIAddress([]byte{0x01})
 
-		assert.Equal(t, common.Address{}, result)
+		assert.Error(t, err)
 	})
 }
 

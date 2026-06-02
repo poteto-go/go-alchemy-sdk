@@ -97,7 +97,7 @@ func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
-	return utils.DecodeABIAddress(output), nil
+	return utils.DecodeABIAddress(output)
 }
 
 func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error) {
@@ -105,7 +105,7 @@ func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error
 	if err != nil {
 		return common.Address{}, err
 	}
-	return utils.DecodeABIAddress(output), nil
+	return utils.DecodeABIAddress(output)
 }
 
 func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
@@ -113,7 +113,7 @@ func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
-	return utils.DecodeABIAddress(output), nil
+	return utils.DecodeABIAddress(output)
 }
 
 func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error) {
@@ -121,5 +121,5 @@ func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error)
 	if err != nil {
 		return common.Address{}, err
 	}
-	return utils.DecodeABIAddress(output), nil
+	return utils.DecodeABIAddress(output)
 }
