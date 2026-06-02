@@ -3,6 +3,7 @@ package utils_test
 import (
 	"testing"
 
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,8 +41,8 @@ func TestDecodeABIString(t *testing.T) {
 	})
 
 	t.Run("length mismatch", func(t *testing.T) {
-		encoded := make([]byte, utils.ABIStringHeaderSize)
-		encoded[utils.ABIStringHeaderSize-1] = 100 // Declared length 100, no data follows
+		encoded := make([]byte, constant.ABIStringHeaderSize)
+		encoded[constant.ABIStringHeaderSize-1] = 100 // Declared length 100, no data follows
 		_, err := utils.DecodeABIString(encoded)
 		assert.Error(t, err)
 	})

@@ -3,37 +3,32 @@ package utils
 import (
 	"fmt"
 	"math/big"
-)
 
-const (
-	// ABIWordSize is the byte length of one ABI-encoded word.
-	ABIWordSize = 32
-	// ABIStringHeaderSize is the byte length of the offset + length header for an ABI string.
-	ABIStringHeaderSize = ABIWordSize * 2
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 )
 
 // EncodeABIString encodes a string into ABI format (offset + length + data).
 func EncodeABIString(s string) []byte {
 	dataLen := len(s)
-	paddedDataLen := ((dataLen + ABIWordSize - 1) / ABIWordSize) * ABIWordSize
-	b := make([]byte, ABIStringHeaderSize+paddedDataLen)
-	b[ABIWordSize-1] = byte(ABIWordSize)     // offset pointing to length field
-	b[ABIStringHeaderSize-1] = byte(dataLen) // string length
-	copy(b[ABIStringHeaderSize:], s)
+	paddedDataLen := ((dataLen + constant.ABIWordSize - 1) / constant.ABIWordSize) * constant.ABIWordSize
+	b := make([]byte, constant.ABIStringHeaderSize+paddedDataLen)
+	b[constant.ABIWordSize-1] = byte(constant.ABIWordSize) // offset pointing to length field
+	b[constant.ABIStringHeaderSize-1] = byte(dataLen)      // string length
+	copy(b[constant.ABIStringHeaderSize:], s)
 	return b
 }
 
 // DecodeABIString decodes an ABI-encoded string (offset, length, data).
 func DecodeABIString(output []byte) (string, error) {
-	if len(output) < ABIStringHeaderSize {
+	if len(output) < constant.ABIStringHeaderSize {
 		return "", fmt.Errorf("invalid ABI string: output too short, got %d bytes", len(output))
 	}
 
-	length := new(big.Int).SetBytes(output[ABIWordSize : ABIWordSize*2]).Int64()
+	length := new(big.Int).SetBytes(output[constant.ABIWordSize : constant.ABIWordSize*2]).Int64()
 
-	if int64(len(output)) < ABIStringHeaderSize+length {
-		return "", fmt.Errorf("invalid ABI string: declared length %d exceeds output size %d", length, len(output)-ABIStringHeaderSize)
+	if int64(len(output)) < constant.ABIStringHeaderSize+length {
+		return "", fmt.Errorf("invalid ABI string: declared length %d exceeds output size %d", length, len(output)-constant.ABIStringHeaderSize)
 	}
 
-	return string(output[ABIStringHeaderSize : ABIStringHeaderSize+length]), nil
+	return string(output[constant.ABIStringHeaderSize : constant.ABIStringHeaderSize+length]), nil
 }
