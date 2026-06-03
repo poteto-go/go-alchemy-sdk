@@ -232,6 +232,60 @@ func Paused(contractAddress string) (bool, error)
 paused, err := w.StableCoin().Paused(contractAddress)
 ```
 
+### UpdateMasterMinter & UpdateMasterMinterNoWait
+
+Update the master minter address. Requires the caller to be the current owner (FiatToken/USDC behavior).
+
+```go
+func UpdateMasterMinter(ctx context.Context, contractAddress, newMasterMinter string, gasLimit *uint64) (*types.Receipt, error)
+func UpdateMasterMinterNoWait(contractAddress, newMasterMinter string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().UpdateMasterMinter(
+	context.Background(),
+	contractAddress,
+	"<newMasterMinterAddress>",
+	nil,
+)
+```
+
+### UpdateBlacklister & UpdateBlacklisterNoWait
+
+Update the blacklister address. Requires the caller to be the current owner (FiatToken/USDC behavior).
+
+```go
+func UpdateBlacklister(ctx context.Context, contractAddress, newBlacklister string, gasLimit *uint64) (*types.Receipt, error)
+func UpdateBlacklisterNoWait(contractAddress, newBlacklister string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().UpdateBlacklister(
+	context.Background(),
+	contractAddress,
+	"<newBlacklisterAddress>",
+	nil,
+)
+```
+
+### UpdatePauser & UpdatePauserNoWait
+
+Update the pauser address. Requires the caller to be the current owner (FiatToken/USDC behavior).
+
+```go
+func UpdatePauser(ctx context.Context, contractAddress, newPauser string, gasLimit *uint64) (*types.Receipt, error)
+func UpdatePauserNoWait(contractAddress, newPauser string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().UpdatePauser(
+	context.Background(),
+	contractAddress,
+	"<newPauserAddress>",
+	nil,
+)
+```
+
 ### TransferOwnership & TransferOwnershipNoWait
 
 Transfer contract ownership to a new address. Requires the caller to be the current owner (FiatToken/USDC behavior).
