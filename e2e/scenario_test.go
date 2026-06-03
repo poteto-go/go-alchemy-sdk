@@ -644,6 +644,19 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, common.HexToAddress(otherAddress), ownerAfter)
 		})
+
+		t.Run("EIP-2612: nonces returns 0 for new owner", func(t *testing.T) {
+			nonce, err := alchemy.StableCoin.Nonces(contractHex, initAddress)
+
+			assert.Nil(t, err)
+			assert.Equal(t, int64(0), nonce.Int64())
+		})
+
+		t.Run("EIP-2612: domain separator returns error for contract without EIP-2612 support", func(t *testing.T) {
+			_, err := alchemy.StableCoin.DomainSeparator(contractHex)
+
+			assert.Error(t, err)
+		})
 	})
 }
 
