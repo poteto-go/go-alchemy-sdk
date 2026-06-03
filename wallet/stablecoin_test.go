@@ -18,8 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ WalletStableCoin = (*walletStableCoin)(nil)
-
 func TestWallet_StableCoin(t *testing.T) {
 	t.Run("returns WalletStableCoin", func(t *testing.T) {
 		w := createConnectedWallet()

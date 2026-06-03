@@ -8,13 +8,12 @@ import (
 	"github.com/agiledragon/gomonkey"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/wallet"
 	"github.com/stretchr/testify/assert"
 )
 
 // Mock wallet implementation for test
 type mockWallet struct {
-	wallet.Wallet
+	types.Wallet
 }
 
 func (m *mockWallet) ContractCall(

@@ -11,8 +11,6 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-type WalletERC20 = types.WalletERC20
-
 type walletERC20 struct {
 	w *wallet
 }

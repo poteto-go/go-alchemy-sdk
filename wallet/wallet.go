@@ -21,8 +21,6 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
 
-type Wallet = types.Wallet
-
 type wallet struct {
 	privateKey *ecdsa.PrivateKey
 	publicKey  *ecdsa.PublicKey
@@ -38,7 +36,7 @@ type wallet struct {
 	stablecoin namespace.IStableCoin
 }
 
-func New(privateKeyStr string) (Wallet, error) {
+func New(privateKeyStr string) (types.Wallet, error) {
 	privateKeyStr = strings.TrimPrefix(privateKeyStr, "0x")
 
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
@@ -296,11 +294,11 @@ func (w *wallet) ContractCall(
 	return provider.Eth().ContractCall(contract, addr, opts, callData, unpack)
 }
 
-func (w *wallet) ERC20() WalletERC20 {
+func (w *wallet) ERC20() types.WalletERC20 {
 	return &walletERC20{w: w}
 }
 
-func (w *wallet) StableCoin() WalletStableCoin {
+func (w *wallet) StableCoin() types.WalletStableCoin {
 	return &walletStableCoin{walletERC20{w: w}}
 }
 

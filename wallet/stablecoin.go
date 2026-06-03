@@ -7,16 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
-	"github.com/poteto-go/go-alchemy-sdk/types"
 )
-
-type StableCoinMinting = types.StableCoinMinting
-type StableCoinPausing = types.StableCoinPausing
-type StableCoinBlacklisting = types.StableCoinBlacklisting
-type StableCoinMinterAdmin = types.StableCoinMinterAdmin
-type StableCoinRoleAdmin = types.StableCoinRoleAdmin
-type StableCoinInfo = types.StableCoinInfo
-type WalletStableCoin = types.WalletStableCoin
 
 type walletStableCoin struct {
 	walletERC20
