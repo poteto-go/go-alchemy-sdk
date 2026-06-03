@@ -77,6 +77,12 @@ func (api *walletERC20) sendERC20Tx(contractAddress string, gasLimit *uint64, si
 }
 
 func (api *walletERC20) TransferNoWait(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(toAddress); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateUint256(amount); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferFnSignature,
 		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(amount.Bytes(), constant.ABIWordSize),
@@ -84,6 +90,12 @@ func (api *walletERC20) TransferNoWait(contractAddress, toAddress string, amount
 }
 
 func (api *walletERC20) ApproveNoWait(contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(spenderAddress); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateUint256(amount); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.ApproveFnSignature,
 		common.LeftPadBytes(common.HexToAddress(spenderAddress).Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(amount.Bytes(), constant.ABIWordSize),
@@ -97,6 +109,15 @@ func (api *walletERC20) Approve(ctx context.Context, contractAddress, spenderAdd
 }
 
 func (api *walletERC20) TransferFromNoWait(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(fromAddress); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateAddress(toAddress); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateUint256(amount); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferFromFnSignature,
 		common.LeftPadBytes(common.HexToAddress(fromAddress).Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), constant.ABIWordSize),

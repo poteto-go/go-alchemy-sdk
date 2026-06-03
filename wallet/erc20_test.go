@@ -372,6 +372,22 @@ func TestWallet_ERC20ApproveNoWait(t *testing.T) {
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
+
+	t.Run("invalid address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().ApproveNoWait(contractAddress, "invalid", big.NewInt(1), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("nil amount returns ErrNilAmount", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().ApproveNoWait(contractAddress, spenderAddress, nil, nil)
+
+		assert.ErrorIs(t, err, constant.ErrNilAmount)
+	})
 }
 
 func TestWallet_ERC20TransferFrom(t *testing.T) {
@@ -487,6 +503,30 @@ func TestWallet_ERC20TransferFromNoWait(t *testing.T) {
 		_, err := w.ERC20().TransferFromNoWait(contractAddress, fromAddress, toAddress, big.NewInt(1), nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("invalid from-address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().TransferFromNoWait(contractAddress, "invalid", toAddress, big.NewInt(1), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("invalid to-address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().TransferFromNoWait(contractAddress, fromAddress, "invalid", big.NewInt(1), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("nil amount returns ErrNilAmount", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().TransferFromNoWait(contractAddress, fromAddress, toAddress, nil, nil)
+
+		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
 }
 

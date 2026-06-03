@@ -15,6 +15,12 @@ type walletStableCoin struct {
 }
 
 func (api *walletStableCoin) MintNoWait(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(toAddress); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateUint256(amount); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.MintFnSignature,
 		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(amount.Bytes(), constant.ABIWordSize),
@@ -28,6 +34,9 @@ func (api *walletStableCoin) Mint(ctx context.Context, contractAddress, toAddres
 }
 
 func (api *walletStableCoin) BurnNoWait(contractAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
+	if err := validateUint256(amount); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.BurnFnSignature,
 		common.LeftPadBytes(amount.Bytes(), constant.ABIWordSize),
 	)
@@ -40,6 +49,9 @@ func (api *walletStableCoin) Burn(ctx context.Context, contractAddress string, a
 }
 
 func (api *walletStableCoin) BlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(address); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.BlacklistFnSignature,
 		common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize),
 	)
@@ -52,6 +64,9 @@ func (api *walletStableCoin) Blacklist(ctx context.Context, contractAddress, add
 }
 
 func (api *walletStableCoin) UnBlacklistNoWait(contractAddress, address string, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(address); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.UnBlacklistFnSignature,
 		common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize),
 	)
@@ -132,6 +147,9 @@ func (api *walletStableCoin) Paused(contractAddress string) (bool, error) {
 }
 
 func (api *walletStableCoin) TransferOwnershipNoWait(contractAddress, newOwner string, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(newOwner); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferOwnershipFnSignature,
 		common.LeftPadBytes(common.HexToAddress(newOwner).Bytes(), constant.ABIWordSize),
 	)
@@ -160,6 +178,12 @@ func (api *walletStableCoin) Version(contractAddress string) (string, error) {
 }
 
 func (api *walletStableCoin) ConfigureMinterNoWait(contractAddress, minter string, allowance *big.Int, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(minter); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateUint256(allowance); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.ConfigureMinterFnSignature,
 		common.LeftPadBytes(common.HexToAddress(minter).Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(allowance.Bytes(), constant.ABIWordSize),
@@ -173,6 +197,9 @@ func (api *walletStableCoin) ConfigureMinter(ctx context.Context, contractAddres
 }
 
 func (api *walletStableCoin) RemoveMinterNoWait(contractAddress, minter string, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(minter); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.RemoveMinterFnSignature,
 		common.LeftPadBytes(common.HexToAddress(minter).Bytes(), constant.ABIWordSize),
 	)
@@ -201,6 +228,9 @@ func (api *walletStableCoin) MinterAllowance(contractAddress, address string) (*
 }
 
 func (api *walletStableCoin) UpdateMasterMinterNoWait(contractAddress, newMasterMinter string, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(newMasterMinter); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.UpdateMasterMinterFnSignature,
 		common.LeftPadBytes(common.HexToAddress(newMasterMinter).Bytes(), constant.ABIWordSize),
 	)
@@ -213,6 +243,9 @@ func (api *walletStableCoin) UpdateMasterMinter(ctx context.Context, contractAdd
 }
 
 func (api *walletStableCoin) UpdateBlacklisterNoWait(contractAddress, newBlacklister string, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(newBlacklister); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.UpdateBlacklisterFnSignature,
 		common.LeftPadBytes(common.HexToAddress(newBlacklister).Bytes(), constant.ABIWordSize),
 	)
@@ -225,6 +258,9 @@ func (api *walletStableCoin) UpdateBlacklister(ctx context.Context, contractAddr
 }
 
 func (api *walletStableCoin) UpdatePauserNoWait(contractAddress, newPauser string, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(newPauser); err != nil {
+		return common.Hash{}, err
+	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.UpdatePauserFnSignature,
 		common.LeftPadBytes(common.HexToAddress(newPauser).Bytes(), constant.ABIWordSize),
 	)
@@ -286,6 +322,18 @@ func (api *walletStableCoin) signPermit(contractAddress, ownerAddress, spenderAd
 }
 
 func (api *walletStableCoin) PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(ownerAddress); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateAddress(spenderAddress); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateUint256(value); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateUint256(deadline); err != nil {
+		return common.Hash{}, err
+	}
 	v, r, s, err := api.signPermit(contractAddress, ownerAddress, spenderAddress, value, deadline)
 	if err != nil {
 		return common.Hash{}, err
