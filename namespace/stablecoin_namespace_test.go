@@ -475,3 +475,119 @@ func TestStableCoin_MinterAllowance(t *testing.T) {
 		assert.Nil(t, result)
 	})
 }
+
+func TestStableCoin_Nonces(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+	ownerAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
+
+	t.Run("returns nonce for owner", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+		expected[31] = 5
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.Nonces(contractAddress, ownerAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, int64(5), result.Int64())
+	})
+
+	t.Run("returns zero nonce for new owner", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return make([]byte, 32), nil
+		})
+
+		result, err := sc.Nonces(contractAddress, ownerAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), result.Int64())
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.Nonces(contractAddress, ownerAddress)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestStableCoin_DomainSeparator(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+
+	t.Run("returns domain separator", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+		expected[0] = 0xab
+		expected[31] = 0xcd
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.DomainSeparator(contractAddress)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result[:])
+	})
+
+	t.Run("returns error when output is shorter than 32 bytes", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return []byte{0x01, 0x02}, nil
+		})
+
+		result, err := sc.DomainSeparator(contractAddress)
+
+		assert.Error(t, err)
+		assert.Equal(t, [32]byte{}, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.DomainSeparator(contractAddress)
+
+		assert.Error(t, err)
+		assert.Equal(t, [32]byte{}, result)
+	})
+}

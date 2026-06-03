@@ -234,3 +234,37 @@ func (api *walletStableCoin) UpdatePauser(ctx context.Context, contractAddress, 
 		return api.UpdatePauserNoWait(contractAddress, newPauser, gasLimit)
 	})
 }
+
+func (api *walletStableCoin) PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, v uint8, r, s [32]byte, gasLimit *uint64) (common.Hash, error) {
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.PermitFnSignature,
+		common.LeftPadBytes(common.HexToAddress(ownerAddress).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(common.HexToAddress(spenderAddress).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(value.Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(deadline.Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes([]byte{v}, constant.ABIWordSize),
+		r[:],
+		s[:],
+	)
+}
+
+func (api *walletStableCoin) Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, v uint8, r, s [32]byte, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.PermitNoWait(contractAddress, ownerAddress, spenderAddress, value, deadline, v, r, s, gasLimit)
+	})
+}
+
+func (api *walletStableCoin) Nonces(contractAddress, ownerAddress string) (*big.Int, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+	return sc.Nonces(contractAddress, ownerAddress)
+}
+
+func (api *walletStableCoin) DomainSeparator(contractAddress string) ([32]byte, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return [32]byte{}, constant.ErrWalletIsNotConnected
+	}
+	return sc.DomainSeparator(contractAddress)
+}
