@@ -60,6 +60,11 @@ type StableCoinInfo interface {
 	Version(contractAddress string) (string, error)
 }
 
+type EIP2612 interface {
+	PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error)
+	Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
+}
+
 type WalletStableCoin interface {
 	WalletERC20
 	StableCoinMinting
@@ -68,4 +73,5 @@ type WalletStableCoin interface {
 	StableCoinMinterAdmin
 	StableCoinRoleAdmin
 	StableCoinInfo
+	EIP2612
 }

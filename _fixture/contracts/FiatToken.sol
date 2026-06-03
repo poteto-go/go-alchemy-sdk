@@ -21,6 +21,13 @@ contract FiatToken {
 
     bool public paused;
 
+    // EIP-2612
+    bytes32 public DOMAIN_SEPARATOR;
+    mapping(address => uint256) public nonces;
+
+    bytes32 private constant PERMIT_TYPEHASH =
+        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Mint(address indexed minter, address indexed to, uint256 amount);
@@ -86,6 +93,16 @@ contract FiatToken {
         pauser = _pauser;
         blacklister = _blacklister;
         owner = _owner;
+
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes(_name)),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     function configureMinter(address minter, uint256 minterAllowedAmount)
@@ -231,5 +248,27 @@ contract FiatToken {
 
     function version() public pure returns (string memory) {
         return "1";
+    }
+
+    function permit(
+        address _owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        require(block.timestamp <= deadline, "FiatToken: permit expired");
+
+        bytes32 structHash = keccak256(
+            abi.encode(PERMIT_TYPEHASH, _owner, spender, value, nonces[_owner]++, deadline)
+        );
+        bytes32 hash = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+        address signer = ecrecover(hash, v, r, s);
+        require(signer != address(0) && signer == _owner, "FiatToken: invalid permit signature");
+
+        allowance[_owner][spender] = value;
+        emit Approval(_owner, spender, value);
     }
 }

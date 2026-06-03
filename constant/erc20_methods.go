@@ -32,4 +32,9 @@ var (
 	UpdateMasterMinterFnSignature = []byte("updateMasterMinter(address)")
 	UpdateBlacklisterFnSignature  = []byte("updateBlacklister(address)")
 	UpdatePauserFnSignature       = []byte("updatePauser(address)")
+
+	// EIP-2612
+	PermitFnSignature          = []byte("permit(address,address,uint256,uint256,uint8,bytes32,bytes32)")
+	NoncesFnSignature          = []byte("nonces(address)")
+	DomainSeparatorFnSignature = []byte("DOMAIN_SEPARATOR()")
 )

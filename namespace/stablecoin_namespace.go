@@ -1,6 +1,7 @@
 package namespace
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -41,6 +42,12 @@ type IStableCoin interface {
 
 	// MinterAllowance returns the remaining mint allowance for the given minter.
 	MinterAllowance(contractAddress, address string) (*big.Int, error)
+
+	// Nonces returns the current EIP-2612 permit nonce for the given owner.
+	Nonces(contractAddress, ownerAddress string) (*big.Int, error)
+
+	// DomainSeparator returns the EIP-712 domain separator for the contract.
+	DomainSeparator(contractAddress string) ([32]byte, error)
 }
 
 type stableCoin struct {
@@ -154,4 +161,32 @@ func (s *stableCoin) MinterAllowance(contractAddress, address string) (*big.Int,
 		return nil, err
 	}
 	return new(big.Int).SetBytes(output), nil
+}
+
+func (s *stableCoin) Nonces(contractAddress, ownerAddress string) (*big.Int, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.NoncesFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(ownerAddress).Bytes(), constant.ABIWordSize),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return new(big.Int).SetBytes(output), nil
+}
+
+func (s *stableCoin) DomainSeparator(contractAddress string) ([32]byte, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.DomainSeparatorFnSignature,
+		contractAddress,
+	)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	if len(output) < constant.ABIWordSize {
+		return [32]byte{}, fmt.Errorf("unexpected output length: %d", len(output))
+	}
+	var result [32]byte
+	copy(result[:], output[:constant.ABIWordSize])
+	return result, nil
 }

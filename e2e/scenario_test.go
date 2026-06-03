@@ -644,6 +644,50 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, common.HexToAddress(otherAddress), ownerAfter)
 		})
+
+		t.Run("EIP-2612: nonces returns 0 for new owner", func(t *testing.T) {
+			nonce, err := alchemy.StableCoin.Nonces(contractHex, initAddress)
+
+			assert.Nil(t, err)
+			assert.Equal(t, int64(0), nonce.Int64())
+		})
+
+		t.Run("EIP-2612: domain separator returns non-zero value", func(t *testing.T) {
+			ds, err := alchemy.StableCoin.DomainSeparator(contractHex)
+
+			assert.Nil(t, err)
+			var zero [32]byte
+			assert.NotEqual(t, zero, ds)
+		})
+
+		t.Run("EIP-2612: permit sets allowance and increments nonce", func(t *testing.T) {
+			permitValue := big.NewInt(999)
+			deadline := new(big.Int).SetInt64(9999999999)
+
+			allowanceBefore, err := alchemy.StableCoin.Allowance(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+
+			receipt, err := w.StableCoin().Permit(
+				context.Background(),
+				contractHex,
+				initAddress,
+				otherAddress,
+				permitValue,
+				deadline,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			allowanceAfter, err := alchemy.StableCoin.Allowance(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.NotEqual(t, allowanceBefore.Int64(), allowanceAfter.Int64())
+			assert.Equal(t, permitValue.Int64(), allowanceAfter.Int64())
+
+			nonce, err := alchemy.StableCoin.Nonces(contractHex, initAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, int64(1), nonce.Int64())
+		})
 	})
 }
 

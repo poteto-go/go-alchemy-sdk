@@ -1545,3 +1545,119 @@ func TestWallet_StableCoin_UpdatePauser(t *testing.T) {
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
 }
+
+func mockCallContractForPermit(patches *gomonkey.Patches, eth interface {
+	CallContract(ethereum.CallMsg, string) ([]byte, error)
+}) {
+	callCount := 0
+	patches.ApplyMethod(reflect.TypeOf(eth), "CallContract",
+		func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			callCount++
+			if callCount == 1 {
+				// Nonces: return nonce = 0
+				return make([]byte, 32), nil
+			}
+			// DomainSeparator: return 32 non-zero bytes
+			ds := make([]byte, 32)
+			ds[0] = 0xde
+			return ds, nil
+		},
+	)
+}
+
+func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	ownerAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	spenderAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can submit permit", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		mockCallContractForPermit(patches, w.snapshot().Eth())
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		hash, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("handle error on nonces", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(reflect.TypeOf(w.snapshot().Eth()), "CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return nil, errors.New("nonces error")
+			},
+		)
+
+		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_Permit(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	ownerAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	spenderAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
+
+	t.Run("can permit and wait", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := &gethTypes.Receipt{TxHash: common.HexToHash("0x123")}
+
+		mockCallContractForPermit(patches, w.snapshot().Eth())
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expected.TxHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.snapshot().Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return expected, nil
+			},
+		)
+
+		receipt, err := w.StableCoin().Permit(context.Background(), contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, receipt)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().Permit(context.Background(), contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 )
 
@@ -232,5 +233,76 @@ func (api *walletStableCoin) UpdatePauserNoWait(contractAddress, newPauser strin
 func (api *walletStableCoin) UpdatePauser(ctx context.Context, contractAddress, newPauser string, gasLimit *uint64) (*gethTypes.Receipt, error) {
 	return api.waitMined(ctx, func() (common.Hash, error) {
 		return api.UpdatePauserNoWait(contractAddress, newPauser, gasLimit)
+	})
+}
+
+var permitTypeHash = crypto.Keccak256([]byte("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"))
+
+func (api *walletStableCoin) signPermit(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int) (uint8, [32]byte, [32]byte, error) {
+	sc := api.w.snapshotStableCoin()
+	if sc == nil {
+		return 0, [32]byte{}, [32]byte{}, constant.ErrWalletIsNotConnected
+	}
+
+	nonce, err := sc.Nonces(contractAddress, ownerAddress)
+	if err != nil {
+		return 0, [32]byte{}, [32]byte{}, err
+	}
+
+	domainSeparator, err := sc.DomainSeparator(contractAddress)
+	if err != nil {
+		return 0, [32]byte{}, [32]byte{}, err
+	}
+
+	// ABI-encode: permitTypeHash || owner || spender || value || nonce || deadline
+	encoded := make([]byte, 0, constant.ABIWordSize*6)
+	encoded = append(encoded, permitTypeHash...)
+	encoded = append(encoded, common.LeftPadBytes(common.HexToAddress(ownerAddress).Bytes(), constant.ABIWordSize)...)
+	encoded = append(encoded, common.LeftPadBytes(common.HexToAddress(spenderAddress).Bytes(), constant.ABIWordSize)...)
+	encoded = append(encoded, common.LeftPadBytes(value.Bytes(), constant.ABIWordSize)...)
+	encoded = append(encoded, common.LeftPadBytes(nonce.Bytes(), constant.ABIWordSize)...)
+	encoded = append(encoded, common.LeftPadBytes(deadline.Bytes(), constant.ABIWordSize)...)
+
+	structHash := crypto.Keccak256(encoded)
+
+	// EIP-712: "\x19\x01" || domainSeparator || structHash
+	msg := make([]byte, 0, 2+constant.ABIWordSize*2)
+	msg = append(msg, 0x19, 0x01)
+	msg = append(msg, domainSeparator[:]...)
+	msg = append(msg, structHash...)
+	hash := crypto.Keccak256(msg)
+
+	sig, err := crypto.Sign(hash, api.w.privateKey)
+	if err != nil {
+		return 0, [32]byte{}, [32]byte{}, err
+	}
+
+	var r, s [32]byte
+	copy(r[:], sig[:constant.ABIWordSize])
+	copy(s[:], sig[constant.ABIWordSize:constant.ABIWordSize*2])
+	v := sig[constant.ABIWordSize*2] + constant.ECDSALegacyVOffset
+
+	return v, r, s, nil
+}
+
+func (api *walletStableCoin) PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error) {
+	v, r, s, err := api.signPermit(contractAddress, ownerAddress, spenderAddress, value, deadline)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	return api.sendERC20Tx(contractAddress, gasLimit, constant.PermitFnSignature,
+		common.LeftPadBytes(common.HexToAddress(ownerAddress).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(common.HexToAddress(spenderAddress).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(value.Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(deadline.Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes([]byte{v}, constant.ABIWordSize),
+		r[:],
+		s[:],
+	)
+}
+
+func (api *walletStableCoin) Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.PermitNoWait(contractAddress, ownerAddress, spenderAddress, value, deadline, gasLimit)
 	})
 }
