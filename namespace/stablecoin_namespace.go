@@ -48,6 +48,9 @@ type IStableCoin interface {
 
 	// DomainSeparator returns the EIP-712 domain separator for the contract.
 	DomainSeparator(contractAddress string) ([32]byte, error)
+
+	// AuthorizationState returns true if the authorization identified by (authorizer, nonce) has been used or cancelled.
+	AuthorizationState(contractAddress, authorizer string, nonce [32]byte) (bool, error)
 }
 
 type stableCoin struct {
@@ -173,6 +176,19 @@ func (s *stableCoin) Nonces(contractAddress, ownerAddress string) (*big.Int, err
 		return nil, err
 	}
 	return new(big.Int).SetBytes(output), nil
+}
+
+func (s *stableCoin) AuthorizationState(contractAddress, authorizer string, nonce [32]byte) (bool, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.AuthorizationStateFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(authorizer).Bytes(), constant.ABIWordSize),
+		nonce[:],
+	)
+	if err != nil {
+		return false, err
+	}
+	return decodeBoolOutput(output), nil
 }
 
 func (s *stableCoin) DomainSeparator(contractAddress string) ([32]byte, error) {

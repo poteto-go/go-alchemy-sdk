@@ -591,3 +591,64 @@ func TestStableCoin_DomainSeparator(t *testing.T) {
 		assert.Equal(t, [32]byte{}, result)
 	})
 }
+
+func TestStableCoin_AuthorizationState(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+	authorizer := "0xabcdef1234567890abcdef1234567890abcdef12"
+	var nonce [32]byte
+	nonce[0] = 0xde
+	nonce[31] = 0xad
+
+	t.Run("returns true when authorization is used", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+		expected := make([]byte, 32)
+		expected[31] = 1
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return expected, nil
+		})
+
+		result, err := sc.AuthorizationState(contractAddress, authorizer, nonce)
+
+		assert.NoError(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("returns false when authorization is not used", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return make([]byte, 32), nil
+		})
+
+		result, err := sc.AuthorizationState(contractAddress, authorizer, nonce)
+
+		assert.NoError(t, err)
+		assert.False(t, result)
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		result, err := sc.AuthorizationState(contractAddress, authorizer, nonce)
+
+		assert.Error(t, err)
+		assert.False(t, result)
+	})
+}
