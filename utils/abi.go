@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 )
 
@@ -16,6 +17,14 @@ func EncodeABIString(s string) []byte {
 	b[constant.ABIStringHeaderSize-1] = byte(dataLen)      // string length
 	copy(b[constant.ABIStringHeaderSize:], s)
 	return b
+}
+
+// DecodeABIAddress decodes an ABI-encoded address (left-padded 32-byte word).
+func DecodeABIAddress(output []byte) (common.Address, error) {
+	if len(output) < constant.ABIWordSize {
+		return common.Address{}, fmt.Errorf("invalid ABI address: output too short, got %d bytes", len(output))
+	}
+	return common.BytesToAddress(output[constant.ABIAddressOffset:constant.ABIWordSize]), nil
 }
 
 // DecodeABIString decodes an ABI-encoded string (offset, length, data).

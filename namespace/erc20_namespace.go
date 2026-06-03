@@ -50,7 +50,7 @@ func (e *ERC20) BalanceOf(
 	output, err := e.ether.CallReadMethod(
 		constant.BalanceOfFnSignature,
 		contractAddress,
-		common.LeftPadBytes(common.HexToAddress(walletAddress).Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(walletAddress).Bytes(), constant.ABIWordSize),
 	)
 	if err != nil {
 		return nil, err
@@ -77,8 +77,8 @@ func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, err
 	output, err := e.ether.CallReadMethod(
 		constant.AllowanceFnSignature,
 		contractAddress,
-		common.LeftPadBytes(common.HexToAddress(owner).Bytes(), 32),
-		common.LeftPadBytes(common.HexToAddress(spender).Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(owner).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(common.HexToAddress(spender).Bytes(), constant.ABIWordSize),
 	)
 	if err != nil {
 		return nil, err

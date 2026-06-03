@@ -396,6 +396,22 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Equal(t, "1", version)
 		})
 
+		t.Run("can read role addresses via StableCoin", func(t *testing.T) {
+			sc := w.StableCoin()
+
+			masterMinter, err := sc.MasterMinter(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), masterMinter)
+
+			pauser, err := sc.Pauser(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), pauser)
+
+			blacklister, err := sc.Blacklister(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), blacklister)
+		})
+
 		t.Run("can configure minter and mint tokens", func(t *testing.T) {
 			fiatToken := artifacts.NewFiatToken()
 
@@ -521,6 +537,42 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
 		})
 
+		t.Run("can configure minter, check allowance, and remove minter", func(t *testing.T) {
+			allowance := big.NewInt(5_000_000)
+
+			// address should not be a minter initially
+			isMinter, err := alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isMinter)
+
+			// configure minter with allowance (initAddress is the masterMinter in this test setup)
+			receipt, err := w.StableCoin().ConfigureMinter(context.Background(), contractHex, otherAddress, allowance, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should now be a minter
+			isMinter, err = alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.True(t, isMinter)
+
+			// allowance should match what was configured
+			minterAllowance, err := alchemy.StableCoin.MinterAllowance(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, allowance.Cmp(minterAllowance))
+
+			// remove the minter
+			receipt, err = w.StableCoin().RemoveMinter(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should no longer be a minter
+			isMinter, err = alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isMinter)
+		})
+
+		// UpdateMasterMinter/UpdateBlacklister/UpdatePauser require owner role.
+		// Run these before TransferOwnership so initAddress still has the owner role.
 		t.Run("can update master minter", func(t *testing.T) {
 			receipt, err := w.StableCoin().UpdateMasterMinter(context.Background(), contractHex, otherAddress, nil)
 			assert.Nil(t, err)

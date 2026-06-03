@@ -1,6 +1,8 @@
 package namespace
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -19,11 +21,26 @@ type IStableCoin interface {
 	// Owner returns the current owner address of the contract.
 	Owner(contractAddress string) (common.Address, error)
 
+	// MasterMinter returns the master minter address of the contract.
+	MasterMinter(contractAddress string) (common.Address, error)
+
+	// Pauser returns the pauser address of the contract.
+	Pauser(contractAddress string) (common.Address, error)
+
+	// Blacklister returns the blacklister address of the contract.
+	Blacklister(contractAddress string) (common.Address, error)
+
 	// Currency returns the currency identifier of the token (e.g. "USD").
 	Currency(contractAddress string) (string, error)
 
 	// Version returns the contract version string.
 	Version(contractAddress string) (string, error)
+
+	// IsMinter returns true if the address is a configured minter.
+	IsMinter(contractAddress, address string) (bool, error)
+
+	// MinterAllowance returns the remaining mint allowance for the given minter.
+	MinterAllowance(contractAddress, address string) (*big.Int, error)
 }
 
 type stableCoin struct {
@@ -42,7 +59,7 @@ func (s *stableCoin) IsBlacklisted(contractAddress, address string) (bool, error
 	output, err := s.ether.CallReadMethod(
 		constant.IsBlacklistedFnSignature,
 		contractAddress,
-		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize),
 	)
 	if err != nil {
 		return false, err
@@ -84,15 +101,57 @@ func (s *stableCoin) Paused(contractAddress string) (bool, error) {
 }
 
 func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
-	output, err := s.ether.CallReadMethod(
-		constant.OwnerFnSignature,
-		contractAddress,
-	)
+	output, err := s.ether.CallReadMethod(constant.OwnerFnSignature, contractAddress)
 	if err != nil {
 		return common.Address{}, err
 	}
-	if len(output) < constant.ABIWordSize {
-		return common.Address{}, nil
+	return utils.DecodeABIAddress(output)
+}
+
+func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error) {
+	output, err := s.ether.CallReadMethod(constant.MasterMinterFnSignature, contractAddress)
+	if err != nil {
+		return common.Address{}, err
 	}
-	return common.BytesToAddress(output[constant.ABIAddressOffset:constant.ABIWordSize]), nil
+	return utils.DecodeABIAddress(output)
+}
+
+func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
+	output, err := s.ether.CallReadMethod(constant.PauserFnSignature, contractAddress)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return utils.DecodeABIAddress(output)
+}
+
+func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error) {
+	output, err := s.ether.CallReadMethod(constant.BlacklisterFnSignature, contractAddress)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return utils.DecodeABIAddress(output)
+}
+
+func (s *stableCoin) IsMinter(contractAddress, address string) (bool, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.IsMinterFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize),
+	)
+	if err != nil {
+		return false, err
+	}
+	return decodeBoolOutput(output), nil
+}
+
+func (s *stableCoin) MinterAllowance(contractAddress, address string) (*big.Int, error) {
+	output, err := s.ether.CallReadMethod(
+		constant.MinterAllowanceFnSignature,
+		contractAddress,
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return new(big.Int).SetBytes(output), nil
 }
