@@ -61,6 +61,8 @@ You can fetch token metadata and balance information:
 - Pauser
 - Blacklister
 - Owner
+- IsMinter
+- MinterAllowance
 
 ## Write Methods
 
@@ -318,4 +320,65 @@ func Version(contractAddress string) (string, error)
 
 ```go
 version, err := w.StableCoin().Version(contractAddress)
+```
+
+### ConfigureMinter & ConfigureMinterNoWait
+
+Configure a minter with a mint allowance. Requires the caller to have the masterMinter role (FiatToken/USDC behavior).
+
+```go
+func ConfigureMinter(ctx context.Context, contractAddress, minter string, allowance *big.Int, gasLimit *uint64) (*types.Receipt, error)
+func ConfigureMinterNoWait(contractAddress, minter string, allowance *big.Int, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().ConfigureMinter(
+	context.Background(),
+	contractAddress,
+	"<minterAddress>",
+	big.NewInt(1_000_000),
+	nil,
+)
+```
+
+### RemoveMinter & RemoveMinterNoWait
+
+Remove a minter, revoking their ability to mint. Requires the caller to have the masterMinter role (FiatToken/USDC behavior).
+
+```go
+func RemoveMinter(ctx context.Context, contractAddress, minter string, gasLimit *uint64) (*types.Receipt, error)
+func RemoveMinterNoWait(contractAddress, minter string, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+receipt, err := w.StableCoin().RemoveMinter(
+	context.Background(),
+	contractAddress,
+	"<minterAddress>",
+	nil,
+)
+```
+
+### IsMinter
+
+Check whether an address is a configured minter on the contract. FiatToken/USDC compatibility.
+
+```go
+func IsMinter(contractAddress, address string) (bool, error)
+```
+
+```go
+isMinter, err := w.StableCoin().IsMinter(contractAddress, "<minterAddress>")
+```
+
+### MinterAllowance
+
+Get the remaining mint allowance for a minter. FiatToken/USDC compatibility.
+
+```go
+func MinterAllowance(contractAddress, address string) (*big.Int, error)
+```
+
+```go
+allowance, err := w.StableCoin().MinterAllowance(contractAddress, "<minterAddress>")
 ```

@@ -950,6 +950,283 @@ func TestWallet_StableCoin_TransferOwnershipNoWait(t *testing.T) {
 	})
 }
 
+func TestWallet_StableCoin_ConfigureMinterNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	minterAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can configure minter", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		hash, err := w.StableCoin().ConfigureMinterNoWait(contractAddress, minterAddress, big.NewInt(1_000_000), nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("handle error on configure minter", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.StableCoin().ConfigureMinterNoWait(contractAddress, minterAddress, big.NewInt(1_000_000), nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().ConfigureMinterNoWait(contractAddress, minterAddress, big.NewInt(1_000_000), nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_ConfigureMinter(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	minterAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can configure minter and wait", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.StableCoin().ConfigureMinter(context.Background(), contractAddress, minterAddress, big.NewInt(1_000_000), nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().ConfigureMinter(context.Background(), contractAddress, minterAddress, big.NewInt(1_000_000), nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_RemoveMinterNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	minterAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can remove minter", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+
+		hash, err := w.StableCoin().RemoveMinterNoWait(contractAddress, minterAddress, nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("handle error on remove minter", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.StableCoin().RemoveMinterNoWait(contractAddress, minterAddress, nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().RemoveMinterNoWait(contractAddress, minterAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_RemoveMinter(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	minterAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can remove minter and wait", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.StableCoin().RemoveMinter(context.Background(), contractAddress, minterAddress, nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().RemoveMinter(context.Background(), contractAddress, minterAddress, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_IsMinter(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	minterAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+
+	t.Run("returns true when address is a minter", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		expected[31] = 1
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().IsMinter(contractAddress, minterAddress)
+
+		assert.Nil(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("returns false when address is not a minter", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().IsMinter(contractAddress, minterAddress)
+
+		assert.Nil(t, err)
+		assert.False(t, result)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().IsMinter(contractAddress, minterAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_StableCoin_MinterAllowance(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	minterAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+
+	t.Run("returns minter allowance", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		expected := make([]byte, 32)
+		expected[31] = 100
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"CallContract",
+			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+				return expected, nil
+			},
+		)
+
+		result, err := w.StableCoin().MinterAllowance(contractAddress, minterAddress)
+
+		assert.Nil(t, err)
+		assert.Equal(t, int64(100), result.Int64())
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().MinterAllowance(contractAddress, minterAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
 func TestWallet_StableCoin_TransferOwnership(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	newOwnerAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
