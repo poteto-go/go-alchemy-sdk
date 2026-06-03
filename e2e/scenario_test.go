@@ -4,12 +4,14 @@ import (
 	"context"
 	"math/big"
 	"os"
+	"slices"
 	"strconv"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
 	"github.com/poteto-go/go-alchemy-sdk/deployer"
+	"github.com/poteto-go/go-alchemy-sdk/famous"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/wallet"
@@ -166,6 +168,36 @@ func TestSenario_DeployContract(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Greater(t, blockNumber, uint64(0))
 		})
+	})
+}
+
+func TestScenario_Famous_StableCoin(t *testing.T) {
+	t.Run("SupportedNetworks returns non-empty list including EthMainnet", func(t *testing.T) {
+		networks := famous.SupportedNetworks()
+
+		assert.NotEmpty(t, networks)
+		assert.True(t, slices.Contains(networks, types.EthMainnet))
+	})
+
+	t.Run("SupportedSymbols returns USDC/USDT/JPYC for EthMainnet", func(t *testing.T) {
+		symbols := famous.SupportedSymbols(types.EthMainnet)
+
+		assert.True(t, slices.Contains(symbols, famous.USDC))
+		assert.True(t, slices.Contains(symbols, famous.USDT))
+		assert.True(t, slices.Contains(symbols, famous.JPYC))
+	})
+
+	t.Run("SupportedSymbols returns empty for unsupported network", func(t *testing.T) {
+		symbols := famous.SupportedSymbols(types.SolanaMainnet)
+
+		assert.Empty(t, symbols)
+	})
+
+	t.Run("ContractAddress resolves typed symbol on EthMainnet", func(t *testing.T) {
+		addr, err := famous.ContractAddress(types.EthMainnet, famous.USDC)
+
+		assert.NoError(t, err)
+		assert.Equal(t, common.HexToAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"), addr)
 	})
 }
 

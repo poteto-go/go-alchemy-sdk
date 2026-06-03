@@ -1,6 +1,8 @@
 package famous_test
 
 import (
+	"slices"
+	"sort"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -10,46 +12,46 @@ import (
 )
 
 func TestContractAddress(t *testing.T) {
-	t.Run("returns known addresses", func(t *testing.T) {
+	t.Run("returns known addresses using typed symbols", func(t *testing.T) {
 		tests := []struct {
 			name    string
 			network types.Network
-			symbol  string
+			symbol  famous.StableCoinSymbol
 			want    common.Address
 		}{
 			{
 				"USDC on Ethereum mainnet",
-				types.EthMainnet, "USDC",
+				types.EthMainnet, famous.USDC,
 				common.HexToAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
 			},
 			{
 				"USDT on Ethereum mainnet",
-				types.EthMainnet, "USDT",
+				types.EthMainnet, famous.USDT,
 				common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
 			},
 			{
 				"JPYC on Ethereum mainnet",
-				types.EthMainnet, "JPYC",
+				types.EthMainnet, famous.JPYC,
 				common.HexToAddress("0x431D5dfF03120AFA4bDf332c61A6e1766eF37BF9"),
 			},
 			{
 				"USDC on Polygon mainnet",
-				types.PolygonMainnet, "USDC",
+				types.PolygonMainnet, famous.USDC,
 				common.HexToAddress("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"),
 			},
 			{
 				"USDT on Polygon mainnet",
-				types.PolygonMainnet, "USDT",
+				types.PolygonMainnet, famous.USDT,
 				common.HexToAddress("0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
 			},
 			{
 				"JPYC on Polygon mainnet",
-				types.PolygonMainnet, "JPYC",
+				types.PolygonMainnet, famous.JPYC,
 				common.HexToAddress("0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c"),
 			},
 			{
 				"USDC on Polygon Amoy",
-				types.PolygonAmoy, "USDC",
+				types.PolygonAmoy, famous.USDC,
 				common.HexToAddress("0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582"),
 			},
 		}
@@ -65,7 +67,7 @@ func TestContractAddress(t *testing.T) {
 	})
 
 	t.Run("returns error for unsupported network", func(t *testing.T) {
-		_, err := famous.ContractAddress(types.SolanaMainnet, "USDC")
+		_, err := famous.ContractAddress(types.SolanaMainnet, famous.USDC)
 
 		assert.ErrorIs(t, err, famous.ErrNotSupportedNetwork)
 	})
@@ -74,5 +76,41 @@ func TestContractAddress(t *testing.T) {
 		_, err := famous.ContractAddress(types.EthMainnet, "UNKNOWN")
 
 		assert.ErrorIs(t, err, famous.ErrNotSupportedSymbol)
+	})
+}
+
+func TestSupportedNetworks(t *testing.T) {
+	networks := famous.SupportedNetworks()
+
+	assert.NotEmpty(t, networks)
+	assert.True(t, slices.Contains(networks, types.EthMainnet))
+	assert.True(t, slices.Contains(networks, types.PolygonMainnet))
+	assert.True(t, slices.Contains(networks, types.PolygonAmoy))
+}
+
+func TestSupportedSymbols(t *testing.T) {
+	t.Run("returns symbols for EthMainnet", func(t *testing.T) {
+		symbols := famous.SupportedSymbols(types.EthMainnet)
+
+		got := make([]string, len(symbols))
+		for i, s := range symbols {
+			got[i] = string(s)
+		}
+		sort.Strings(got)
+
+		assert.Equal(t, []string{"JPYC", "USDC", "USDT"}, got)
+	})
+
+	t.Run("returns symbols for PolygonAmoy", func(t *testing.T) {
+		symbols := famous.SupportedSymbols(types.PolygonAmoy)
+
+		assert.Len(t, symbols, 1)
+		assert.Equal(t, famous.USDC, symbols[0])
+	})
+
+	t.Run("returns empty slice for unsupported network", func(t *testing.T) {
+		symbols := famous.SupportedSymbols(types.SolanaMainnet)
+
+		assert.Empty(t, symbols)
 	})
 }
