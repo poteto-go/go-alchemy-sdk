@@ -106,6 +106,9 @@ type Wallet interface {
 	/* StableCoin support */
 	StableCoin() WalletStableCoin
 
+	/* EIP-2612 permit support */
+	EIP2612() WalletEIP2612
+
 	/*
 		ResetPool clears the cached ChainID and TransactOpts.
 		Call this when you need to refresh the cached values.
