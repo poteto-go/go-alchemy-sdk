@@ -396,22 +396,6 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Equal(t, "1", version)
 		})
 
-		t.Run("can read role addresses via StableCoin", func(t *testing.T) {
-			sc := w.StableCoin()
-
-			masterMinter, err := sc.MasterMinter(contractHex)
-			assert.Nil(t, err)
-			assert.Equal(t, common.HexToAddress(initAddress), masterMinter)
-
-			pauser, err := sc.Pauser(contractHex)
-			assert.Nil(t, err)
-			assert.Equal(t, common.HexToAddress(initAddress), pauser)
-
-			blacklister, err := sc.Blacklister(contractHex)
-			assert.Nil(t, err)
-			assert.Equal(t, common.HexToAddress(initAddress), blacklister)
-		})
-
 		t.Run("can configure minter and mint tokens", func(t *testing.T) {
 			fiatToken := artifacts.NewFiatToken()
 
@@ -574,21 +558,45 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 		// UpdateMasterMinter/UpdateBlacklister/UpdatePauser require owner role.
 		// Run these before TransferOwnership so initAddress still has the owner role.
 		t.Run("can update master minter", func(t *testing.T) {
+			masterMinterBefore, err := alchemy.StableCoin.MasterMinter(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), masterMinterBefore)
+
 			receipt, err := w.StableCoin().UpdateMasterMinter(context.Background(), contractHex, otherAddress, nil)
 			assert.Nil(t, err)
 			assert.NotNil(t, receipt)
+
+			masterMinterAfter, err := alchemy.StableCoin.MasterMinter(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(otherAddress), masterMinterAfter)
 		})
 
 		t.Run("can update blacklister", func(t *testing.T) {
+			blacklisterBefore, err := alchemy.StableCoin.Blacklister(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), blacklisterBefore)
+
 			receipt, err := w.StableCoin().UpdateBlacklister(context.Background(), contractHex, otherAddress, nil)
 			assert.Nil(t, err)
 			assert.NotNil(t, receipt)
+
+			blacklisterAfter, err := alchemy.StableCoin.Blacklister(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(otherAddress), blacklisterAfter)
 		})
 
 		t.Run("can update pauser", func(t *testing.T) {
+			pauserBefore, err := alchemy.StableCoin.Pauser(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), pauserBefore)
+
 			receipt, err := w.StableCoin().UpdatePauser(context.Background(), contractHex, otherAddress, nil)
 			assert.Nil(t, err)
 			assert.NotNil(t, receipt)
+
+			pauserAfter, err := alchemy.StableCoin.Pauser(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(otherAddress), pauserAfter)
 		})
 
 		t.Run("transferOwnership transfers owner to new address", func(t *testing.T) {
