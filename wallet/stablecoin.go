@@ -278,9 +278,9 @@ func (api *walletStableCoin) signPermit(contractAddress, ownerAddress, spenderAd
 	}
 
 	var r, s [32]byte
-	copy(r[:], sig[:32])
-	copy(s[:], sig[32:64])
-	v := sig[64] + 27
+	copy(r[:], sig[:constant.ABIWordSize])
+	copy(s[:], sig[constant.ABIWordSize:constant.ABIWordSize*2])
+	v := sig[constant.ABIWordSize*2] + 27
 
 	return v, r, s, nil
 }
