@@ -384,7 +384,7 @@ func (api *walletStableCoin) signEIP712(domainSeparator [32]byte, encoded []byte
 	structHash := crypto.Keccak256(encoded)
 
 	msg := make([]byte, 0, 2+constant.ABIWordSize*2)
-	msg = append(msg, 0x19, 0x01)
+	msg = append(msg, constant.EIP191DataPrefix, constant.EIP712StructuredDataVersion)
 	msg = append(msg, domainSeparator[:]...)
 	msg = append(msg, structHash...)
 	hash := crypto.Keccak256(msg)

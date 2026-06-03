@@ -6,9 +6,11 @@ Return whether the EIP-3009 authorization identified by `(authorizer, nonce)` ha
 func AuthorizationState(
     contractAddress string,
     authorizer string,
-    nonce [32]byte,
+    nonce [32]byte, // the bytes32 nonce that was chosen when the authorization was created
 ) (bool, error)
 ```
+
+`nonce` is a required parameter because the EIP-3009 contract stores a `mapping(address => mapping(bytes32 => bool))`. Both the authorizer address and the nonce are needed to identify a specific authorization.
 
 ```go
 func main() {
