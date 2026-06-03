@@ -19,10 +19,9 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
-	walletinterfaces "github.com/poteto-go/go-alchemy-sdk/wallet/interfaces"
 )
 
-type Wallet = walletinterfaces.Wallet
+type Wallet = types.Wallet
 
 type wallet struct {
 	privateKey *ecdsa.PrivateKey

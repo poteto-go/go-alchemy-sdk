@@ -1,4 +1,4 @@
-package interfaces
+package types
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 // Wallet class inherits Signer and can sign transactions and messages using
@@ -19,7 +18,7 @@ type Wallet interface {
 	GetBalance() (balance *big.Int, err error)
 
 	// connect provider to wallet
-	Connect(provider types.IAlchemyProvider)
+	Connect(provider IAlchemyProvider)
 
 	/*
 		PendingNonceAt returns the account nonce of the given account in the pending state.
@@ -35,11 +34,11 @@ type Wallet interface {
 
 		EIP155Signer sign w/ ChainID to protect replay-attack
 	*/
-	SignTx(txRequest types.TransactionRequest) (signedTx *gethTypes.Transaction, err error)
+	SignTx(txRequest TransactionRequest) (signedTx *gethTypes.Transaction, err error)
 
 	// Signs tx and sends it to the pending pool for execution
 	// Returns the transaction hash of the submitted transaction
-	SendTransaction(txRequest types.TransactionRequest) (txHash common.Hash, err error)
+	SendTransaction(txRequest TransactionRequest) (txHash common.Hash, err error)
 
 	/*
 		DeployContract creates and submits a deployment transaction based on the
@@ -70,7 +69,7 @@ type Wallet interface {
 	*/
 	ContractTransact(
 		ctx context.Context,
-		contract types.ContractInstance,
+		contract ContractInstance,
 		contractAddress string,
 		data []byte,
 	) (*gethTypes.Receipt, error)
@@ -84,7 +83,7 @@ type Wallet interface {
 			txReceipt, err := alchemy.Transact.WaitDeployed(tx.Hash().Hex())
 	*/
 	ContractTransactNoWait(
-		contract types.ContractInstance,
+		contract ContractInstance,
 		contractAddress string,
 		data []byte,
 	) (*gethTypes.Transaction, error)
@@ -94,7 +93,7 @@ type Wallet interface {
 		It is used for read-only methods.
 	*/
 	ContractCall(
-		contract types.ContractInstance,
+		contract ContractInstance,
 		contractAddress string,
 		opts *bind.CallOpts,
 		callData []byte,
