@@ -473,9 +473,10 @@ func TransferWithAuthorization(ctx context.Context, contractAddress, from, to st
 func TransferWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
 ```
 
+Use `utils.NewAuthorizationNonce()` to generate a cryptographically random nonce. Hold on to the returned value if you may need to cancel the authorization later.
+
 ```go
-var nonce [32]byte
-rand.Read(nonce[:])
+nonce := utils.NewAuthorizationNonce()
 
 receipt, err := w.StableCoin().TransferWithAuthorization(
 	context.Background(),
@@ -500,6 +501,8 @@ func ReceiveWithAuthorizationNoWait(contractAddress, from, to string, value, val
 ```
 
 ```go
+nonce := utils.NewAuthorizationNonce()
+
 receipt, err := w.StableCoin().ReceiveWithAuthorization(
 	context.Background(),
 	contractAddress,
@@ -523,6 +526,7 @@ func CancelAuthorizationNoWait(contractAddress, authorizer string, nonce [32]byt
 ```
 
 ```go
+// nonce must be the same value used when the authorization was submitted
 receipt, err := w.StableCoin().CancelAuthorization(
 	context.Background(),
 	contractAddress,

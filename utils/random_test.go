@@ -12,6 +12,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewAuthorizationNonce(t *testing.T) {
+	t.Run("returns 32-byte non-zero nonce", func(t *testing.T) {
+		nonce := utils.NewAuthorizationNonce()
+
+		var zero [32]byte
+		assert.NotEqual(t, zero, nonce)
+	})
+
+	t.Run("returns unique nonces on successive calls", func(t *testing.T) {
+		nonce1 := utils.NewAuthorizationNonce()
+		nonce2 := utils.NewAuthorizationNonce()
+
+		assert.NotEqual(t, nonce1, nonce2)
+	})
+
+	t.Run("panics when rand.Read fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		patches.ApplyFunc(
+			rand.Read,
+			func(_ []byte) (int, error) {
+				return 0, errors.New("error")
+			},
+		)
+
+		assert.Panics(t, func() {
+			utils.NewAuthorizationNonce()
+		})
+	})
+}
+
 func TestRandomF64(t *testing.T) {
 	t.Run("normal case:", func(t *testing.T) {
 		// Act
