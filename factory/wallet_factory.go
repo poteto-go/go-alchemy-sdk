@@ -5,11 +5,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/wallet"
 )
 
 func ContractCall[T any](
-	w wallet.Wallet,
+	w types.Wallet,
 	contract types.ContractInstance,
 	contractAddress string,
 	opts *bind.CallOpts,
