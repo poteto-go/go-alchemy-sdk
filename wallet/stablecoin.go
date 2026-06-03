@@ -280,7 +280,7 @@ func (api *walletStableCoin) signPermit(contractAddress, ownerAddress, spenderAd
 	var r, s [32]byte
 	copy(r[:], sig[:constant.ABIWordSize])
 	copy(s[:], sig[constant.ABIWordSize:constant.ABIWordSize*2])
-	v := sig[constant.ABIWordSize*2] + 27
+	v := sig[constant.ABIWordSize*2] + constant.ECDSALegacyVOffset
 
 	return v, r, s, nil
 }
