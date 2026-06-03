@@ -252,19 +252,3 @@ func (api *walletStableCoin) Permit(ctx context.Context, contractAddress, ownerA
 		return api.PermitNoWait(contractAddress, ownerAddress, spenderAddress, value, deadline, v, r, s, gasLimit)
 	})
 }
-
-func (api *walletStableCoin) Nonces(contractAddress, ownerAddress string) (*big.Int, error) {
-	sc := api.w.snapshotStableCoin()
-	if sc == nil {
-		return nil, constant.ErrWalletIsNotConnected
-	}
-	return sc.Nonces(contractAddress, ownerAddress)
-}
-
-func (api *walletStableCoin) DomainSeparator(contractAddress string) ([32]byte, error) {
-	sc := api.w.snapshotStableCoin()
-	if sc == nil {
-		return [32]byte{}, constant.ErrWalletIsNotConnected
-	}
-	return sc.DomainSeparator(contractAddress)
-}
