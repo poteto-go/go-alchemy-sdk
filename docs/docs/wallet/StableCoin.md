@@ -444,9 +444,11 @@ allowance, err := w.StableCoin().MinterAllowance(contractAddress, "<minterAddres
 Submit an EIP-2612 permit transaction, allowing a spender to use tokens on behalf of an owner via a pre-signed signature.
 
 ```go
-func Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, v uint8, r, s [32]byte, gasLimit *uint64) (*types.Receipt, error)
-func PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, v uint8, r, s [32]byte, gasLimit *uint64) (common.Hash, error)
+func Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*types.Receipt, error)
+func PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error)
 ```
+
+The wallet automatically fetches the on-chain nonce and domain separator, then signs the EIP-712 permit message using the wallet's private key.
 
 ```go
 receipt, err := w.StableCoin().Permit(
@@ -456,9 +458,6 @@ receipt, err := w.StableCoin().Permit(
 	"<spenderAddress>",
 	big.NewInt(100),
 	big.NewInt(deadline),
-	v,
-	r,
-	s,
 	nil,
 )
 ```
