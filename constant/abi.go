@@ -12,8 +12,4 @@ const (
 	// ABIStringHeaderSize is the byte length of the offset + length header
 	// for an ABI-encoded dynamic string.
 	ABIStringHeaderSize = ABIWordSize * 2
-
-	// ECDSALegacyVOffset is added to the ECDSA recovery id (0 or 1) returned
-	// by crypto.Sign to produce the Ethereum v value (27 or 28).
-	ECDSALegacyVOffset = 27
 )
