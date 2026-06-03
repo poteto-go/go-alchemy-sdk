@@ -59,7 +59,7 @@ func (s *stableCoin) IsBlacklisted(contractAddress, address string) (bool, error
 	output, err := s.ether.CallReadMethod(
 		constant.IsBlacklistedFnSignature,
 		contractAddress,
-		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize),
 	)
 	if err != nil {
 		return false, err
@@ -136,7 +136,7 @@ func (s *stableCoin) IsMinter(contractAddress, address string) (bool, error) {
 	output, err := s.ether.CallReadMethod(
 		constant.IsMinterFnSignature,
 		contractAddress,
-		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize),
 	)
 	if err != nil {
 		return false, err
@@ -148,7 +148,7 @@ func (s *stableCoin) MinterAllowance(contractAddress, address string) (*big.Int,
 	output, err := s.ether.CallReadMethod(
 		constant.MinterAllowanceFnSignature,
 		contractAddress,
-		common.LeftPadBytes(common.HexToAddress(address).Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize),
 	)
 	if err != nil {
 		return nil, err

@@ -154,15 +154,15 @@ func (api *walletERC20) sendERC20Tx(contractAddress string, gasLimit *uint64, si
 
 func (api *walletERC20) TransferNoWait(contractAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferFnSignature,
-		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), 32),
-		common.LeftPadBytes(amount.Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(amount.Bytes(), constant.ABIWordSize),
 	)
 }
 
 func (api *walletERC20) ApproveNoWait(contractAddress, spenderAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.ApproveFnSignature,
-		common.LeftPadBytes(common.HexToAddress(spenderAddress).Bytes(), 32),
-		common.LeftPadBytes(amount.Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(spenderAddress).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(amount.Bytes(), constant.ABIWordSize),
 	)
 }
 
@@ -174,9 +174,9 @@ func (api *walletERC20) Approve(ctx context.Context, contractAddress, spenderAdd
 
 func (api *walletERC20) TransferFromNoWait(contractAddress, fromAddress, toAddress string, amount *big.Int, gasLimit *uint64) (common.Hash, error) {
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.TransferFromFnSignature,
-		common.LeftPadBytes(common.HexToAddress(fromAddress).Bytes(), 32),
-		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), 32),
-		common.LeftPadBytes(amount.Bytes(), 32),
+		common.LeftPadBytes(common.HexToAddress(fromAddress).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(common.HexToAddress(toAddress).Bytes(), constant.ABIWordSize),
+		common.LeftPadBytes(amount.Bytes(), constant.ABIWordSize),
 	)
 }
 
