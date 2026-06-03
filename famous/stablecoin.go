@@ -12,26 +12,42 @@ var (
 	ErrNotSupportedSymbol  = errors.New("not supported stablecoin symbol")
 )
 
+// StableCoinSymbol is a typed constant for well-known stablecoin token symbols.
+type StableCoinSymbol string
+
+const (
+	USDC StableCoinSymbol = "USDC"
+	USDT StableCoinSymbol = "USDT"
+	JPYC StableCoinSymbol = "JPYC"
+)
+
 // stablecoinAddresses maps network → token symbol → contract address.
 // Addresses are pre-parsed at init time to avoid repeated hex conversion on each lookup.
-var stablecoinAddresses = map[types.Network]map[string]common.Address{
+var stablecoinAddresses = map[types.Network]map[StableCoinSymbol]common.Address{
 	types.EthMainnet: {
-		"USDC": common.HexToAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
-		"USDT": common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
-		"JPYC": common.HexToAddress("0x431D5dfF03120AFA4bDf332c61A6e1766eF37BF9"),
+		// https://etherscan.io/token/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+		USDC: common.HexToAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+		// https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7
+		USDT: common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
+		// https://etherscan.io/token/0x431d5dff03120afa4bdf332c61a6e1766ef37bf9
+		JPYC: common.HexToAddress("0x431D5dfF03120AFA4bDf332c61A6e1766eF37BF9"),
 	},
 	types.PolygonMainnet: {
-		"USDC": common.HexToAddress("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"),
-		"USDT": common.HexToAddress("0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
-		"JPYC": common.HexToAddress("0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c"),
+		// https://polygonscan.com/token/0x3c499c542cef5e3811e1192ce70d8cc03d5c3359 (native USDC)
+		USDC: common.HexToAddress("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"),
+		// https://polygonscan.com/token/0xc2132d05d31c914a87c6611c10748aeb04b58e8f
+		USDT: common.HexToAddress("0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
+		// https://polygonscan.com/token/0x6ae7dfc73e0dde2aa99ac063dcf7e8a63265108c
+		JPYC: common.HexToAddress("0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c"),
 	},
 	types.PolygonAmoy: {
-		"USDC": common.HexToAddress("0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582"),
+		// https://amoy.polygonscan.com/token/0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582 (testnet USDC)
+		USDC: common.HexToAddress("0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582"),
 	},
 }
 
 // ContractAddress returns the contract address of a well-known stablecoin on the given network.
-func ContractAddress(network types.Network, symbol string) (common.Address, error) {
+func ContractAddress(network types.Network, symbol StableCoinSymbol) (common.Address, error) {
 	networkMap, ok := stablecoinAddresses[network]
 	if !ok {
 		return common.Address{}, ErrNotSupportedNetwork
@@ -43,4 +59,28 @@ func ContractAddress(network types.Network, symbol string) (common.Address, erro
 	}
 
 	return addr, nil
+}
+
+// SupportedNetworks returns all networks that have at least one registered stablecoin address.
+func SupportedNetworks() []types.Network {
+	networks := make([]types.Network, 0, len(stablecoinAddresses))
+	for n := range stablecoinAddresses {
+		networks = append(networks, n)
+	}
+	return networks
+}
+
+// SupportedSymbols returns all stablecoin symbols registered for the given network.
+// Returns an empty slice if the network is not supported.
+func SupportedSymbols(network types.Network) []StableCoinSymbol {
+	networkMap, ok := stablecoinAddresses[network]
+	if !ok {
+		return nil
+	}
+
+	symbols := make([]StableCoinSymbol, 0, len(networkMap))
+	for s := range networkMap {
+		symbols = append(symbols, s)
+	}
+	return symbols
 }
