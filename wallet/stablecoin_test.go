@@ -263,6 +263,14 @@ func TestWallet_StableCoin_BlacklistNoWait(t *testing.T) {
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
+
+	t.Run("invalid address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().BlacklistNoWait(contractAddress, "invalid", nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestWallet_StableCoin_Blacklist(t *testing.T) {
@@ -355,6 +363,14 @@ func TestWallet_StableCoin_UnBlacklistNoWait(t *testing.T) {
 		_, err := w.StableCoin().UnBlacklistNoWait(contractAddress, targetAddress, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("invalid address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().UnBlacklistNoWait(contractAddress, "invalid", nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -948,6 +964,14 @@ func TestWallet_StableCoin_TransferOwnershipNoWait(t *testing.T) {
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
+
+	t.Run("invalid address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().TransferOwnershipNoWait(contractAddress, "invalid", nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestWallet_StableCoin_ConfigureMinterNoWait(t *testing.T) {
@@ -1093,6 +1117,14 @@ func TestWallet_StableCoin_RemoveMinterNoWait(t *testing.T) {
 		_, err := w.StableCoin().RemoveMinterNoWait(contractAddress, minterAddress, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("invalid address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().RemoveMinterNoWait(contractAddress, "invalid", nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -1318,6 +1350,14 @@ func TestWallet_StableCoin_UpdateMasterMinterNoWait(t *testing.T) {
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
+
+	t.Run("invalid address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().UpdateMasterMinterNoWait(contractAddress, "invalid", nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestWallet_StableCoin_UpdateMasterMinter(t *testing.T) {
@@ -1411,6 +1451,14 @@ func TestWallet_StableCoin_UpdateBlacklisterNoWait(t *testing.T) {
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
+
+	t.Run("invalid address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().UpdateBlacklisterNoWait(contractAddress, "invalid", nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestWallet_StableCoin_UpdateBlacklister(t *testing.T) {
@@ -1503,6 +1551,14 @@ func TestWallet_StableCoin_UpdatePauserNoWait(t *testing.T) {
 		_, err := w.StableCoin().UpdatePauserNoWait(contractAddress, newPauserAddress, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("invalid address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().UpdatePauserNoWait(contractAddress, "invalid", nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -1615,6 +1671,38 @@ func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
 		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("invalid owner address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().PermitNoWait(contractAddress, "invalid", spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("invalid spender address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, "invalid", big.NewInt(100), big.NewInt(9999999), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("nil value returns ErrNilAmount", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, nil, big.NewInt(9999999), nil)
+
+		assert.ErrorIs(t, err, constant.ErrNilAmount)
+	})
+
+	t.Run("nil deadline returns ErrNilAmount", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), nil, nil)
+
+		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
 }
 

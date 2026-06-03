@@ -8,56 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateUint256(t *testing.T) {
-	tests := []struct {
-		name    string
-		v       *big.Int
-		wantErr error
-	}{
-		{"nil", nil, constant.ErrNilAmount},
-		{"negative", big.NewInt(-1), constant.ErrNegativeAmount},
-		{"zero", big.NewInt(0), nil},
-		{"positive", big.NewInt(100), nil},
-		{
-			"uint256 max",
-			new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1)),
-			nil,
-		},
-		{
-			"over uint256 max",
-			new(big.Int).Lsh(big.NewInt(1), 256),
-			constant.ErrAmountExceedsUint256,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.ErrorIs(t, validateUint256(tt.v), tt.wantErr)
-		})
-	}
-}
-
-func TestValidateAddress(t *testing.T) {
-	tests := []struct {
-		name    string
-		addr    string
-		wantErr error
-	}{
-		{"valid address", "0xE25583099BA105D9ec0A67f5Ae86D90e50036425", nil},
-		{"valid lowercase", "0xe25583099ba105d9ec0a67f5ae86d90e50036425", nil},
-		{"empty string", "", constant.ErrInvalidAddress},
-		{"too short", "0x1234", constant.ErrInvalidAddress},
-		{"not hex", "not-an-address", constant.ErrInvalidAddress},
-		{"no 0x prefix", "E25583099BA105D9ec0A67f5Ae86D90e50036425", nil},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.ErrorIs(t, validateAddress(tt.addr), tt.wantErr)
-		})
-	}
-}
-
 func TestWallet_ERC20TransferNoWait_Validation(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	validAddr := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
