@@ -8,6 +8,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
+	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
 type IStableCoin interface {
@@ -66,6 +67,9 @@ func decodeBoolOutput(output []byte) bool {
 }
 
 func (s *stableCoin) IsBlacklisted(contractAddress, address string) (bool, error) {
+	if err := validate.Addresses(contractAddress, address); err != nil {
+		return false, err
+	}
 	output, err := s.ether.CallReadMethod(
 		constant.IsBlacklistedFnSignature,
 		contractAddress,
@@ -78,6 +82,9 @@ func (s *stableCoin) IsBlacklisted(contractAddress, address string) (bool, error
 }
 
 func (s *stableCoin) Currency(contractAddress string) (string, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return "", err
+	}
 	output, err := s.ether.CallReadMethod(
 		constant.CurrencyFnSignature,
 		contractAddress,
@@ -89,6 +96,9 @@ func (s *stableCoin) Currency(contractAddress string) (string, error) {
 }
 
 func (s *stableCoin) Version(contractAddress string) (string, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return "", err
+	}
 	output, err := s.ether.CallReadMethod(
 		constant.VersionFnSignature,
 		contractAddress,
@@ -100,6 +110,9 @@ func (s *stableCoin) Version(contractAddress string) (string, error) {
 }
 
 func (s *stableCoin) Paused(contractAddress string) (bool, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return false, err
+	}
 	output, err := s.ether.CallReadMethod(
 		constant.PausedFnSignature,
 		contractAddress,
@@ -111,6 +124,9 @@ func (s *stableCoin) Paused(contractAddress string) (bool, error) {
 }
 
 func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return common.Address{}, err
+	}
 	output, err := s.ether.CallReadMethod(constant.OwnerFnSignature, contractAddress)
 	if err != nil {
 		return common.Address{}, err
@@ -119,6 +135,9 @@ func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
 }
 
 func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return common.Address{}, err
+	}
 	output, err := s.ether.CallReadMethod(constant.MasterMinterFnSignature, contractAddress)
 	if err != nil {
 		return common.Address{}, err
@@ -127,6 +146,9 @@ func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error
 }
 
 func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return common.Address{}, err
+	}
 	output, err := s.ether.CallReadMethod(constant.PauserFnSignature, contractAddress)
 	if err != nil {
 		return common.Address{}, err
@@ -135,6 +157,9 @@ func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
 }
 
 func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return common.Address{}, err
+	}
 	output, err := s.ether.CallReadMethod(constant.BlacklisterFnSignature, contractAddress)
 	if err != nil {
 		return common.Address{}, err
@@ -143,6 +168,9 @@ func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error)
 }
 
 func (s *stableCoin) IsMinter(contractAddress, address string) (bool, error) {
+	if err := validate.Addresses(contractAddress, address); err != nil {
+		return false, err
+	}
 	output, err := s.ether.CallReadMethod(
 		constant.IsMinterFnSignature,
 		contractAddress,
@@ -155,6 +183,9 @@ func (s *stableCoin) IsMinter(contractAddress, address string) (bool, error) {
 }
 
 func (s *stableCoin) MinterAllowance(contractAddress, address string) (*big.Int, error) {
+	if err := validate.Addresses(contractAddress, address); err != nil {
+		return nil, err
+	}
 	output, err := s.ether.CallReadMethod(
 		constant.MinterAllowanceFnSignature,
 		contractAddress,
@@ -167,6 +198,9 @@ func (s *stableCoin) MinterAllowance(contractAddress, address string) (*big.Int,
 }
 
 func (s *stableCoin) Nonces(contractAddress, ownerAddress string) (*big.Int, error) {
+	if err := validate.Addresses(contractAddress, ownerAddress); err != nil {
+		return nil, err
+	}
 	output, err := s.ether.CallReadMethod(
 		constant.NoncesFnSignature,
 		contractAddress,
@@ -192,6 +226,9 @@ func (s *stableCoin) AuthorizationState(contractAddress, authorizer string, nonc
 }
 
 func (s *stableCoin) DomainSeparator(contractAddress string) ([32]byte, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return [32]byte{}, err
+	}
 	output, err := s.ether.CallReadMethod(
 		constant.DomainSeparatorFnSignature,
 		contractAddress,

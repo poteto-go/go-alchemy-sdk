@@ -58,3 +58,25 @@ func TestAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestAddresses(t *testing.T) {
+	valid := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+	invalid := "invalid"
+
+	tests := []struct {
+		name    string
+		addrs   []string
+		wantErr error
+	}{
+		{"all valid", []string{valid, valid}, nil},
+		{"first invalid", []string{invalid, valid}, constant.ErrInvalidAddress},
+		{"second invalid", []string{valid, invalid}, constant.ErrInvalidAddress},
+		{"empty slice", []string{}, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.ErrorIs(t, validate.Addresses(tt.addrs...), tt.wantErr)
+		})
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/agiledragon/gomonkey"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -78,6 +79,24 @@ func TestStableCoin_IsBlacklisted(t *testing.T) {
 		assert.Error(t, err)
 		assert.False(t, result)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.IsBlacklisted("invalid", walletAddress)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("returns error for invalid address", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.IsBlacklisted(contractAddress, "invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestStableCoin_Currency(t *testing.T) {
@@ -117,6 +136,15 @@ func TestStableCoin_Currency(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, result)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.Currency("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestStableCoin_Version(t *testing.T) {
@@ -155,6 +183,15 @@ func TestStableCoin_Version(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Empty(t, result)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.Version("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -214,6 +251,15 @@ func TestStableCoin_Paused(t *testing.T) {
 		assert.Error(t, err)
 		assert.False(t, result)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.Paused("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestStableCoin_MasterMinter(t *testing.T) {
@@ -253,6 +299,15 @@ func TestStableCoin_MasterMinter(t *testing.T) {
 		_, err := sc.MasterMinter(contractAddress)
 
 		assert.Error(t, err)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.MasterMinter("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -294,6 +349,15 @@ func TestStableCoin_Pauser(t *testing.T) {
 
 		assert.Error(t, err)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.Pauser("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestStableCoin_Blacklister(t *testing.T) {
@@ -334,6 +398,15 @@ func TestStableCoin_Blacklister(t *testing.T) {
 
 		assert.Error(t, err)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.Blacklister("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestStableCoin_Owner(t *testing.T) {
@@ -373,6 +446,15 @@ func TestStableCoin_Owner(t *testing.T) {
 		_, err := sc.Owner(contractAddress)
 
 		assert.Error(t, err)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.Owner("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -433,6 +515,24 @@ func TestStableCoin_IsMinter(t *testing.T) {
 		assert.Error(t, err)
 		assert.False(t, result)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.IsMinter("invalid", minterAddress)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("returns error for invalid address", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.IsMinter(contractAddress, "invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestStableCoin_MinterAllowance(t *testing.T) {
@@ -473,6 +573,24 @@ func TestStableCoin_MinterAllowance(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.MinterAllowance("invalid", minterAddress)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("returns error for invalid address", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.MinterAllowance(contractAddress, "invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -532,6 +650,24 @@ func TestStableCoin_Nonces(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, result)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.Nonces("invalid", ownerAddress)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("returns error for invalid ownerAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.Nonces(contractAddress, "invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestStableCoin_DomainSeparator(t *testing.T) {
@@ -589,6 +725,15 @@ func TestStableCoin_DomainSeparator(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Equal(t, [32]byte{}, result)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		sc := namespace.NewStableCoinNamespace(eth)
+
+		_, err := sc.DomainSeparator("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 

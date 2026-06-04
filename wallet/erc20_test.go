@@ -258,6 +258,14 @@ func TestWallet_ERC20TransferNoWait(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 	})
+
+	t.Run("invalid contractAddress returns ErrInvalidAddress", func(t *testing.T) {
+		w := createConnectedWallet()
+
+		_, err := w.ERC20().TransferNoWait("invalid", otherAddress, big.NewInt(1), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestWallet_ERC20Approve(t *testing.T) {
@@ -387,6 +395,14 @@ func TestWallet_ERC20ApproveNoWait(t *testing.T) {
 		_, err := w.ERC20().ApproveNoWait(contractAddress, spenderAddress, nil, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
+	})
+
+	t.Run("invalid contractAddress returns ErrInvalidAddress", func(t *testing.T) {
+		w := createConnectedWallet()
+
+		_, err := w.ERC20().ApproveNoWait("invalid", spenderAddress, big.NewInt(1), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -527,6 +543,14 @@ func TestWallet_ERC20TransferFromNoWait(t *testing.T) {
 		_, err := w.ERC20().TransferFromNoWait(contractAddress, fromAddress, toAddress, nil, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
+	})
+
+	t.Run("invalid contractAddress returns ErrInvalidAddress", func(t *testing.T) {
+		w := createConnectedWallet()
+
+		_, err := w.ERC20().TransferFromNoWait("invalid", fromAddress, toAddress, big.NewInt(1), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 

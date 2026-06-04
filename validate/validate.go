@@ -26,3 +26,12 @@ func Address(addr string) error {
 	}
 	return nil
 }
+
+func Addresses(addrs ...string) error {
+	for _, addr := range addrs {
+		if err := Address(addr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
