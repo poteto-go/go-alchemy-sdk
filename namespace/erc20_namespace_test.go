@@ -7,6 +7,7 @@ import (
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/ethereum/go-ethereum"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -62,6 +63,24 @@ func TestERC20_BalanceOf(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, balance)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.BalanceOf("invalid", walletAddress)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("returns error for invalid walletAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.BalanceOf(contractAddress, "invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestERC20_TotalSupply(t *testing.T) {
@@ -96,12 +115,21 @@ func TestERC20_TotalSupply(t *testing.T) {
 		_, err := erc20.TotalSupply(contractAddress)
 		assert.Error(t, err)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.TotalSupply("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestERC20_Allowance(t *testing.T) {
 	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
-	owner := "0xowner"
-	spender := "0xspender"
+	owner := "0xabcdef1234567890abcdef1234567890abcdef12"
+	spender := "0x1234567890abcdef1234567890abcdef12345678"
 
 	t.Run("can get allowance", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
@@ -131,6 +159,33 @@ func TestERC20_Allowance(t *testing.T) {
 
 		_, err := erc20.Allowance(contractAddress, owner, spender)
 		assert.Error(t, err)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.Allowance("invalid", owner, spender)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("returns error for invalid owner", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.Allowance(contractAddress, "invalid", spender)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("returns error for invalid spender", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.Allowance(contractAddress, owner, "invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -166,6 +221,15 @@ func TestERC20_Name(t *testing.T) {
 		_, err := erc20.Name(contractAddress)
 		assert.Error(t, err)
 	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.Name("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestERC20_Symbol(t *testing.T) {
@@ -199,6 +263,15 @@ func TestERC20_Symbol(t *testing.T) {
 
 		_, err := erc20.Symbol(contractAddress)
 		assert.Error(t, err)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.Symbol("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
@@ -249,5 +322,14 @@ func TestERC20_Decimals(t *testing.T) {
 
 		_, err := erc20.Decimals(contractAddress)
 		assert.Error(t, err)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		erc20 := namespace.NewERC20Namespace(eth)
+
+		_, err := erc20.Decimals("invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }

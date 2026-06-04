@@ -8,6 +8,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
+	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
 type IERC20 interface {
@@ -47,6 +48,9 @@ func (e *ERC20) BalanceOf(
 	contractAddress,
 	walletAddress string,
 ) (*big.Int, error) {
+	if err := validate.Addresses(contractAddress, walletAddress); err != nil {
+		return nil, err
+	}
 	output, err := e.ether.CallReadMethod(
 		constant.BalanceOfFnSignature,
 		contractAddress,
@@ -61,6 +65,9 @@ func (e *ERC20) BalanceOf(
 }
 
 func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return nil, err
+	}
 	output, err := e.ether.CallReadMethod(
 		constant.TotalSupplyFnSignature,
 		contractAddress,
@@ -74,6 +81,9 @@ func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
 }
 
 func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, error) {
+	if err := validate.Addresses(contractAddress, owner, spender); err != nil {
+		return nil, err
+	}
 	output, err := e.ether.CallReadMethod(
 		constant.AllowanceFnSignature,
 		contractAddress,
@@ -89,6 +99,9 @@ func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, err
 }
 
 func (e *ERC20) Name(contractAddress string) (string, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return "", err
+	}
 	output, err := e.ether.CallReadMethod(
 		constant.NameFnSignature,
 		contractAddress,
@@ -101,6 +114,9 @@ func (e *ERC20) Name(contractAddress string) (string, error) {
 }
 
 func (e *ERC20) Symbol(contractAddress string) (string, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return "", err
+	}
 	output, err := e.ether.CallReadMethod(
 		constant.SymbolFnSignature,
 		contractAddress,
@@ -113,6 +129,9 @@ func (e *ERC20) Symbol(contractAddress string) (string, error) {
 }
 
 func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
+	if err := validate.Address(contractAddress); err != nil {
+		return 0, err
+	}
 	output, err := e.ether.CallReadMethod(
 		constant.DecimalsFnSignature,
 		contractAddress,

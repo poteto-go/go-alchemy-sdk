@@ -60,6 +60,9 @@ func resolveGasLimit(gasLimit *uint64) uint64 {
 }
 
 func (api *walletERC20) sendERC20Tx(contractAddress string, gasLimit *uint64, sig []byte, params ...[]byte) (common.Hash, error) {
+	if err := validateAddress(contractAddress); err != nil {
+		return common.Hash{}, err
+	}
 	if api.w.snapshot() == nil {
 		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}

@@ -79,6 +79,14 @@ func TestWallet_StableCoin_MintNoWait(t *testing.T) {
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
+
+	t.Run("invalid contractAddress returns ErrInvalidAddress", func(t *testing.T) {
+		w := createConnectedWallet()
+
+		_, err := w.StableCoin().MintNoWait("invalid", toAddress, big.NewInt(100), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
 }
 
 func TestWallet_StableCoin_Mint(t *testing.T) {
@@ -170,6 +178,14 @@ func TestWallet_StableCoin_BurnNoWait(t *testing.T) {
 		_, err := w.StableCoin().BurnNoWait(contractAddress, big.NewInt(50), nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("invalid contractAddress returns ErrInvalidAddress", func(t *testing.T) {
+		w := createConnectedWallet()
+
+		_, err := w.StableCoin().BurnNoWait("invalid", big.NewInt(50), nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
 
