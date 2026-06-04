@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -23,7 +24,10 @@ func isAlwaysReProduceError(err error) bool {
 		return false
 	}
 
-	if _, ok := errors.AsType[*url.Error](err); ok {
+	if urlErr, ok := errors.AsType[*url.Error](err); ok {
+		if urlErr.Timeout() || errors.Is(urlErr.Err, context.DeadlineExceeded) {
+			return false
+		}
 		return true
 	}
 
