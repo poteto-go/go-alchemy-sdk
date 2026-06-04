@@ -661,4 +661,44 @@ func TestWallet_ERC20ReadMethods(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expected, res)
 	})
+
+	t.Run("error w/o connect wallet on TotalSupply", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().TotalSupply(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("error w/o connect wallet on Allowance", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().Allowance(contractAddress, "owner", "spender")
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("error w/o connect wallet on Name", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().Name(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("error w/o connect wallet on Symbol", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().Symbol(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("error w/o connect wallet on Decimals", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.ERC20().Decimals(contractAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
 }

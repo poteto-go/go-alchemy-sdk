@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"slices"
-	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
@@ -37,9 +36,7 @@ type wallet struct {
 }
 
 func New(privateKeyStr string) (types.Wallet, error) {
-	privateKeyStr = strings.TrimPrefix(privateKeyStr, "0x")
-
-	privateKey, err := crypto.HexToECDSA(privateKeyStr)
+	privateKey, err := utils.EncodePrivateKey(privateKeyStr)
 	if err != nil {
 		return &wallet{}, err
 	}

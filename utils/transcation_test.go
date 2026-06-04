@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -50,9 +51,9 @@ func TestTransformTransaction(t *testing.T) {
 				Value:       big.NewInt(10),
 				ChainID:     11,
 				Signature: types.Signature{
-					R: "0xd",
-					S: "0xe",
-					V: big.NewInt(12),
+					V: 12,
+					R: [32]byte(common.HexToHash("0xd")),
+					S: [32]byte(common.HexToHash("0xe")),
 				},
 				MaxPriorityFeePerGas: big.NewInt(0),
 				MaxFeePerGas:         big.NewInt(0),

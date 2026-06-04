@@ -1766,24 +1766,13 @@ func TestWallet_StableCoin_Permit(t *testing.T) {
 	})
 }
 
-func mockCallContractForAuthorization(patches *gomonkey.Patches, eth interface {
-	CallContract(ethereum.CallMsg, string) ([]byte, error)
-}) {
-	patches.ApplyMethod(reflect.TypeOf(eth), "CallContract",
-		func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-			ds := make([]byte, 32)
-			ds[0] = 0xde
-			return ds, nil
-		},
-	)
-}
-
 func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	fromAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
 	toAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
 	var nonce [32]byte
 	nonce[0] = 0xde
+	sig := types.Signature{}
 	expectedHash := common.HexToHash("0x123")
 
 	t.Run("can submit transferWithAuthorization", func(t *testing.T) {
@@ -1791,7 +1780,6 @@ func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 		defer patches.Reset()
 
 		w := createConnectedWallet()
-		mockCallContractForAuthorization(patches, w.snapshot().Eth())
 
 		patches.ApplyMethod(
 			reflect.TypeOf(w),
@@ -1801,33 +1789,16 @@ func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 			},
 		)
 
-		hash, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		hash, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expectedHash, hash)
 	})
 
-	t.Run("handle error on DomainSeparator", func(t *testing.T) {
-		patches := gomonkey.NewPatches()
-		defer patches.Reset()
-
-		w := createConnectedWallet()
-
-		patches.ApplyMethod(reflect.TypeOf(w.snapshot().Eth()), "CallContract",
-			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-				return nil, errors.New("domain separator error")
-			},
-		)
-
-		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
-
-		assert.Error(t, err)
-	})
-
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -1835,7 +1806,7 @@ func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 	t.Run("invalid from address returns ErrInvalidAddress", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, "invalid", toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, "invalid", toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -1843,7 +1814,7 @@ func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 	t.Run("invalid to address returns ErrInvalidAddress", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, "invalid", big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, "invalid", big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -1851,7 +1822,7 @@ func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 	t.Run("nil value returns ErrNilAmount", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, nil, big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, nil, big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
@@ -1859,7 +1830,7 @@ func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 	t.Run("nil validAfter returns ErrNilAmount", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), nil, big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), nil, big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
@@ -1867,7 +1838,7 @@ func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 	t.Run("nil validBefore returns ErrNilAmount", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), nil, nonce, nil)
+		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), nil, nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
@@ -1879,6 +1850,7 @@ func TestWallet_StableCoin_TransferWithAuthorization(t *testing.T) {
 	toAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
 	var nonce [32]byte
 	nonce[0] = 0xde
+	sig := types.Signature{}
 
 	t.Run("can transferWithAuthorization and wait", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
@@ -1886,8 +1858,6 @@ func TestWallet_StableCoin_TransferWithAuthorization(t *testing.T) {
 
 		w := createConnectedWallet()
 		expected := &gethTypes.Receipt{TxHash: common.HexToHash("0x123")}
-
-		mockCallContractForAuthorization(patches, w.snapshot().Eth())
 
 		patches.ApplyMethod(
 			reflect.TypeOf(w),
@@ -1904,7 +1874,7 @@ func TestWallet_StableCoin_TransferWithAuthorization(t *testing.T) {
 			},
 		)
 
-		receipt, err := w.StableCoin().TransferWithAuthorization(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		receipt, err := w.StableCoin().TransferWithAuthorization(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, receipt)
@@ -1913,7 +1883,7 @@ func TestWallet_StableCoin_TransferWithAuthorization(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().TransferWithAuthorization(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().TransferWithAuthorization(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -1925,6 +1895,7 @@ func TestWallet_StableCoin_ReceiveWithAuthorizationNoWait(t *testing.T) {
 	toAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
 	var nonce [32]byte
 	nonce[0] = 0xde
+	sig := types.Signature{}
 	expectedHash := common.HexToHash("0x123")
 
 	t.Run("can submit receiveWithAuthorization", func(t *testing.T) {
@@ -1932,7 +1903,6 @@ func TestWallet_StableCoin_ReceiveWithAuthorizationNoWait(t *testing.T) {
 		defer patches.Reset()
 
 		w := createConnectedWallet()
-		mockCallContractForAuthorization(patches, w.snapshot().Eth())
 
 		patches.ApplyMethod(
 			reflect.TypeOf(w),
@@ -1942,7 +1912,7 @@ func TestWallet_StableCoin_ReceiveWithAuthorizationNoWait(t *testing.T) {
 			},
 		)
 
-		hash, err := w.StableCoin().ReceiveWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		hash, err := w.StableCoin().ReceiveWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expectedHash, hash)
@@ -1951,7 +1921,7 @@ func TestWallet_StableCoin_ReceiveWithAuthorizationNoWait(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().ReceiveWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().ReceiveWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -1959,7 +1929,7 @@ func TestWallet_StableCoin_ReceiveWithAuthorizationNoWait(t *testing.T) {
 	t.Run("invalid from address returns ErrInvalidAddress", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().ReceiveWithAuthorizationNoWait(contractAddress, "invalid", toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().ReceiveWithAuthorizationNoWait(contractAddress, "invalid", toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -1967,7 +1937,7 @@ func TestWallet_StableCoin_ReceiveWithAuthorizationNoWait(t *testing.T) {
 	t.Run("invalid to address returns ErrInvalidAddress", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().ReceiveWithAuthorizationNoWait(contractAddress, fromAddress, "invalid", big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().ReceiveWithAuthorizationNoWait(contractAddress, fromAddress, "invalid", big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -1979,6 +1949,7 @@ func TestWallet_StableCoin_ReceiveWithAuthorization(t *testing.T) {
 	toAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
 	var nonce [32]byte
 	nonce[0] = 0xde
+	sig := types.Signature{}
 
 	t.Run("can receiveWithAuthorization and wait", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
@@ -1986,8 +1957,6 @@ func TestWallet_StableCoin_ReceiveWithAuthorization(t *testing.T) {
 
 		w := createConnectedWallet()
 		expected := &gethTypes.Receipt{TxHash: common.HexToHash("0x123")}
-
-		mockCallContractForAuthorization(patches, w.snapshot().Eth())
 
 		patches.ApplyMethod(
 			reflect.TypeOf(w),
@@ -2004,7 +1973,7 @@ func TestWallet_StableCoin_ReceiveWithAuthorization(t *testing.T) {
 			},
 		)
 
-		receipt, err := w.StableCoin().ReceiveWithAuthorization(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		receipt, err := w.StableCoin().ReceiveWithAuthorization(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, receipt)
@@ -2013,7 +1982,7 @@ func TestWallet_StableCoin_ReceiveWithAuthorization(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().ReceiveWithAuthorization(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, nil)
+		_, err := w.StableCoin().ReceiveWithAuthorization(context.Background(), contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(0), big.NewInt(9999999), nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -2024,6 +1993,7 @@ func TestWallet_StableCoin_CancelAuthorizationNoWait(t *testing.T) {
 	authorizer := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
 	var nonce [32]byte
 	nonce[0] = 0xde
+	sig := types.Signature{}
 	expectedHash := common.HexToHash("0x123")
 
 	t.Run("can submit cancelAuthorization", func(t *testing.T) {
@@ -2031,7 +2001,6 @@ func TestWallet_StableCoin_CancelAuthorizationNoWait(t *testing.T) {
 		defer patches.Reset()
 
 		w := createConnectedWallet()
-		mockCallContractForAuthorization(patches, w.snapshot().Eth())
 
 		patches.ApplyMethod(
 			reflect.TypeOf(w),
@@ -2041,33 +2010,16 @@ func TestWallet_StableCoin_CancelAuthorizationNoWait(t *testing.T) {
 			},
 		)
 
-		hash, err := w.StableCoin().CancelAuthorizationNoWait(contractAddress, authorizer, nonce, nil)
+		hash, err := w.StableCoin().CancelAuthorizationNoWait(contractAddress, authorizer, nonce, sig, nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expectedHash, hash)
 	})
 
-	t.Run("handle error on DomainSeparator", func(t *testing.T) {
-		patches := gomonkey.NewPatches()
-		defer patches.Reset()
-
-		w := createConnectedWallet()
-
-		patches.ApplyMethod(reflect.TypeOf(w.snapshot().Eth()), "CallContract",
-			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-				return nil, errors.New("domain separator error")
-			},
-		)
-
-		_, err := w.StableCoin().CancelAuthorizationNoWait(contractAddress, authorizer, nonce, nil)
-
-		assert.Error(t, err)
-	})
-
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().CancelAuthorizationNoWait(contractAddress, authorizer, nonce, nil)
+		_, err := w.StableCoin().CancelAuthorizationNoWait(contractAddress, authorizer, nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -2075,7 +2027,7 @@ func TestWallet_StableCoin_CancelAuthorizationNoWait(t *testing.T) {
 	t.Run("invalid authorizer address returns ErrInvalidAddress", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().CancelAuthorizationNoWait(contractAddress, "invalid", nonce, nil)
+		_, err := w.StableCoin().CancelAuthorizationNoWait(contractAddress, "invalid", nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -2086,6 +2038,7 @@ func TestWallet_StableCoin_CancelAuthorization(t *testing.T) {
 	authorizer := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
 	var nonce [32]byte
 	nonce[0] = 0xde
+	sig := types.Signature{}
 
 	t.Run("can cancelAuthorization and wait", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
@@ -2093,8 +2046,6 @@ func TestWallet_StableCoin_CancelAuthorization(t *testing.T) {
 
 		w := createConnectedWallet()
 		expected := &gethTypes.Receipt{TxHash: common.HexToHash("0x123")}
-
-		mockCallContractForAuthorization(patches, w.snapshot().Eth())
 
 		patches.ApplyMethod(
 			reflect.TypeOf(w),
@@ -2111,7 +2062,7 @@ func TestWallet_StableCoin_CancelAuthorization(t *testing.T) {
 			},
 		)
 
-		receipt, err := w.StableCoin().CancelAuthorization(context.Background(), contractAddress, authorizer, nonce, nil)
+		receipt, err := w.StableCoin().CancelAuthorization(context.Background(), contractAddress, authorizer, nonce, sig, nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, receipt)
@@ -2120,7 +2071,7 @@ func TestWallet_StableCoin_CancelAuthorization(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().CancelAuthorization(context.Background(), contractAddress, authorizer, nonce, nil)
+		_, err := w.StableCoin().CancelAuthorization(context.Background(), contractAddress, authorizer, nonce, sig, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})

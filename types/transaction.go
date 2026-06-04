@@ -4,12 +4,6 @@ import (
 	"math/big"
 )
 
-type Signature struct {
-	R string   `json:"r"`
-	S string   `json:"s"`
-	V *big.Int `json:"v"`
-}
-
 type TransactionRawResponse struct {
 	BlockHash        string `json:"blockHash"`
 	BlockNumber      string `json:"blockNumber"`

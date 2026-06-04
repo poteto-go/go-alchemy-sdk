@@ -1,15 +1,18 @@
 package constant
 
 var (
-	TransferFnSignature           = []byte("transfer(address,uint256)")
-	TransferFromFnSignature       = []byte("transferFrom(address,address,uint256)")
-	ApproveFnSignature            = []byte("approve(address,uint256)")
-	BalanceOfFnSignature          = []byte("balanceOf(address)")
-	TotalSupplyFnSignature        = []byte("totalSupply()")
-	AllowanceFnSignature          = []byte("allowance(address,address)")
-	NameFnSignature               = []byte("name()")
-	SymbolFnSignature             = []byte("symbol()")
-	DecimalsFnSignature           = []byte("decimals()")
+	// ERC-20 function signatures
+	TransferFnSignature     = []byte("transfer(address,uint256)")
+	TransferFromFnSignature = []byte("transferFrom(address,address,uint256)")
+	ApproveFnSignature      = []byte("approve(address,uint256)")
+	BalanceOfFnSignature    = []byte("balanceOf(address)")
+	TotalSupplyFnSignature  = []byte("totalSupply()")
+	AllowanceFnSignature    = []byte("allowance(address,address)")
+	NameFnSignature         = []byte("name()")
+	SymbolFnSignature       = []byte("symbol()")
+	DecimalsFnSignature     = []byte("decimals()")
+
+	// Stablecoin function signatures
 	MintFnSignature               = []byte("mint(address,uint256)")
 	BurnFnSignature               = []byte("burn(uint256)")
 	BlacklistFnSignature          = []byte("blacklist(address)")

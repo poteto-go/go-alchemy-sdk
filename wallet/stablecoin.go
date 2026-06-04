@@ -6,8 +6,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/typeddata"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
 type walletStableCoin struct {
@@ -272,23 +273,37 @@ func (api *walletStableCoin) UpdatePauser(ctx context.Context, contractAddress, 
 	})
 }
 
-func (api *walletStableCoin) signPermit(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int) (uint8, [32]byte, [32]byte, error) {
+func (api *walletStableCoin) signPermit(
+	contractAddress, ownerAddress, spenderAddress string,
+	value, deadline *big.Int,
+) (types.Signature, error) {
 	sc := api.w.snapshotStableCoin()
 	if sc == nil {
-		return 0, [32]byte{}, [32]byte{}, constant.ErrWalletIsNotConnected
+		return types.Signature{}, constant.ErrWalletIsNotConnected
 	}
 
 	nonce, err := sc.Nonces(contractAddress, ownerAddress)
 	if err != nil {
-		return 0, [32]byte{}, [32]byte{}, err
+		return types.Signature{}, err
 	}
 
 	domainSeparator, err := sc.DomainSeparator(contractAddress)
 	if err != nil {
-		return 0, [32]byte{}, [32]byte{}, err
+		return types.Signature{}, err
 	}
 
-	return api.signEIP712(domainSeparator, abiEncodeWords(constant.PermitTypeHash, ownerAddress, spenderAddress, value, nonce, deadline))
+	return typeddata.SignEIP712(
+		api.w.privateKey,
+		domainSeparator,
+		typeddata.EncodeWords(
+			constant.PermitTypeHash,
+			ownerAddress,
+			spenderAddress,
+			value,
+			nonce,
+			deadline,
+		),
+	)
 }
 
 func (api *walletStableCoin) PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error) {
@@ -304,7 +319,7 @@ func (api *walletStableCoin) PermitNoWait(contractAddress, ownerAddress, spender
 	if err := validateUint256(deadline); err != nil {
 		return common.Hash{}, err
 	}
-	v, r, s, err := api.signPermit(contractAddress, ownerAddress, spenderAddress, value, deadline)
+	sig, err := api.signPermit(contractAddress, ownerAddress, spenderAddress, value, deadline)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -313,9 +328,9 @@ func (api *walletStableCoin) PermitNoWait(contractAddress, ownerAddress, spender
 		common.LeftPadBytes(common.HexToAddress(spenderAddress).Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(value.Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(deadline.Bytes(), constant.ABIWordSize),
-		common.LeftPadBytes([]byte{v}, constant.ABIWordSize),
-		r[:],
-		s[:],
+		common.LeftPadBytes([]byte{sig.V}, constant.ABIWordSize),
+		sig.R[:],
+		sig.S[:],
 	)
 }
 
@@ -325,45 +340,7 @@ func (api *walletStableCoin) Permit(ctx context.Context, contractAddress, ownerA
 	})
 }
 
-func (api *walletStableCoin) domainSeparatorFor(contractAddress string) ([32]byte, error) {
-	sc := api.w.snapshotStableCoin()
-	if sc == nil {
-		return [32]byte{}, constant.ErrWalletIsNotConnected
-	}
-	return sc.DomainSeparator(contractAddress)
-}
-
-func (api *walletStableCoin) signAuthorization(contractAddress string, args ...any) (uint8, [32]byte, [32]byte, error) {
-	domainSeparator, err := api.domainSeparatorFor(contractAddress)
-	if err != nil {
-		return 0, [32]byte{}, [32]byte{}, err
-	}
-	return api.signEIP712(domainSeparator, abiEncodeWords(args...))
-}
-
-func (api *walletStableCoin) signEIP712(domainSeparator [32]byte, encoded []byte) (uint8, [32]byte, [32]byte, error) {
-	structHash := crypto.Keccak256(encoded)
-
-	msg := make([]byte, 0, 2+constant.ABIWordSize*2)
-	msg = append(msg, constant.EIP191DataPrefix, constant.EIP712StructuredDataVersion)
-	msg = append(msg, domainSeparator[:]...)
-	msg = append(msg, structHash...)
-	hash := crypto.Keccak256(msg)
-
-	sig, err := crypto.Sign(hash, api.w.privateKey)
-	if err != nil {
-		return 0, [32]byte{}, [32]byte{}, err
-	}
-
-	var r, s [32]byte
-	copy(r[:], sig[:constant.ABIWordSize])
-	copy(s[:], sig[constant.ABIWordSize:constant.ABIWordSize*2])
-	v := sig[constant.ABIWordSize*2] + constant.ECDSALegacyVOffset
-
-	return v, r, s, nil
-}
-
-func (api *walletStableCoin) transferOrReceiveAuthorizationNoWait(typeHash, fnSig []byte, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error) {
+func (api *walletStableCoin) transferOrReceiveAuthorizationNoWait(fnSig []byte, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, sig types.Signature, gasLimit *uint64) (common.Hash, error) {
 	if err := validateAddress(from); err != nil {
 		return common.Hash{}, err
 	}
@@ -379,10 +356,6 @@ func (api *walletStableCoin) transferOrReceiveAuthorizationNoWait(typeHash, fnSi
 	if err := validateUint256(validBefore); err != nil {
 		return common.Hash{}, err
 	}
-	v, r, s, err := api.signAuthorization(contractAddress, typeHash, from, to, value, validAfter, validBefore, nonce)
-	if err != nil {
-		return common.Hash{}, err
-	}
 	return api.sendERC20Tx(contractAddress, gasLimit, fnSig,
 		common.LeftPadBytes(common.HexToAddress(from).Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(common.HexToAddress(to).Bytes(), constant.ABIWordSize),
@@ -390,51 +363,53 @@ func (api *walletStableCoin) transferOrReceiveAuthorizationNoWait(typeHash, fnSi
 		common.LeftPadBytes(validAfter.Bytes(), constant.ABIWordSize),
 		common.LeftPadBytes(validBefore.Bytes(), constant.ABIWordSize),
 		nonce[:],
-		common.LeftPadBytes([]byte{v}, constant.ABIWordSize),
-		r[:],
-		s[:],
+		common.LeftPadBytes([]byte{sig.V}, constant.ABIWordSize),
+		sig.R[:],
+		sig.S[:],
 	)
 }
 
-func (api *walletStableCoin) TransferWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error) {
-	return api.transferOrReceiveAuthorizationNoWait(constant.TransferWithAuthorizationTypeHash, constant.TransferWithAuthorizationFnSignature, contractAddress, from, to, value, validAfter, validBefore, nonce, gasLimit)
+func (api *walletStableCoin) TransferWithAuthorizationNoWait(
+	contractAddress, from, to string,
+	value, validAfter, validBefore *big.Int,
+	nonce [32]byte,
+	sig types.Signature,
+	gasLimit *uint64,
+) (common.Hash, error) {
+	return api.transferOrReceiveAuthorizationNoWait(constant.TransferWithAuthorizationFnSignature, contractAddress, from, to, value, validAfter, validBefore, nonce, sig, gasLimit)
 }
 
-func (api *walletStableCoin) TransferWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (*gethTypes.Receipt, error) {
+func (api *walletStableCoin) TransferWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, sig types.Signature, gasLimit *uint64) (*gethTypes.Receipt, error) {
 	return api.waitMined(ctx, func() (common.Hash, error) {
-		return api.TransferWithAuthorizationNoWait(contractAddress, from, to, value, validAfter, validBefore, nonce, gasLimit)
+		return api.TransferWithAuthorizationNoWait(contractAddress, from, to, value, validAfter, validBefore, nonce, sig, gasLimit)
 	})
 }
 
-func (api *walletStableCoin) ReceiveWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error) {
-	return api.transferOrReceiveAuthorizationNoWait(constant.ReceiveWithAuthorizationTypeHash, constant.ReceiveWithAuthorizationFnSignature, contractAddress, from, to, value, validAfter, validBefore, nonce, gasLimit)
+func (api *walletStableCoin) ReceiveWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, sig types.Signature, gasLimit *uint64) (common.Hash, error) {
+	return api.transferOrReceiveAuthorizationNoWait(constant.ReceiveWithAuthorizationFnSignature, contractAddress, from, to, value, validAfter, validBefore, nonce, sig, gasLimit)
 }
 
-func (api *walletStableCoin) ReceiveWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (*gethTypes.Receipt, error) {
+func (api *walletStableCoin) ReceiveWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, sig types.Signature, gasLimit *uint64) (*gethTypes.Receipt, error) {
 	return api.waitMined(ctx, func() (common.Hash, error) {
-		return api.ReceiveWithAuthorizationNoWait(contractAddress, from, to, value, validAfter, validBefore, nonce, gasLimit)
+		return api.ReceiveWithAuthorizationNoWait(contractAddress, from, to, value, validAfter, validBefore, nonce, sig, gasLimit)
 	})
 }
 
-func (api *walletStableCoin) CancelAuthorizationNoWait(contractAddress, authorizer string, nonce [32]byte, gasLimit *uint64) (common.Hash, error) {
+func (api *walletStableCoin) CancelAuthorizationNoWait(contractAddress, authorizer string, nonce [32]byte, sig types.Signature, gasLimit *uint64) (common.Hash, error) {
 	if err := validateAddress(authorizer); err != nil {
-		return common.Hash{}, err
-	}
-	v, r, s, err := api.signAuthorization(contractAddress, constant.CancelAuthorizationTypeHash, authorizer, nonce)
-	if err != nil {
 		return common.Hash{}, err
 	}
 	return api.sendERC20Tx(contractAddress, gasLimit, constant.CancelAuthorizationFnSignature,
 		common.LeftPadBytes(common.HexToAddress(authorizer).Bytes(), constant.ABIWordSize),
 		nonce[:],
-		common.LeftPadBytes([]byte{v}, constant.ABIWordSize),
-		r[:],
-		s[:],
+		common.LeftPadBytes([]byte{sig.V}, constant.ABIWordSize),
+		sig.R[:],
+		sig.S[:],
 	)
 }
 
-func (api *walletStableCoin) CancelAuthorization(ctx context.Context, contractAddress, authorizer string, nonce [32]byte, gasLimit *uint64) (*gethTypes.Receipt, error) {
+func (api *walletStableCoin) CancelAuthorization(ctx context.Context, contractAddress, authorizer string, nonce [32]byte, sig types.Signature, gasLimit *uint64) (*gethTypes.Receipt, error) {
 	return api.waitMined(ctx, func() (common.Hash, error) {
-		return api.CancelAuthorizationNoWait(contractAddress, authorizer, nonce, gasLimit)
+		return api.CancelAuthorizationNoWait(contractAddress, authorizer, nonce, sig, gasLimit)
 	})
 }
