@@ -37,4 +37,10 @@ var (
 	PermitFnSignature          = []byte("permit(address,address,uint256,uint256,uint8,bytes32,bytes32)")
 	NoncesFnSignature          = []byte("nonces(address)")
 	DomainSeparatorFnSignature = []byte("DOMAIN_SEPARATOR()")
+
+	// EIP-3009
+	AuthorizationStateFnSignature        = []byte("authorizationState(address,bytes32)")
+	TransferWithAuthorizationFnSignature = []byte("transferWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
+	ReceiveWithAuthorizationFnSignature  = []byte("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
+	CancelAuthorizationFnSignature       = []byte("cancelAuthorization(address,bytes32,uint8,bytes32,bytes32)")
 )

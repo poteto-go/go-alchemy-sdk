@@ -65,6 +65,15 @@ type EIP2612 interface {
 	Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
 }
 
+type EIP3009 interface {
+	TransferWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+	TransferWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (*gethTypes.Receipt, error)
+	ReceiveWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+	ReceiveWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (*gethTypes.Receipt, error)
+	CancelAuthorizationNoWait(contractAddress, authorizer string, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+	CancelAuthorization(ctx context.Context, contractAddress, authorizer string, nonce [32]byte, gasLimit *uint64) (*gethTypes.Receipt, error)
+}
+
 type WalletStableCoin interface {
 	WalletERC20
 	StableCoinMinting
@@ -74,4 +83,5 @@ type WalletStableCoin interface {
 	StableCoinRoleAdmin
 	StableCoinInfo
 	EIP2612
+	EIP3009
 }

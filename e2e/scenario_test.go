@@ -688,6 +688,75 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, int64(1), nonce.Int64())
 		})
+
+		t.Run("EIP-3009: authorizationState returns false for unused nonce", func(t *testing.T) {
+			var nonce [32]byte
+			nonce[0] = 0xde
+			nonce[31] = 0xad
+
+			used, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
+
+			assert.Nil(t, err)
+			assert.False(t, used)
+		})
+
+		t.Run("EIP-3009: transferWithAuthorization moves tokens and marks nonce used", func(t *testing.T) {
+			transferValue := big.NewInt(1)
+			validAfter := big.NewInt(0)
+			validBefore := new(big.Int).SetInt64(9999999999)
+			var nonce [32]byte
+			nonce[0] = 0xEE
+			nonce[31] = 0xFF
+
+			balanceBefore, err := alchemy.StableCoin.BalanceOf(contractHex, otherAddress)
+			assert.Nil(t, err)
+
+			receipt, err := w.StableCoin().TransferWithAuthorization(
+				context.Background(),
+				contractHex,
+				initAddress,
+				otherAddress,
+				transferValue,
+				validAfter,
+				validBefore,
+				nonce,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			balanceAfter, err := alchemy.StableCoin.BalanceOf(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, new(big.Int).Add(balanceBefore, transferValue).Int64(), balanceAfter.Int64())
+
+			used, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
+			assert.Nil(t, err)
+			assert.True(t, used)
+		})
+
+		t.Run("EIP-3009: cancelAuthorization marks nonce as used", func(t *testing.T) {
+			var nonce [32]byte
+			nonce[0] = 0xCA
+			nonce[31] = 0xC1
+
+			usedBefore, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
+			assert.Nil(t, err)
+			assert.False(t, usedBefore)
+
+			receipt, err := w.StableCoin().CancelAuthorization(
+				context.Background(),
+				contractHex,
+				initAddress,
+				nonce,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			usedAfter, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
+			assert.Nil(t, err)
+			assert.True(t, usedAfter)
+		})
 	})
 }
 

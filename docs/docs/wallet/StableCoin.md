@@ -461,3 +461,77 @@ receipt, err := w.StableCoin().Permit(
 	nil,
 )
 ```
+
+## EIP-3009 Methods
+
+### TransferWithAuthorization & TransferWithAuthorizationNoWait
+
+Submit an EIP-3009 transfer-with-authorization transaction. The wallet signs a `TransferWithAuthorization` EIP-712 message and submits it on-chain. The `nonce` is a random `[32]byte` chosen by the caller.
+
+```go
+func TransferWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (*types.Receipt, error)
+func TransferWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+```
+
+Use `utils.NewAuthorizationNonce()` to generate a cryptographically random nonce. Hold on to the returned value if you may need to cancel the authorization later.
+
+```go
+nonce := utils.NewAuthorizationNonce()
+
+receipt, err := w.StableCoin().TransferWithAuthorization(
+	context.Background(),
+	contractAddress,
+	"<fromAddress>",
+	"<toAddress>",
+	big.NewInt(100),
+	big.NewInt(validAfter),
+	big.NewInt(validBefore),
+	nonce,
+	nil,
+)
+```
+
+### ReceiveWithAuthorization & ReceiveWithAuthorizationNoWait
+
+Submit an EIP-3009 receive-with-authorization transaction. The caller must be the `to` address. The wallet signs a `ReceiveWithAuthorization` EIP-712 message.
+
+```go
+func ReceiveWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (*types.Receipt, error)
+func ReceiveWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+nonce := utils.NewAuthorizationNonce()
+
+receipt, err := w.StableCoin().ReceiveWithAuthorization(
+	context.Background(),
+	contractAddress,
+	"<fromAddress>",
+	"<toAddress>",
+	big.NewInt(100),
+	big.NewInt(validAfter),
+	big.NewInt(validBefore),
+	nonce,
+	nil,
+)
+```
+
+### CancelAuthorization & CancelAuthorizationNoWait
+
+Cancel an outstanding EIP-3009 authorization by its nonce. The wallet signs a `CancelAuthorization` EIP-712 message.
+
+```go
+func CancelAuthorization(ctx context.Context, contractAddress, authorizer string, nonce [32]byte, gasLimit *uint64) (*types.Receipt, error)
+func CancelAuthorizationNoWait(contractAddress, authorizer string, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+```
+
+```go
+// nonce must be the same value used when the authorization was submitted
+receipt, err := w.StableCoin().CancelAuthorization(
+	context.Background(),
+	contractAddress,
+	"<authorizerAddress>",
+	nonce,
+	nil,
+)
+```
