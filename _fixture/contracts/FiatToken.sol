@@ -28,6 +28,18 @@ contract FiatToken {
     bytes32 private constant PERMIT_TYPEHASH =
         keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
+    // EIP-3009
+    mapping(address => mapping(bytes32 => bool)) public authorizationState;
+
+    bytes32 private constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH =
+        keccak256("TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)");
+
+    bytes32 private constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH =
+        keccak256("ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)");
+
+    bytes32 private constant CANCEL_AUTHORIZATION_TYPEHASH =
+        keccak256("CancelAuthorization(address authorizer,bytes32 nonce)");
+
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Mint(address indexed minter, address indexed to, uint256 amount);
@@ -270,5 +282,85 @@ contract FiatToken {
 
         allowance[_owner][spender] = value;
         emit Approval(_owner, spender, value);
+    }
+
+    function transferWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external whenNotPaused notBlacklisted(from) notBlacklisted(to) {
+        require(block.timestamp > validAfter, "FiatToken: authorization not yet valid");
+        require(block.timestamp < validBefore, "FiatToken: authorization expired");
+        require(!authorizationState[from][nonce], "FiatToken: authorization already used");
+
+        bytes32 structHash = keccak256(
+            abi.encode(TRANSFER_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce)
+        );
+        bytes32 hash = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+        address signer = ecrecover(hash, v, r, s);
+        require(signer != address(0) && signer == from, "FiatToken: invalid transferWithAuthorization signature");
+
+        authorizationState[from][nonce] = true;
+
+        require(balanceOf[from] >= value, "FiatToken: transfer amount exceeds balance");
+        balanceOf[from] -= value;
+        balanceOf[to] += value;
+        emit Transfer(from, to, value);
+    }
+
+    function receiveWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external whenNotPaused notBlacklisted(from) notBlacklisted(to) {
+        require(to == msg.sender, "FiatToken: caller must be the payee");
+        require(block.timestamp > validAfter, "FiatToken: authorization not yet valid");
+        require(block.timestamp < validBefore, "FiatToken: authorization expired");
+        require(!authorizationState[from][nonce], "FiatToken: authorization already used");
+
+        bytes32 structHash = keccak256(
+            abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce)
+        );
+        bytes32 hash = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+        address signer = ecrecover(hash, v, r, s);
+        require(signer != address(0) && signer == from, "FiatToken: invalid receiveWithAuthorization signature");
+
+        authorizationState[from][nonce] = true;
+
+        require(balanceOf[from] >= value, "FiatToken: transfer amount exceeds balance");
+        balanceOf[from] -= value;
+        balanceOf[to] += value;
+        emit Transfer(from, to, value);
+    }
+
+    function cancelAuthorization(
+        address authorizer,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        require(!authorizationState[authorizer][nonce], "FiatToken: authorization already used or cancelled");
+
+        bytes32 structHash = keccak256(
+            abi.encode(CANCEL_AUTHORIZATION_TYPEHASH, authorizer, nonce)
+        );
+        bytes32 hash = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+        address signer = ecrecover(hash, v, r, s);
+        require(signer != address(0) && signer == authorizer, "FiatToken: invalid cancelAuthorization signature");
+
+        authorizationState[authorizer][nonce] = true;
     }
 }
