@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -35,9 +37,23 @@ func Test_isAlwaysReproduceError(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "url error",
+			name:     "url error - permanent (no timeout)",
 			err:      &url.Error{},
 			expected: true,
+		},
+		{
+			name:     "url error - timeout",
+			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: context.DeadlineExceeded},
+			expected: false,
+		},
+		{
+			name: "url error - wrapped deadline exceeded",
+			err: &url.Error{
+				Op:  "Get",
+				URL: "https://example.com",
+				Err: fmt.Errorf("wrapped: %w", context.DeadlineExceeded),
+			},
+			expected: false,
 		},
 		{
 			name:     "http.StatusTooManyRequests",
