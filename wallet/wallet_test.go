@@ -1676,6 +1676,58 @@ func TestWallet_buildAuth(t *testing.T) {
 	})
 }
 
+func TestWallet_SignTx_CachesChainID(t *testing.T) {
+	t.Run("ChainID RPC is called only once across multiple SignTx calls", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+		txRequest := types.TransactionRequest{
+			To:       "0x123",
+			Nonce:    0,
+			GasLimit: 1000,
+			Value:    "0x123",
+			Data:     []byte("0x123"),
+		}
+		chainIDCallCount := 0
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) { return 0, nil },
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, _ types.TransactionRequest) (*big.Int, error) {
+				return big.NewInt(100), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1_000_000_000), nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				chainIDCallCount++
+				return big.NewInt(1), nil
+			},
+		)
+
+		_, err := w.SignTx(txRequest)
+		assert.NoError(t, err)
+		_, err = w.SignTx(txRequest)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 1, chainIDCallCount, "ChainID RPC must be called only once (cached)")
+	})
+}
+
 func TestWallet_ResetPool(t *testing.T) {
 	txData := &gethTypes.AccessListTx{
 		To:       &common.Address{},
