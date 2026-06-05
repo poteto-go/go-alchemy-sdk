@@ -1,6 +1,7 @@
 package utils_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -44,6 +45,14 @@ func TestEncodeABIString(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "", res)
 	})
+
+	t.Run("roundtrip with string longer than 255 bytes", func(t *testing.T) {
+		str := strings.Repeat("a", 300)
+		encoded := utils.EncodeABIString(str)
+		res, err := utils.DecodeABIString(encoded)
+		assert.NoError(t, err)
+		assert.Equal(t, str, res)
+	})
 }
 
 func TestDecodeABIString(t *testing.T) {
@@ -66,5 +75,18 @@ func TestDecodeABIString(t *testing.T) {
 		encoded[constant.ABIStringHeaderSize-1] = 100 // Declared length 100, no data follows
 		_, err := utils.DecodeABIString(encoded)
 		assert.Error(t, err)
+	})
+
+	t.Run("returns error for malicious length (no panic)", func(t *testing.T) {
+		// length word's lower 8 bytes set to 0xFF...FF => Int64() == -1,
+		// which previously slipped past the bounds check and panicked.
+		encoded := make([]byte, constant.ABIStringHeaderSize)
+		for i := constant.ABIWordSize; i < constant.ABIStringHeaderSize; i++ {
+			encoded[i] = 0xFF
+		}
+		assert.NotPanics(t, func() {
+			_, err := utils.DecodeABIString(encoded)
+			assert.Error(t, err)
+		})
 	})
 }
