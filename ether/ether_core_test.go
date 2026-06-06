@@ -197,6 +197,27 @@ func TestEther_Client_Race(t *testing.T) {
 	wg.Wait()
 }
 
+func TestEther_BlockNumber_Race(t *testing.T) {
+	const goroutines = 10
+	e := newEtherApiForTest()
+	alchemyMock := newAlchemyMockOnEtherTest(t)
+	defer alchemyMock.DeactivateAndReset()
+
+	for i := 0; i < goroutines; i++ {
+		alchemyMock.RegisterResponderOnce("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x1234"}`)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func() {
+			defer wg.Done()
+			_, _ = e.BlockNumber()
+		}()
+	}
+	wg.Wait()
+}
+
 func TestEther_BlockNumber(t *testing.T) {
 	t.Run("normal case", func(t *testing.T) {
 		t.Run("success request", func(t *testing.T) {
