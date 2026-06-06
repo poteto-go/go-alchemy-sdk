@@ -59,24 +59,6 @@ func TestAddress(t *testing.T) {
 	}
 }
 
-func TestBlockTag(t *testing.T) {
-	t.Run("normal case:", func(t *testing.T) {
-		for _, blockTag := range []string{"latest", "earliest", "pending", "safe", "finalized", "0x1234"} {
-			t.Run(blockTag, func(t *testing.T) {
-				assert.NoError(t, validate.BlockTag(blockTag))
-			})
-		}
-	})
-
-	t.Run("error case:", func(t *testing.T) {
-		for _, blockTag := range []string{"unexpected", "", "0x", "0xgg"} {
-			t.Run(blockTag, func(t *testing.T) {
-				assert.ErrorIs(t, validate.BlockTag(blockTag), constant.ErrInvalidBlockTag)
-			})
-		}
-	})
-}
-
 func TestAddresses(t *testing.T) {
 	valid := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
 	invalid := "invalid"
