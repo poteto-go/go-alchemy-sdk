@@ -24,6 +24,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
+	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
 type Ether struct {
@@ -199,7 +200,7 @@ func (ether *Ether) GasPrice() (*big.Int, error) {
 }
 
 func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error) {
-	if err := utils.ValidateBlockTag(blockTag); err != nil {
+	if err := validate.BlockTag(blockTag); err != nil {
 		return nil, err
 	}
 
@@ -475,7 +476,7 @@ func (ether *Ether) SuggestGasPrice() (*big.Int, error) {
 }
 
 func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, error) {
-	if err := utils.ValidateBlockTag(blockTag); err != nil {
+	if err := validate.BlockTag(blockTag); err != nil {
 		return "", err
 	}
 

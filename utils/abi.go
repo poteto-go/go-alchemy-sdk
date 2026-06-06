@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
 // EncodeABIString encodes a string into ABI format (offset + length + data).
@@ -31,10 +32,11 @@ func DecodeABIAddress(output []byte) (common.Address, error) {
 
 // DecodeABIString decodes an ABI-encoded string (offset, length, data).
 func DecodeABIString(output []byte) (string, error) {
-	length, err := ValidateABIString(output)
-	if err != nil {
+	if err := validate.ABIString(output); err != nil {
 		return "", err
 	}
 
+	// Safe: validate.ABIString guarantees the declared length fits within output.
+	length := new(big.Int).SetBytes(output[constant.ABIWordSize : constant.ABIWordSize*2]).Int64()
 	return string(output[constant.ABIStringHeaderSize : constant.ABIStringHeaderSize+length]), nil
 }

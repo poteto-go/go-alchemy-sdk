@@ -35,3 +35,41 @@ func Addresses(addrs ...string) error {
 	}
 	return nil
 }
+
+// BlockTag validates an EIP-1898 block tag: a named tag (latest/safe/...) or a
+// hex-encoded block number.
+// https://docs.ethers.org/v5/api/providers/types/
+func BlockTag(blockTag string) error {
+	if blockTag == "" {
+		return constant.ErrInvalidBlockTag
+	}
+	if _, ok := constant.BlockTagNumbers[blockTag]; ok {
+		return nil
+	}
+	if len(blockTag) <= 2 || blockTag[:2] != "0x" {
+		return constant.ErrInvalidBlockTag
+	}
+	if _, ok := new(big.Int).SetString(blockTag[2:], 16); !ok {
+		return constant.ErrInvalidBlockTag
+	}
+	return nil
+}
+
+// ABIString validates an ABI-encoded string's header and declared length
+// against the available output, guarding callers against a slice
+// out-of-range panic on malicious/corrupt contract or RPC data.
+func ABIString(output []byte) error {
+	if len(output) < constant.ABIStringHeaderSize {
+		return constant.ErrInvalidABIString
+	}
+
+	// Compare as *big.Int to avoid Int64() overflow: a length whose lower 64
+	// bits are >= 2^63 would become negative and slip past a naive bounds check.
+	length := new(big.Int).SetBytes(output[constant.ABIWordSize : constant.ABIWordSize*2])
+	maxLength := big.NewInt(int64(len(output) - constant.ABIStringHeaderSize))
+	if length.Cmp(maxLength) > 0 {
+		return constant.ErrInvalidABIString
+	}
+
+	return nil
+}
