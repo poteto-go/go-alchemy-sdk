@@ -363,6 +363,9 @@ func (api *walletStableCoin) transferOrReceiveAuthorizationNoWait(
 	if err := validateUint256(validBefore); err != nil {
 		return common.Hash{}, err
 	}
+	if validAfter.Cmp(validBefore) >= 0 {
+		return common.Hash{}, constant.ErrInvalidAuthorizationWindow
+	}
 	return api.sendERC20Tx(
 		contractAddress,
 		gasLimit,

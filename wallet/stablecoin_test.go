@@ -1832,6 +1832,22 @@ func TestWallet_StableCoin_TransferWithAuthorizationNoWait(t *testing.T) {
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
+
+	t.Run("validAfter >= validBefore returns ErrInvalidAuthorizationWindow", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(9999999), big.NewInt(9999999), nonce, sig, nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAuthorizationWindow)
+	})
+
+	t.Run("validAfter > validBefore returns ErrInvalidAuthorizationWindow", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.StableCoin().TransferWithAuthorizationNoWait(contractAddress, fromAddress, toAddress, big.NewInt(100), big.NewInt(9999999), big.NewInt(1), nonce, sig, nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAuthorizationWindow)
+	})
 }
 
 func TestWallet_StableCoin_TransferWithAuthorization(t *testing.T) {
