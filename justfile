@@ -4,6 +4,11 @@ alias ut := unit-test
 unit-test path="./..." *args="":
     @go test $(go list {{path}} | grep -v /e2e) {{args}}
 
+alias ut-race := unit-test-race
+[group("ci")]
+unit-test-race path="./..." *args="":
+    @go test $(go list {{path}} | grep -v /e2e) {{args}} -race
+
 alias ut-cov := unit-test-coverage
 [group("ci")]
 unit-test-coverage path="./..." *args="":
