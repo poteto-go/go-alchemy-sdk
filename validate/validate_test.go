@@ -80,3 +80,64 @@ func TestAddresses(t *testing.T) {
 		})
 	}
 }
+
+func TestBlockTag(t *testing.T) {
+	tests := []struct {
+		name     string
+		blockTag string
+		wantErr  error
+	}{
+		{"latest", "latest", nil},
+		{"earliest", "earliest", nil},
+		{"pending", "pending", nil},
+		{"safe", "safe", nil},
+		{"finalized", "finalized", nil},
+		{"hex block number", "0x1234", nil},
+		{"unexpected", "unexpected", constant.ErrInvalidBlockTag},
+		{"empty", "", constant.ErrInvalidBlockTag},
+		{"only prefix", "0x", constant.ErrInvalidBlockTag},
+		{"not hex", "0xgg", constant.ErrInvalidBlockTag},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.ErrorIs(t, validate.BlockTag(tt.blockTag), tt.wantErr)
+		})
+	}
+}
+
+func TestABIString(t *testing.T) {
+	t.Run("normal case: valid header and length", func(t *testing.T) {
+		// header declares length 3 with a full data word following.
+		output := make([]byte, constant.ABIStringHeaderSize+constant.ABIWordSize)
+		output[constant.ABIStringHeaderSize-1] = 3
+
+		assert.NoError(t, validate.ABIString(output))
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("output too short", func(t *testing.T) {
+			assert.ErrorIs(t, validate.ABIString([]byte("too-short")), constant.ErrInvalidABIString)
+		})
+
+		t.Run("declared length exceeds output", func(t *testing.T) {
+			output := make([]byte, constant.ABIStringHeaderSize)
+			output[constant.ABIStringHeaderSize-1] = 100
+
+			assert.ErrorIs(t, validate.ABIString(output), constant.ErrInvalidABIString)
+		})
+
+		t.Run("malicious length does not panic", func(t *testing.T) {
+			// lower 8 bytes of the length word set to 0xFF...FF, which would
+			// make Int64() negative and slip past a naive bounds check.
+			output := make([]byte, constant.ABIStringHeaderSize)
+			for i := constant.ABIWordSize; i < constant.ABIStringHeaderSize; i++ {
+				output[i] = 0xFF
+			}
+
+			assert.NotPanics(t, func() {
+				assert.ErrorIs(t, validate.ABIString(output), constant.ErrInvalidABIString)
+			})
+		})
+	})
+}
