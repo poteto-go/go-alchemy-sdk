@@ -155,7 +155,7 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 		txRequest.GasPrice = gasPrice
 	}
 
-	chainID, err := provider.Eth().ChainID()
+	chainID, _, err := w.chainID()
 	if err != nil {
 		return nil, err
 	}
@@ -303,22 +303,15 @@ func (w *wallet) StableCoin() types.WalletStableCoin {
 }
 
 func (w *wallet) buildAuth() (*bind.TransactOpts, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if w.cachedChainID == nil {
-		chainID, err := w.provider.Eth().ChainID()
-		if err != nil {
-			return nil, err
-		}
-		w.cachedChainID = chainID
-		w.legacyChain = slices.Contains(internal.ChainListNotSupportEIP1559, chainID.Int64())
+	chainID, legacyChain, err := w.chainID()
+	if err != nil {
+		return nil, err
 	}
 
-	auth := bind.NewKeyedTransactor(w.privateKey, w.cachedChainID)
+	auth := bind.NewKeyedTransactor(w.privateKey, chainID)
 
-	if w.legacyChain {
-		gasPrice, err := w.provider.Eth().SuggestGasPrice()
+	if legacyChain {
+		gasPrice, err := w.snapshot().Eth().SuggestGasPrice()
 		if err != nil {
 			return nil, err
 		}
@@ -326,6 +319,41 @@ func (w *wallet) buildAuth() (*bind.TransactOpts, error) {
 	}
 
 	return auth, nil
+}
+
+// chainID returns the cached chainID and legacy-chain flag, fetching them from
+// the network on first use. It uses a double-checked pattern so the network
+// round-trip happens outside the lock: a concurrent buildAuth / SignTx no longer
+// blocks on the write lock for the duration of the RPC.
+func (w *wallet) chainID() (*big.Int, bool, error) {
+	w.mu.RLock()
+	if w.cachedChainID != nil {
+		chainID, legacyChain := w.cachedChainID, w.legacyChain
+		w.mu.RUnlock()
+		return chainID, legacyChain, nil
+	}
+	provider := w.provider
+	w.mu.RUnlock()
+
+	if provider == nil {
+		return nil, false, constant.ErrWalletIsNotConnected
+	}
+
+	chainID, err := provider.Eth().ChainID()
+	if err != nil {
+		return nil, false, err
+	}
+	legacyChain := slices.Contains(internal.ChainListNotSupportEIP1559, chainID.Int64())
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	// Another goroutine may have populated the cache while we were fetching;
+	// prefer the already-cached value so all callers observe the same chainID.
+	if w.cachedChainID == nil {
+		w.cachedChainID = chainID
+		w.legacyChain = legacyChain
+	}
+	return w.cachedChainID, w.legacyChain, nil
 }
 
 func (w *wallet) ResetPool() {
