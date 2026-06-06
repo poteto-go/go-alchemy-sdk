@@ -43,6 +43,7 @@ var (
 	ErrNegativeAmount                   = errors.New("amount must not be negative")
 	ErrAmountExceedsUint256             = errors.New("amount exceeds uint256 max")
 	ErrInvalidAddress                   = errors.New("invalid hex address")
+	ErrInvalidABIString                 = errors.New("invalid ABI string")
 	ErrFailedToReadResponse             = errors.New("failed to read response body")
 	ErrUnexpectedResponseType           = errors.New("unexpected response type")
 )

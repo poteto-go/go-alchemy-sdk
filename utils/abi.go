@@ -31,19 +31,10 @@ func DecodeABIAddress(output []byte) (common.Address, error) {
 
 // DecodeABIString decodes an ABI-encoded string (offset, length, data).
 func DecodeABIString(output []byte) (string, error) {
-	if len(output) < constant.ABIStringHeaderSize {
-		return "", fmt.Errorf("invalid ABI string: output too short, got %d bytes", len(output))
+	length, err := ValidateABIString(output)
+	if err != nil {
+		return "", err
 	}
 
-	// Compare as *big.Int to avoid Int64() overflow: a length whose lower 64
-	// bits are >= 2^63 would become negative and slip past the bounds check,
-	// causing a slice out-of-range panic (DoS on untrusted contract/RPC data).
-	length := new(big.Int).SetBytes(output[constant.ABIWordSize : constant.ABIWordSize*2])
-	maxLength := big.NewInt(int64(len(output) - constant.ABIStringHeaderSize))
-	if length.Cmp(maxLength) > 0 {
-		return "", fmt.Errorf("invalid ABI string: declared length %s exceeds output size %d", length.String(), len(output)-constant.ABIStringHeaderSize)
-	}
-
-	l := length.Int64()
-	return string(output[constant.ABIStringHeaderSize : constant.ABIStringHeaderSize+l]), nil
+	return string(output[constant.ABIStringHeaderSize : constant.ABIStringHeaderSize+length]), nil
 }
