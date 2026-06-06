@@ -61,8 +61,8 @@ type StableCoinInfo interface {
 }
 
 type EIP2612 interface {
-	PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error)
-	Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
+	PermitNoWait(contractAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error)
+	Permit(ctx context.Context, contractAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
 }
 
 type EIP3009 interface {

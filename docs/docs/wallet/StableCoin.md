@@ -441,23 +441,26 @@ allowance, err := w.StableCoin().MinterAllowance(contractAddress, "<minterAddres
 
 ### Permit & PermitNoWait
 
-Submit an EIP-2612 permit transaction, allowing a spender to use tokens on behalf of an owner via a pre-signed signature.
+Submit an EIP-2612 permit transaction, allowing a spender to use tokens on behalf of the connected wallet.
 
 ```go
-func Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*types.Receipt, error)
-func PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error)
+func Permit(ctx context.Context, contractAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*types.Receipt, error)
+func PermitNoWait(contractAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error)
 ```
 
-The wallet automatically fetches the on-chain nonce and domain separator, then signs the EIP-712 permit message using the wallet's private key.
+The wallet automatically uses its own address as `owner`, fetches the on-chain nonce, and signs the EIP-712 permit message using the wallet's private key.
+
+- `deadline`: Unix timestamp (seconds) after which the permit expires. The contract rejects the permit if `block.timestamp > deadline`.
 
 ```go
+deadline := big.NewInt(time.Now().Add(10 * time.Minute).Unix())
+
 receipt, err := w.StableCoin().Permit(
 	context.Background(),
 	contractAddress,
-	"<ownerAddress>",
 	"<spenderAddress>",
 	big.NewInt(100),
-	big.NewInt(deadline),
+	deadline,
 	nil,
 )
 ```
@@ -481,6 +484,23 @@ sig, err := typeddata.SignEIP712Str(
 )
 ```
 
+### validAfter and validBefore
+
+All EIP-3009 authorization methods accept `validAfter` and `validBefore` as Unix timestamps (seconds) that define the window during which the authorization is valid. The contract enforces:
+
+```
+validAfter < block.timestamp < validBefore
+```
+
+- `validAfter`: the authorization cannot be used **before** this time. Use `0` to make it usable immediately.
+- `validBefore`: the authorization expires **after** this time. Always set a finite expiry to limit the risk of a leaked signature being replayed.
+
+```go
+now := time.Now().Unix()
+validAfter  := big.NewInt(0)                    // usable immediately
+validBefore := big.NewInt(now + int64(10*time.Minute/time.Second)) // expires in 10 minutes
+```
+
 ### TransferWithAuthorization & TransferWithAuthorizationNoWait
 
 Submit an EIP-3009 transfer-with-authorization transaction. The `nonce` is a random `[32]byte` chosen by the caller.
@@ -493,6 +513,10 @@ func TransferWithAuthorizationNoWait(contractAddress, from, to string, value, va
 Use `utils.NewAuthorizationNonce()` to generate a cryptographically random nonce.
 
 ```go
+now := time.Now().Unix()
+validAfter  := big.NewInt(0)
+validBefore := big.NewInt(now + int64(10*time.Minute/time.Second))
+
 nonce := utils.NewAuthorizationNonce()
 
 domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractAddress)
@@ -505,8 +529,8 @@ sig, err := typeddata.SignEIP712Str(
 		"<fromAddress>",
 		"<toAddress>",
 		big.NewInt(100),
-		big.NewInt(validAfter),
-		big.NewInt(validBefore),
+		validAfter,
+		validBefore,
 		nonce,
 	),
 )
@@ -517,8 +541,8 @@ receipt, err := w.StableCoin().TransferWithAuthorization(
 	"<fromAddress>",
 	"<toAddress>",
 	big.NewInt(100),
-	big.NewInt(validAfter),
-	big.NewInt(validBefore),
+	validAfter,
+	validBefore,
 	nonce,
 	sig,
 	nil,
@@ -535,6 +559,10 @@ func ReceiveWithAuthorizationNoWait(contractAddress, from, to string, value, val
 ```
 
 ```go
+now := time.Now().Unix()
+validAfter  := big.NewInt(0)
+validBefore := big.NewInt(now + int64(10*time.Minute/time.Second))
+
 nonce := utils.NewAuthorizationNonce()
 
 domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractAddress)
@@ -547,8 +575,8 @@ sig, err := typeddata.SignEIP712Str(
 		"<fromAddress>",
 		"<toAddress>",
 		big.NewInt(100),
-		big.NewInt(validAfter),
-		big.NewInt(validBefore),
+		validAfter,
+		validBefore,
 		nonce,
 	),
 )
@@ -559,8 +587,8 @@ receipt, err := w.StableCoin().ReceiveWithAuthorization(
 	"<fromAddress>",
 	"<toAddress>",
 	big.NewInt(100),
-	big.NewInt(validAfter),
-	big.NewInt(validBefore),
+	validAfter,
+	validBefore,
 	nonce,
 	sig,
 	nil,

@@ -672,7 +672,6 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			receipt, err := w.StableCoin().Permit(
 				context.Background(),
 				contractHex,
-				initAddress,
 				otherAddress,
 				permitValue,
 				deadline,

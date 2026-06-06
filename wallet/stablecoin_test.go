@@ -1639,7 +1639,6 @@ func mockCallContractForPermit(patches *gomonkey.Patches, eth interface {
 
 func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
-	ownerAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
 	spenderAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
 	expectedHash := common.HexToHash("0x123")
 
@@ -1658,7 +1657,7 @@ func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
 			},
 		)
 
-		hash, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+		hash, err := w.StableCoin().PermitNoWait(contractAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expectedHash, hash)
@@ -1676,7 +1675,7 @@ func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
 			},
 		)
 
-		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+		_, err := w.StableCoin().PermitNoWait(contractAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
 
 		assert.Error(t, err)
 	})
@@ -1684,23 +1683,15 @@ func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+		_, err := w.StableCoin().PermitNoWait(contractAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
-	})
-
-	t.Run("invalid owner address returns ErrInvalidAddress", func(t *testing.T) {
-		w, _ := New(testPrivHex)
-
-		_, err := w.StableCoin().PermitNoWait(contractAddress, "invalid", spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
-
-		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 
 	t.Run("invalid spender address returns ErrInvalidAddress", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, "invalid", big.NewInt(100), big.NewInt(9999999), nil)
+		_, err := w.StableCoin().PermitNoWait(contractAddress, "invalid", big.NewInt(100), big.NewInt(9999999), nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -1708,7 +1699,7 @@ func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
 	t.Run("nil value returns ErrNilAmount", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, nil, big.NewInt(9999999), nil)
+		_, err := w.StableCoin().PermitNoWait(contractAddress, spenderAddress, nil, big.NewInt(9999999), nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
@@ -1716,7 +1707,7 @@ func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
 	t.Run("nil deadline returns ErrNilAmount", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().PermitNoWait(contractAddress, ownerAddress, spenderAddress, big.NewInt(100), nil, nil)
+		_, err := w.StableCoin().PermitNoWait(contractAddress, spenderAddress, big.NewInt(100), nil, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
@@ -1724,7 +1715,6 @@ func TestWallet_StableCoin_PermitNoWait(t *testing.T) {
 
 func TestWallet_StableCoin_Permit(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
-	ownerAddress := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
 	spenderAddress := "0xabcdef1234567890abcdef1234567890abcdef12"
 
 	t.Run("can permit and wait", func(t *testing.T) {
@@ -1751,7 +1741,7 @@ func TestWallet_StableCoin_Permit(t *testing.T) {
 			},
 		)
 
-		receipt, err := w.StableCoin().Permit(context.Background(), contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+		receipt, err := w.StableCoin().Permit(context.Background(), contractAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, receipt)
@@ -1760,7 +1750,7 @@ func TestWallet_StableCoin_Permit(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.StableCoin().Permit(context.Background(), contractAddress, ownerAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
+		_, err := w.StableCoin().Permit(context.Background(), contractAddress, spenderAddress, big.NewInt(100), big.NewInt(9999999), nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
