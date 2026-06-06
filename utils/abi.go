@@ -31,6 +31,14 @@ func DecodeABIAddress(output []byte) (common.Address, error) {
 }
 
 // DecodeABIString decodes an ABI-encoded string (offset, length, data).
+//
+// ABI-encoded string layout:
+//
+//	[0x00..20  (32 bytes)] offset  - points to the start of the length field (always 0x20)
+//	[0x00..09  (32 bytes)] length  - byte length of the string (e.g. 9 for "TestToken")
+//	[data..00  (N bytes) ] data    - UTF-8 string bytes, zero-padded to a 32-byte boundary
+//
+// output[64 : 64+length] is the actual string data.
 func DecodeABIString(output []byte) (string, error) {
 	if err := validate.ABIString(output); err != nil {
 		return "", err
