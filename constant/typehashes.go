@@ -3,6 +3,7 @@ package constant
 import "github.com/ethereum/go-ethereum/crypto"
 
 var (
+	// EIP-2612 type hashes
 	PermitTypeHash = crypto.Keccak256([]byte("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"))
 
 	// EIP-3009 type hashes

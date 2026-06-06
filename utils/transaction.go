@@ -3,6 +3,7 @@ package utils
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
@@ -37,7 +38,7 @@ func TransformTransaction(rawTx types.TransactionRawResponse) (types.Transaction
 	if err != nil {
 		return types.TransactionResponse{}, constant.ErrFailedToTransformChainId
 	}
-	intV, err := FromBigHex(rawTx.V)
+	intV, err := FromHex(rawTx.V)
 	if err != nil {
 		return types.TransactionResponse{}, constant.ErrFailedToTransformV
 	}
@@ -59,9 +60,9 @@ func TransformTransaction(rawTx types.TransactionRawResponse) (types.Transaction
 		Value:                valueInt,
 		ChainID:              chainId,
 		Signature: types.Signature{
-			R: rawTx.R,
-			S: rawTx.S,
-			V: intV,
+			V: uint8(intV), //nolint:gosec // G115: V is always ≤28 in ECDSA signatures
+			R: [32]byte(common.HexToHash(rawTx.R)),
+			S: [32]byte(common.HexToHash(rawTx.S)),
 		},
 		AccessList:          []string{}, // TODO: 仮
 		BlobVersionedHashes: []string{}, // TODO: 仮

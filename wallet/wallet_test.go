@@ -912,7 +912,7 @@ func TestWallet_SendTransaction(t *testing.T) {
 }
 
 func TestWallet_DeployContract(t *testing.T) {
-	metaData := artifacts.PotetoStorageMetaData
+	metaData := &artifacts.PotetoStorageMetaData
 
 	t.Run("can deploy contract", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
@@ -960,7 +960,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		)
 
 		// Act
-		addr, err := w.DeployContract(context.Background(), &metaData)
+		addr, err := w.DeployContract(context.Background(), metaData)
 
 		// Assert
 		assert.Nil(t, err)
@@ -1001,7 +1001,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.DeployContract(context.Background(), &metaData)
+		_, err := w.DeployContract(context.Background(), metaData)
 
 		// Assert
 		assert.Error(t, err)
@@ -1011,7 +1011,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.DeployContract(context.Background(), &metaData)
+		_, err := w.DeployContract(context.Background(), metaData)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -1041,7 +1041,7 @@ func TestWallet_DeployContract(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.DeployContract(context.Background(), &metaData)
+		_, err := w.DeployContract(context.Background(), metaData)
 
 		// Assert
 		assert.Error(t, err)
@@ -1049,7 +1049,7 @@ func TestWallet_DeployContract(t *testing.T) {
 }
 
 func TestWallet_DeployContractNoWait(t *testing.T) {
-	metaData := artifacts.PotetoStorageMetaData
+	metaData := &artifacts.PotetoStorageMetaData
 
 	t.Run("can transact of deployment contract", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
@@ -1085,7 +1085,7 @@ func TestWallet_DeployContractNoWait(t *testing.T) {
 		)
 
 		// Act
-		res, err := w.DeployContractNoWait(&metaData)
+		res, err := w.DeployContractNoWait(metaData)
 
 		// Assert
 		assert.Nil(t, err)
@@ -1096,7 +1096,7 @@ func TestWallet_DeployContractNoWait(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.DeployContractNoWait(&metaData)
+		_, err := w.DeployContractNoWait(metaData)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -1119,7 +1119,7 @@ func TestWallet_DeployContractNoWait(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.DeployContractNoWait(&metaData)
+		_, err := w.DeployContractNoWait(metaData)
 
 		// Assert
 		assert.Error(t, err)
@@ -1153,7 +1153,7 @@ func TestWallet_DeployContractNoWait(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.DeployContractNoWait(&metaData)
+		_, err := w.DeployContractNoWait(metaData)
 
 		// Assert
 		assert.Error(t, err)
@@ -1203,7 +1203,7 @@ func TestWallet_DeployContractNoWait(t *testing.T) {
 			)
 
 			// Act
-			res, err := w.DeployContractNoWait(&metaData)
+			res, err := w.DeployContractNoWait(metaData)
 
 			// Assert
 			assert.Nil(t, err)
@@ -1235,7 +1235,7 @@ func TestWallet_DeployContractNoWait(t *testing.T) {
 			)
 
 			// Act
-			_, err := w.DeployContractNoWait(&metaData)
+			_, err := w.DeployContractNoWait(metaData)
 
 			// Assert
 			assert.Error(t, err)

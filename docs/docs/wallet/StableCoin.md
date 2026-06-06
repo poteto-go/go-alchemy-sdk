@@ -441,42 +441,99 @@ allowance, err := w.StableCoin().MinterAllowance(contractAddress, "<minterAddres
 
 ### Permit & PermitNoWait
 
-Submit an EIP-2612 permit transaction, allowing a spender to use tokens on behalf of an owner via a pre-signed signature.
+Submit an EIP-2612 permit transaction, allowing a spender to use tokens on behalf of the connected wallet.
 
 ```go
-func Permit(ctx context.Context, contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*types.Receipt, error)
-func PermitNoWait(contractAddress, ownerAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error)
+func Permit(ctx context.Context, contractAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (*types.Receipt, error)
+func PermitNoWait(contractAddress, spenderAddress string, value, deadline *big.Int, gasLimit *uint64) (common.Hash, error)
 ```
 
-The wallet automatically fetches the on-chain nonce and domain separator, then signs the EIP-712 permit message using the wallet's private key.
+The wallet automatically uses its own address as `owner`, fetches the on-chain nonce, and signs the EIP-712 permit message using the wallet's private key.
+
+- `deadline`: Unix timestamp (seconds) after which the permit expires. The contract rejects the permit if `block.timestamp > deadline`.
 
 ```go
+deadline := big.NewInt(time.Now().Add(10 * time.Minute).Unix())
+
 receipt, err := w.StableCoin().Permit(
 	context.Background(),
 	contractAddress,
-	"<ownerAddress>",
 	"<spenderAddress>",
 	big.NewInt(100),
-	big.NewInt(deadline),
+	deadline,
 	nil,
 )
 ```
 
 ## EIP-3009 Methods
 
-### TransferWithAuthorization & TransferWithAuthorizationNoWait
-
-Submit an EIP-3009 transfer-with-authorization transaction. The wallet signs a `TransferWithAuthorization` EIP-712 message and submits it on-chain. The `nonce` is a random `[32]byte` chosen by the caller.
+EIP-3009 methods require a pre-computed `types.Signature`. The caller is responsible for signing the authorization message using `typeddata.SignEIP712Str` (or `typeddata.SignEIP712` with an `*ecdsa.PrivateKey`). This design allows any authorized signer — not just the connected wallet — to produce the signature.
 
 ```go
-func TransferWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (*types.Receipt, error)
-func TransferWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+import (
+	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/typeddata"
+)
+
+domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractAddress)
+
+sig, err := typeddata.SignEIP712Str(
+	"<signerPrivateKey>",
+	domainSeparator,
+	typeddata.EncodeWords(<typeHash>, <args...>),
+)
 ```
 
-Use `utils.NewAuthorizationNonce()` to generate a cryptographically random nonce. Hold on to the returned value if you may need to cancel the authorization later.
+### validAfter and validBefore
+
+All EIP-3009 authorization methods accept `validAfter` and `validBefore` as Unix timestamps (seconds) that define the window during which the authorization is valid. The contract enforces:
+
+```
+validAfter < block.timestamp < validBefore
+```
+
+- `validAfter`: the authorization cannot be used **before** this time. Use `0` to make it usable immediately.
+- `validBefore`: the authorization expires **after** this time. Always set a finite expiry to limit the risk of a leaked signature being replayed.
 
 ```go
+now := time.Now().Unix()
+validAfter  := big.NewInt(0)                    // usable immediately
+validBefore := big.NewInt(now + int64(10*time.Minute/time.Second)) // expires in 10 minutes
+```
+
+### TransferWithAuthorization & TransferWithAuthorizationNoWait
+
+Submit an EIP-3009 transfer-with-authorization transaction. The `nonce` is a random `[32]byte` chosen by the caller.
+
+```go
+func TransferWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, sig types.Signature, gasLimit *uint64) (*types.Receipt, error)
+func TransferWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, sig types.Signature, gasLimit *uint64) (common.Hash, error)
+```
+
+Use `utils.NewAuthorizationNonce()` to generate a cryptographically random nonce.
+
+```go
+now := time.Now().Unix()
+validAfter  := big.NewInt(0)
+validBefore := big.NewInt(now + int64(10*time.Minute/time.Second))
+
 nonce := utils.NewAuthorizationNonce()
+
+domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractAddress)
+
+sig, err := typeddata.SignEIP712Str(
+	"<fromPrivateKey>",
+	domainSeparator,
+	typeddata.EncodeWords(
+		constant.TransferWithAuthorizationTypeHash,
+		"<fromAddress>",
+		"<toAddress>",
+		big.NewInt(100),
+		validAfter,
+		validBefore,
+		nonce,
+	),
+)
 
 receipt, err := w.StableCoin().TransferWithAuthorization(
 	context.Background(),
@@ -484,24 +541,45 @@ receipt, err := w.StableCoin().TransferWithAuthorization(
 	"<fromAddress>",
 	"<toAddress>",
 	big.NewInt(100),
-	big.NewInt(validAfter),
-	big.NewInt(validBefore),
+	validAfter,
+	validBefore,
 	nonce,
+	sig,
 	nil,
 )
 ```
 
 ### ReceiveWithAuthorization & ReceiveWithAuthorizationNoWait
 
-Submit an EIP-3009 receive-with-authorization transaction. The caller must be the `to` address. The wallet signs a `ReceiveWithAuthorization` EIP-712 message.
+Submit an EIP-3009 receive-with-authorization transaction. The caller must be the `to` address.
 
 ```go
-func ReceiveWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (*types.Receipt, error)
-func ReceiveWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+func ReceiveWithAuthorization(ctx context.Context, contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, sig types.Signature, gasLimit *uint64) (*types.Receipt, error)
+func ReceiveWithAuthorizationNoWait(contractAddress, from, to string, value, validAfter, validBefore *big.Int, nonce [32]byte, sig types.Signature, gasLimit *uint64) (common.Hash, error)
 ```
 
 ```go
+now := time.Now().Unix()
+validAfter  := big.NewInt(0)
+validBefore := big.NewInt(now + int64(10*time.Minute/time.Second))
+
 nonce := utils.NewAuthorizationNonce()
+
+domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractAddress)
+
+sig, err := typeddata.SignEIP712Str(
+	"<fromPrivateKey>",
+	domainSeparator,
+	typeddata.EncodeWords(
+		constant.ReceiveWithAuthorizationTypeHash,
+		"<fromAddress>",
+		"<toAddress>",
+		big.NewInt(100),
+		validAfter,
+		validBefore,
+		nonce,
+	),
+)
 
 receipt, err := w.StableCoin().ReceiveWithAuthorization(
 	context.Background(),
@@ -509,29 +587,43 @@ receipt, err := w.StableCoin().ReceiveWithAuthorization(
 	"<fromAddress>",
 	"<toAddress>",
 	big.NewInt(100),
-	big.NewInt(validAfter),
-	big.NewInt(validBefore),
+	validAfter,
+	validBefore,
 	nonce,
+	sig,
 	nil,
 )
 ```
 
 ### CancelAuthorization & CancelAuthorizationNoWait
 
-Cancel an outstanding EIP-3009 authorization by its nonce. The wallet signs a `CancelAuthorization` EIP-712 message.
+Cancel an outstanding EIP-3009 authorization by its nonce.
 
 ```go
-func CancelAuthorization(ctx context.Context, contractAddress, authorizer string, nonce [32]byte, gasLimit *uint64) (*types.Receipt, error)
-func CancelAuthorizationNoWait(contractAddress, authorizer string, nonce [32]byte, gasLimit *uint64) (common.Hash, error)
+func CancelAuthorization(ctx context.Context, contractAddress, authorizer string, nonce [32]byte, sig types.Signature, gasLimit *uint64) (*types.Receipt, error)
+func CancelAuthorizationNoWait(contractAddress, authorizer string, nonce [32]byte, sig types.Signature, gasLimit *uint64) (common.Hash, error)
 ```
 
 ```go
 // nonce must be the same value used when the authorization was submitted
+domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractAddress)
+
+sig, err := typeddata.SignEIP712Str(
+	"<authorizerPrivateKey>",
+	domainSeparator,
+	typeddata.EncodeWords(
+		constant.CancelAuthorizationTypeHash,
+		"<authorizerAddress>",
+		nonce,
+	),
+)
+
 receipt, err := w.StableCoin().CancelAuthorization(
 	context.Background(),
 	contractAddress,
 	"<authorizerAddress>",
 	nonce,
+	sig,
 	nil,
 )
 ```

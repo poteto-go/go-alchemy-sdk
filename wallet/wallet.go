@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"slices"
-	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
@@ -17,6 +16,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
+	"github.com/poteto-go/go-alchemy-sdk/typeddata"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
@@ -37,9 +37,7 @@ type wallet struct {
 }
 
 func New(privateKeyStr string) (types.Wallet, error) {
-	privateKeyStr = strings.TrimPrefix(privateKeyStr, "0x")
-
-	privateKey, err := crypto.HexToECDSA(privateKeyStr)
+	privateKey, err := utils.EncodePrivateKey(privateKeyStr)
 	if err != nil {
 		return &wallet{}, err
 	}
@@ -292,6 +290,10 @@ func (w *wallet) ContractCall(
 
 	addr := common.HexToAddress(contractAddress)
 	return provider.Eth().ContractCall(contract, addr, opts, callData, unpack)
+}
+
+func (w *wallet) SignEIP712(domainSeparator [32]byte, encoded []byte) (types.Signature, error) {
+	return typeddata.SignEIP712(w.privateKey, domainSeparator, encoded)
 }
 
 func (w *wallet) ERC20() types.WalletERC20 {
