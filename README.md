@@ -20,7 +20,7 @@ It supports not only Alchemy, but also other EVM chains.
 
 🧪 easily mock rpc responses w/ `alchemymock`.
 
-🪙 Smart Contract native support (in-progress)
+🪙 StableCoin native support
 
 ## QuickStart
 
@@ -56,7 +56,7 @@ func main() {
 - [x] Deploy Contract to Eth: `v0.1.0`
 - [x] Smart-Contract Tx & call support: `v0.2.0`
 - [x] Private Geth Support & `ERC20.Transfer`: `v0.3.0`
-- [ ] `ERC20` method fully support: `rc0.4.0`
-- [ ] `SC(Stable Coin)` method fully support: `rc0.6.0`
+- [x] `ERC20` method fully support: `v0.4.0`
+- [x] `SC(Stable Coin)` method fully support: `v0.6.0`
 - [ ] `NFT(ERC721)` method fully support: `rc0.8.0`
 - [ ] stable release: `rc1.0.0`
