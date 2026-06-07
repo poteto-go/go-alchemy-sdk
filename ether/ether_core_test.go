@@ -56,6 +56,7 @@ func newEtherApiForTest() *eth.Ether {
 			[]http.Header{},
 			[]byte(""),
 			0,
+			nil,
 		),
 	).(*eth.Ether)
 }
@@ -71,6 +72,7 @@ func newNilEtherApiForTest(provider *gas.AlchemyProvider) *eth.Ether {
 			[]http.Header{},
 			[]byte(""),
 			0,
+			nil,
 		),
 	).(*eth.Ether)
 }

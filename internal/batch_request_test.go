@@ -32,7 +32,7 @@ func TestRequestBatcher_QueueRequest(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 2,
 		MaxBatchTime: time.Millisecond * 100,
-		Client:       utils.NewSharedHTTPClient(0, time.Second),
+		Client:       utils.NewSharedHTTPClient(0, time.Second, nil),
 		Fetch:        utils.AlchemyBatchFetch,
 	}
 
@@ -81,7 +81,7 @@ func TestRequestBatcher_QueueRequest_Error(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Client:       utils.NewSharedHTTPClient(0, time.Second),
+		Client:       utils.NewSharedHTTPClient(0, time.Second, nil),
 		Fetch:        utils.AlchemyBatchFetch,
 	}
 
@@ -101,7 +101,7 @@ func TestRequestBatcher_Context_Cancel(t *testing.T) {
 	config := BatcherConfig{
 		MaxBatchSize: 1,
 		MaxBatchTime: time.Millisecond * 100,
-		Client:       utils.NewSharedHTTPClient(0, time.Second),
+		Client:       utils.NewSharedHTTPClient(0, time.Second, nil),
 		Fetch:        utils.AlchemyBatchFetch,
 	}
 

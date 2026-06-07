@@ -3,9 +3,11 @@ package e2e
 import (
 	"context"
 	"math/big"
+	"net/http"
 	"os"
 	"slices"
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -170,6 +172,42 @@ func TestSenario_DeployContract(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Greater(t, blockNumber, uint64(0))
 		})
+	})
+}
+
+// countingTransport wraps an http.RoundTripper and counts how many RPC calls
+// pass through it, modeling the metrics/benchmarking use case for a custom
+// transport against a blockchain node.
+type countingTransport struct {
+	base  http.RoundTripper
+	count atomic.Int64
+}
+
+func (t *countingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.count.Add(1)
+	return t.base.RoundTrip(req)
+}
+
+func TestScenario_CustomTransport(t *testing.T) {
+	t.Run("RPC calls flow through the caller-supplied transport", func(t *testing.T) {
+		port, err := strconv.Atoi(os.Getenv("RPC_PORT"))
+		assert.Nil(t, err)
+
+		transport := &countingTransport{base: http.DefaultTransport}
+		customAlchemy, err := gas.NewAlchemy(gas.AlchemySetting{
+			PrivateNetworkConfig: gas.PrivateNetworkConfig{
+				Host: "127.0.0.1",
+				Port: port,
+			},
+			Transport: transport,
+		})
+		assert.Nil(t, err)
+
+		blockNumber, err := customAlchemy.Core.GetBlockNumber()
+
+		assert.Nil(t, err)
+		assert.Greater(t, blockNumber, uint64(0))
+		assert.Greater(t, transport.count.Load(), int64(0), "the custom transport must handle the RPC round-trip")
 	})
 }
 

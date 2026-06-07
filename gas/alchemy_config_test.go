@@ -1,6 +1,7 @@
 package gas
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/poteto-go/go-alchemy-sdk/ether"
@@ -90,6 +91,30 @@ func TestNewAlchemyConfig_MaxResponseBytes(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, custom, config.maxResponseBytes)
+	})
+}
+
+func TestNewAlchemyConfig_Transport(t *testing.T) {
+	t.Run("nil when not set", func(t *testing.T) {
+		config, err := NewAlchemyConfig(AlchemySetting{
+			ApiKey:  "api-key",
+			Network: types.MaticMainnet,
+		})
+
+		assert.NoError(t, err)
+		assert.Nil(t, config.transport)
+	})
+
+	t.Run("propagates custom transport from setting", func(t *testing.T) {
+		custom := &http.Transport{}
+		config, err := NewAlchemyConfig(AlchemySetting{
+			ApiKey:    "api-key",
+			Network:   types.MaticMainnet,
+			Transport: custom,
+		})
+
+		assert.NoError(t, err)
+		assert.Same(t, custom, config.transport)
 	})
 }
 

@@ -39,6 +39,7 @@ func newEtherApiWSecretForTest() *eth.Ether {
 			[]http.Header{},
 			decoded,
 			0,
+			nil,
 		),
 	).(*eth.Ether)
 }
@@ -60,6 +61,7 @@ func newEtherApiWIvalidSecretForTest() *eth.Ether {
 			[]http.Header{},
 			[]byte("invalid"),
 			0,
+			nil,
 		),
 	).(*eth.Ether)
 }
