@@ -114,6 +114,70 @@ The limit is enforced on **all** response paths:
 - **Alchemy JSON-RPC** (`AlchemyFetch` / `AlchemyBatchFetch`): returns `constant.ErrFailedToReadResponse` when the body exceeds the limit.
 - **geth `ethclient` methods** (e.g. `BlockNumber`, `CallContract`): the underlying `http.Client` uses a `limitedTransport` that wraps every response body with `io.LimitReader`, so oversized responses are also truncated here.
 
+### Custom Transport
+
+`Transport` lets you plug in your own `http.RoundTripper` for the actual HTTP communication of every RPC call. Because a single transport is shared and reused across calls, this is also where you control the connection pool, so you stop paying the TCP/TLS handshake cost on repeated calls to the same host.
+
+Use it for:
+
+- connection pooling settings
+- retry / backoff
+- request tracing
+- latency / error-rate metrics
+- provider-level benchmarking
+
+If `Transport` is `nil`, `http.DefaultTransport` is used. The SDK always applies its [response-size cap](#response-size-limit) on top of whatever transport you provide, so you never lose that protection.
+
+```go
+func main() {
+	setting := gas.AlchemySetting{
+		ApiKey:  "<alchemy-api-key>",
+		Network: types.EthSepolia,
+		// Reuse connections aggressively for back-to-back RPC calls.
+		Transport: &http.Transport{
+			MaxIdleConns:        100,
+			MaxIdleConnsPerHost: 100,
+			IdleConnTimeout:     90 * time.Second,
+		},
+	}
+
+	alchemy := gas.NewAlchemy(setting)
+}
+```
+
+#### Use case: benchmark your blockchain node
+
+Wrap a transport to measure per-call latency, then point the SDK at different (private) RPC providers to compare them under identical SDK behavior:
+
+```go
+// latencyTransport records how long each RPC round-trip takes.
+type latencyTransport struct {
+	base http.RoundTripper
+}
+
+func (t *latencyTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	start := time.Now()
+	resp, err := t.base.RoundTrip(req)
+	log.Printf("rpc %s took %s", req.URL.Host, time.Since(start))
+	return resp, err
+}
+
+func main() {
+	setting := gas.AlchemySetting{
+		PrivateNetworkConfig: gas.PrivateNetworkConfig{
+			Url: "<your-node-or-provider-url>",
+		},
+		Transport: &latencyTransport{base: http.DefaultTransport},
+	}
+
+	alchemy := gas.NewAlchemy(setting)
+
+	// Every RPC call now logs its latency, so you can benchmark and
+	// compare providers (e.g. Alchemy vs. a private endpoint).
+	alchemy.Core.GetBlockNumber()
+}
+```
+
 ### JWT Secret (Engine API Authentication)
 
 geth's [Engine API](https://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md) requires JWT authentication. Set `JwtSecret` in `PrivateNetworkConfig` to enable it.

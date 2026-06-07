@@ -23,7 +23,7 @@ type AlchemyProvider struct {
 func NewAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	provider := &AlchemyProvider{
 		config: config,
-		client: utils.NewSharedHTTPClient(config.maxResponseBytes, config.requestTimeout),
+		client: utils.NewSharedHTTPClient(config.maxResponseBytes, config.requestTimeout, config.transport),
 	}
 	provider.id.Store(1)
 

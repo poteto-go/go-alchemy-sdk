@@ -23,6 +23,7 @@ type AlchemyConfig struct {
 	customHeaders        []http.Header
 	jwtSecret            []byte
 	maxResponseBytes     int64
+	transport            http.RoundTripper
 }
 
 func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
@@ -47,6 +48,7 @@ func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
 		customHeaders:        setting.CustomHeaders,
 		jwtSecret:            decodedJwt,
 		maxResponseBytes:     setting.MaxResponseBytes,
+		transport:            setting.Transport,
 	}
 
 	if config.requestTimeout == 0 {
@@ -106,5 +108,6 @@ func (config *AlchemyConfig) toEtherApiConfig() ether.EtherApiConfig {
 		config.customHeaders,
 		config.jwtSecret,
 		config.maxResponseBytes,
+		config.transport,
 	)
 }
