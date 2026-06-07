@@ -10,9 +10,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/deployer"
 	"github.com/poteto-go/go-alchemy-sdk/famous"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
+	"github.com/poteto-go/go-alchemy-sdk/typeddata"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/wallet"
 	"github.com/stretchr/testify/assert"
@@ -670,7 +672,6 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			receipt, err := w.StableCoin().Permit(
 				context.Background(),
 				contractHex,
-				initAddress,
 				otherAddress,
 				permitValue,
 				deadline,
@@ -708,6 +709,24 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			nonce[0] = 0xEE
 			nonce[31] = 0xFF
 
+			domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractHex)
+			assert.Nil(t, err)
+
+			sig, err := typeddata.SignEIP712Str(
+				initPrivateKey,
+				domainSeparator,
+				typeddata.EncodeWords(
+					constant.TransferWithAuthorizationTypeHash,
+					initAddress,
+					otherAddress,
+					transferValue,
+					validAfter,
+					validBefore,
+					nonce,
+				),
+			)
+			assert.Nil(t, err)
+
 			balanceBefore, err := alchemy.StableCoin.BalanceOf(contractHex, otherAddress)
 			assert.Nil(t, err)
 
@@ -720,6 +739,7 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 				validAfter,
 				validBefore,
 				nonce,
+				sig,
 				nil,
 			)
 			assert.Nil(t, err)
@@ -743,11 +763,26 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			assert.Nil(t, err)
 			assert.False(t, usedBefore)
 
+			domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractHex)
+			assert.Nil(t, err)
+
+			sig, err := typeddata.SignEIP712Str(
+				initPrivateKey,
+				domainSeparator,
+				typeddata.EncodeWords(
+					constant.CancelAuthorizationTypeHash,
+					initAddress,
+					nonce,
+				),
+			)
+			assert.Nil(t, err)
+
 			receipt, err := w.StableCoin().CancelAuthorization(
 				context.Background(),
 				contractHex,
 				initAddress,
 				nonce,
+				sig,
 				nil,
 			)
 			assert.Nil(t, err)

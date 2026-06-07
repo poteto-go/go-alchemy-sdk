@@ -100,6 +100,18 @@ type Wallet interface {
 		unpack func([]byte) (any, error),
 	) (any, error)
 
+	/*
+		EIP-712 signing by private key.
+
+		EIP-712 is a standard for hashing and signing of typed structured data, as opposed to just arbitrary bytes.
+		It is used to prevent signing of unintended data and to make the signed data more human-readable.
+
+		refs: https://eips.ethereum.org/EIPS/eip-712
+	*/
+	SignEIP712(
+		domainSeparator [32]byte, encoded []byte,
+	) (Signature, error)
+
 	/* ERC20 support */
 	ERC20() WalletERC20
 

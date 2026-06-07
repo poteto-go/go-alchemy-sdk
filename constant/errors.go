@@ -44,6 +44,7 @@ var (
 	ErrAmountExceedsUint256             = errors.New("amount exceeds uint256 max")
 	ErrInvalidAddress                   = errors.New("invalid hex address")
 	ErrInvalidABIString                 = errors.New("invalid ABI string")
+	ErrInvalidAuthorizationWindow       = errors.New("validAfter must be less than validBefore")
 	ErrFailedToReadResponse             = errors.New("failed to read response body")
 	ErrUnexpectedResponseType           = errors.New("unexpected response type")
 )
