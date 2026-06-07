@@ -37,6 +37,13 @@ type AlchemySetting struct {
 	// Set to 0 to use the default.
 	MaxResponseBytes int64 `yaml:"max_response_bytes"`
 
+	// Transport is a caller-supplied http.RoundTripper used for the actual HTTP
+	// communication of every RPC call. Use it to plug in connection pooling,
+	// retry/backoff, request tracing, latency/error-rate metrics, or to
+	// benchmark different (private) RPC providers. If nil, requests delegate to
+	// http.DefaultTransport. The SDK always applies its response-size cap on top of it.
+	Transport http.RoundTripper `yaml:"-"`
+
 	/*
 		return true => p8net is selected
 

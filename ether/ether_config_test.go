@@ -30,6 +30,7 @@ func TestNewEtherApiConfig(t *testing.T) {
 		customHeaders,
 		[]byte(""),
 		0,
+		nil,
 	)
 
 	// Assert

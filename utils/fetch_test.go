@@ -154,7 +154,7 @@ func TestAlchemyFetch_ResponseSizeLimit(t *testing.T) {
 		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, string(resultJson)))
 
 		// Client with limit larger than the response: succeeds.
-		client := utils.NewSharedHTTPClient(int64(len(resultJson)+1), 0)
+		client := utils.NewSharedHTTPClient(int64(len(resultJson)+1), 0, nil)
 		_, err := utils.AlchemyFetch(client, request, body)
 
 		assert.Nil(t, err)
@@ -171,7 +171,7 @@ func TestAlchemyFetch_ResponseSizeLimit(t *testing.T) {
 		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
 
 		// Client with a 10-byte limit: transport truncates body, JSON decode fails.
-		client := utils.NewSharedHTTPClient(10, 0)
+		client := utils.NewSharedHTTPClient(10, 0, nil)
 		_, err := utils.AlchemyFetch(client, request, body)
 
 		assert.ErrorIs(t, err, constant.ErrFailedToUnmarshalResponse)
@@ -192,7 +192,7 @@ func TestAlchemyBatchFetch_ResponseSizeLimit(t *testing.T) {
 		largeBody := string(make([]byte, 100))
 		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
 
-		client := utils.NewSharedHTTPClient(10, 0)
+		client := utils.NewSharedHTTPClient(10, 0, nil)
 		_, err := utils.AlchemyBatchFetch(
 			client,
 			[]types.AlchemyRequest{{Request: req}},
@@ -209,7 +209,7 @@ func TestAlchemyBatchFetch_ResponseSizeLimit(t *testing.T) {
 		largeBody := string(make([]byte, 100))
 		httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, largeBody))
 
-		client := utils.NewSharedHTTPClient(10, 0)
+		client := utils.NewSharedHTTPClient(10, 0, nil)
 		_, err := utils.AlchemyBatchFetch(
 			client,
 			[]types.AlchemyRequest{{Request: req}, {Request: req}},
@@ -520,7 +520,7 @@ func TestAlchemyFetch_ClientTimeout(t *testing.T) {
 	resultJson, _ := json.Marshal(mockResult)
 	httpmock.RegisterResponder("POST", targetUrl, httpmock.NewStringResponder(200, string(resultJson)))
 
-	client := utils.NewSharedHTTPClient(0, 10*time.Second)
+	client := utils.NewSharedHTTPClient(0, 10*time.Second, nil)
 	result, err := utils.AlchemyFetch(client, types.AlchemyRequest{Request: req}, body)
 
 	assert.Nil(t, err)

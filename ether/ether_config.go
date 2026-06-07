@@ -17,6 +17,7 @@ type EtherApiConfig struct {
 	customHeaders    []http.Header
 	jwtSecret        []byte
 	maxResponseBytes int64
+	transport        http.RoundTripper
 }
 
 func NewEtherApiConfig(
@@ -27,6 +28,7 @@ func NewEtherApiConfig(
 	customHeaders []http.Header,
 	jwtSecret []byte,
 	maxResponseBytes int64,
+	transport http.RoundTripper,
 ) EtherApiConfig {
 	return EtherApiConfig{
 		url:              url,
@@ -36,6 +38,7 @@ func NewEtherApiConfig(
 		customHeaders:    customHeaders,
 		jwtSecret:        jwtSecret,
 		maxResponseBytes: maxResponseBytes,
+		transport:        transport,
 	}
 }
 

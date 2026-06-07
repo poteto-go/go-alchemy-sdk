@@ -44,7 +44,7 @@ func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.E
 		connCount:  0,
 		client:     nil,
 		mu:         &sync.Mutex{},
-		httpClient: utils.NewSharedHTTPClient(config.maxResponseBytes, config.requestTimeout),
+		httpClient: utils.NewSharedHTTPClient(config.maxResponseBytes, config.requestTimeout, config.transport),
 	}
 }
 

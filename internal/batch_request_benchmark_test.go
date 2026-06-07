@@ -21,7 +21,7 @@ func BenchmarkRequestBatcher_QueueRequest(b *testing.B) {
 	config := BatcherConfig{
 		MaxBatchSize: 100,
 		MaxBatchTime: time.Millisecond * 10,
-		Client:       utils.NewSharedHTTPClient(0, time.Second),
+		Client:       utils.NewSharedHTTPClient(0, time.Second, nil),
 		Fetch:        utils.AlchemyBatchFetch,
 	}
 
