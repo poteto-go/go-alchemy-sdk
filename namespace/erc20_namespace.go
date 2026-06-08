@@ -1,10 +1,8 @@
 package namespace
 
 import (
-	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -54,14 +52,13 @@ func (e *ERC20) BalanceOf(
 	output, err := e.ether.CallReadMethod(
 		constant.BalanceOfFnSignature,
 		contractAddress,
-		common.LeftPadBytes(common.HexToAddress(walletAddress).Bytes(), constant.ABIWordSize),
+		utils.EncodeABIAddress(walletAddress),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	outputInt := new(big.Int)
-	return outputInt.SetBytes(output), nil
+	return utils.DecodeUint256(output)
 }
 
 func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
@@ -76,8 +73,7 @@ func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
 		return nil, err
 	}
 
-	outputInt := new(big.Int)
-	return outputInt.SetBytes(output), nil
+	return utils.DecodeUint256(output)
 }
 
 func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, error) {
@@ -87,15 +83,14 @@ func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, err
 	output, err := e.ether.CallReadMethod(
 		constant.AllowanceFnSignature,
 		contractAddress,
-		common.LeftPadBytes(common.HexToAddress(owner).Bytes(), constant.ABIWordSize),
-		common.LeftPadBytes(common.HexToAddress(spender).Bytes(), constant.ABIWordSize),
+		utils.EncodeABIAddress(owner),
+		utils.EncodeABIAddress(spender),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	outputInt := new(big.Int)
-	return outputInt.SetBytes(output), nil
+	return utils.DecodeUint256(output)
 }
 
 func (e *ERC20) Name(contractAddress string) (string, error) {
@@ -140,13 +135,5 @@ func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
 		return 0, err
 	}
 
-	out := new(big.Int).SetBytes(output)
-	if out.BitLen() > 8 {
-		return 0, fmt.Errorf("decimals overflow: %s", out.String())
-	}
-	b := out.Bytes()
-	if len(b) == 0 {
-		return 0, nil
-	}
-	return b[len(b)-1], nil
+	return utils.DecodeUint8(output)
 }

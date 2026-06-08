@@ -47,6 +47,8 @@ var (
 	ErrInvalidAuthorizationWindow       = errors.New("validAfter must be less than validBefore")
 	ErrFailedToReadResponse             = errors.New("failed to read response body")
 	ErrUnexpectedResponseType           = errors.New("unexpected response type")
+	ErrBatchNotSent                     = errors.New("batch has not been sent yet")
+	ErrBatchAlreadySent                 = errors.New("batch has already been sent")
 )
 
 var HttpClientErrorCodeList = []int{

@@ -13,6 +13,11 @@ var (
 	Eth_GetTransactionReceipt = "eth_getTransactionReceipt"
 	Eth_GetBlockByNumber      = "eth_getBlockByNumber"
 	Eth_GetBlockByHash        = "eth_getBlockByHash"
+	Eth_ChainId               = "eth_chainId"
+)
+
+var (
+	Net_PeerCount = "net_peerCount"
 )
 
 var (

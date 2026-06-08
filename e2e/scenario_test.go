@@ -12,6 +12,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
+	"github.com/poteto-go/go-alchemy-sdk/batch"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/deployer"
 	"github.com/poteto-go/go-alchemy-sdk/famous"
@@ -84,6 +85,28 @@ func TestSenario_BaseMethod(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.GreaterOrEqual(t, peerCount, uint64(0))
+	})
+
+	t.Run("Batch fetches blockNumber, gasPrice & chainId in a single round-trip", func(t *testing.T) {
+		b := batch.NewBatcher(alchemy.GetProvider().Eth())
+		blockNumber := b.Core.BlockNumber()
+		gasPrice := b.Core.GasPrice()
+		chainId := b.Core.ChainID()
+
+		err := b.Send()
+		assert.Nil(t, err)
+
+		bn, err := blockNumber.Unwrap()
+		assert.Nil(t, err)
+		assert.GreaterOrEqual(t, bn, uint64(0))
+
+		gp, err := gasPrice.Unwrap()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, gp.Cmp(big.NewInt(0)))
+
+		id, err := chainId.Unwrap()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, id.Cmp(big.NewInt(0)))
 	})
 }
 

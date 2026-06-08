@@ -16,9 +16,10 @@ import (
 
 // AlchemyHttpMock is a helper for mocking Alchemy API responses in tests.
 type AlchemyHttpMock struct {
-	baseUrl    string
-	responders map[string][]httpmock.Responder
-	mu         sync.Mutex
+	baseUrl         string
+	responders      map[string][]httpmock.Responder
+	batchResponders []httpmock.Responder
+	mu              sync.Mutex
 }
 
 // NewAlchemyHttpMock creates a new AlchemyHttpMock and activates httpmock.
@@ -69,6 +70,17 @@ func (m *AlchemyHttpMock) registerResponderWithCode(statusCode int, ethMethod, r
 	m.responders[ethMethod] = append(m.responders[ethMethod], responder)
 }
 
+// RegisterBatchResponderOnce registers a single-use responder for a JSON-RPC
+// batch request (an array request body, as emitted by geth's
+// rpc.Client.BatchCallContext). response must be a JSON array whose elements'
+// "id" fields match the ids of the batched requests.
+func (m *AlchemyHttpMock) RegisterBatchResponderOnce(response string) {
+	responder := httpmock.NewStringResponder(http.StatusOK, response)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.batchResponders = append(m.batchResponders, responder)
+}
+
 func (m *AlchemyHttpMock) registerMasterResponder() {
 	httpmock.RegisterResponder("POST", m.baseUrl, func(req *http.Request) (*http.Response, error) {
 		var request jsonRpcRequest
@@ -84,6 +96,12 @@ func (m *AlchemyHttpMock) registerMasterResponder() {
 
 		// Restore the body so other matchers can read it
 		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// A batch request (e.g. geth's rpc.Client.BatchCallContext) sends a
+		// JSON array body. Dispatch it to the dedicated batch responder queue.
+		if isBatchRequestBody(bodyBytes) {
+			return m.serveBatch(req)
+		}
 
 		if err := json.Unmarshal(bodyBytes, &request); err != nil {
 			return nil, errors.New("invalid json")
@@ -103,4 +121,26 @@ func (m *AlchemyHttpMock) registerMasterResponder() {
 
 		return responder(req)
 	})
+}
+
+// isBatchRequestBody reports whether body is a JSON array (the shape of a
+// JSON-RPC batch request).
+func isBatchRequestBody(body []byte) bool {
+	trimmed := bytes.TrimLeft(body, " \t\r\n")
+	return len(trimmed) > 0 && trimmed[0] == '['
+}
+
+func (m *AlchemyHttpMock) serveBatch(req *http.Request) (*http.Response, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if len(m.batchResponders) == 0 {
+		return nil, errors.New("batch request not mocked or no more batch mocks available")
+	}
+
+	// Always pop the first batch responder (FIFO)
+	responder := m.batchResponders[0]
+	m.batchResponders = m.batchResponders[1:]
+
+	return responder(req)
 }
