@@ -49,6 +49,7 @@ var (
 	ErrUnexpectedResponseType           = errors.New("unexpected response type")
 	ErrBatchNotSent                     = errors.New("batch has not been sent yet")
 	ErrBatchAlreadySent                 = errors.New("batch has already been sent")
+	ErrInvalidPrivateNetworkUrl         = errors.New("invalid private network url")
 )
 
 var HttpClientErrorCodeList = []int{

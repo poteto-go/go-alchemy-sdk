@@ -106,6 +106,26 @@ func TestBlockTag(t *testing.T) {
 	}
 }
 
+func TestUrl(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawUrl  string
+		wantErr error
+	}{
+		{"empty is allowed", "", nil},
+		{"valid http", "http://localhost:8545", nil},
+		{"valid https", "https://my-rpc.example.com", nil},
+		{"invalid scheme", "ftp://bad-scheme.com", constant.ErrInvalidPrivateNetworkUrl},
+		{"missing scheme", "localhost:8545", constant.ErrInvalidPrivateNetworkUrl},
+		{"empty host", "http://", constant.ErrInvalidPrivateNetworkUrl},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.ErrorIs(t, validate.Url(tt.rawUrl), tt.wantErr)
+		})
+	}
+}
+
 func TestABIString(t *testing.T) {
 	t.Run("normal case: valid header and length", func(t *testing.T) {
 		// header declares length 3 with a full data word following.
