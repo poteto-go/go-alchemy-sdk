@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"golang.org/x/crypto/sha3"
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -159,6 +158,30 @@ func (ether *Ether) Client() *ethclient.Client {
 	ether.mu.Lock()
 	defer ether.mu.Unlock()
 	return ether.client
+}
+
+/*
+BatchCall sends multiple JSON-RPC requests in a single HTTP round-trip using
+geth's underlying rpc.Client.
+
+Each element's Result/Error is populated in place (geth semantics): a per-request
+RPC error is stored on the element's Error field, while the returned error is only
+set for I/O level failures. Backoff retry therefore applies to I/O failures only.
+*/
+func (ether *Ether) BatchCall(elems []rpc.BatchElem) error {
+	if err := ether.SetEthClient(); err != nil {
+		return err
+	}
+	defer ether.Close()
+
+	// ethclient does not surface batching, so reach the underlying rpc.Client.
+	c := ether.Client()
+	return internal.GethRequestSingleErrorWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		c.Client().BatchCallContext,
+		elems,
+	)
 }
 
 func (ether *Ether) BlockNumber() (uint64, error) {
@@ -841,17 +864,7 @@ func (ether *Ether) CallReadMethod(
 	contractAddress string,
 	args ...[]byte,
 ) ([]byte, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(method); err != nil {
-		return nil, err
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	data := make([]byte, 0, 4+len(args)*32)
-	data = append(data, methodID...)
-	for _, arg := range args {
-		data = append(data, arg...)
-	}
+	data := utils.EncodeReadCalldata(method, args...)
 
 	contractAddr := common.HexToAddress(contractAddress)
 	msg := ethereum.CallMsg{

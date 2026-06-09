@@ -3,8 +3,11 @@ package alchemymock_test
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/alchemymock"
+	"github.com/poteto-go/go-alchemy-sdk/batch"
+	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -186,5 +189,80 @@ func TestAlchemyMock_SequenceResponders(t *testing.T) {
 		balance2, err4 := alchemy.Core.GetBalance("0x", "latest")
 		assert.NoError(t, err4)
 		assert.Equal(t, "2", balance2.String())
+	})
+}
+
+var batchMockSetting = gas.AlchemySetting{
+	ApiKey:  "hoge",
+	Network: "fuga",
+	BackoffConfig: &types.BackoffConfig{
+		MaxRetries: 0,
+	},
+}
+
+// newBatcherForMock builds a real Batcher (via ether) so the batch responder is
+// exercised through actual batch traffic rather than a hand-crafted request.
+func newBatcherForMock() *batch.Batcher {
+	config, err := gas.NewAlchemyConfig(batchMockSetting)
+	if err != nil {
+		panic(err)
+	}
+	provider := gas.NewAlchemyProvider(config)
+	e := ether.NewEtherApi(provider, ether.NewEtherApiConfig(
+		config.GetUrl(),
+		0,
+		2*time.Second,
+		&types.BackoffConfig{MaxRetries: 0},
+		[]http.Header{},
+		nil,
+		0,
+		nil,
+	))
+	return batch.NewBatcher(e)
+}
+
+func TestAlchemyMock_BatchResponder(t *testing.T) {
+	t.Run("a batch sent via the Batcher is served by the batch responder", func(t *testing.T) {
+		// Arrange
+		alchemyMock := alchemymock.NewAlchemyHttpMock(batchMockSetting, t)
+		defer alchemyMock.DeactivateAndReset()
+
+		b := newBatcherForMock()
+		balance := b.Core.Balance("0xabc", "latest")
+		blockNumber := b.Core.BlockNumber()
+
+		// ids are assigned sequentially (1, 2, ...) by a fresh geth rpc.Client.
+		alchemyMock.RegisterBatchResponderOnce(
+			`[{"jsonrpc":"2.0","id":1,"result":"0x1234"},{"jsonrpc":"2.0","id":2,"result":"0x10"}]`,
+		)
+
+		// Act
+		err := b.Send()
+
+		// Assert
+		assert.NoError(t, err)
+
+		bal, err := balance.Unwrap()
+		assert.NoError(t, err)
+		assert.Equal(t, "4660", bal.String())
+
+		bn, err := blockNumber.Unwrap()
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(16), bn)
+	})
+
+	t.Run("if no batch responder registered, Send returns error", func(t *testing.T) {
+		// Arrange
+		alchemyMock := alchemymock.NewAlchemyHttpMock(batchMockSetting, t)
+		defer alchemyMock.DeactivateAndReset()
+
+		b := newBatcherForMock()
+		b.Core.BlockNumber()
+
+		// Act: no batch responder registered.
+		err := b.Send()
+
+		// Assert
+		assert.Error(t, err)
 	})
 }

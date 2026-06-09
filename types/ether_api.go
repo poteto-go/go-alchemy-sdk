@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 type ContractInstance interface {
@@ -40,6 +41,16 @@ type EtherApi interface {
 		get raw ethclient
 	*/
 	Client() *ethclient.Client
+
+	/*
+		BatchCall sends multiple JSON-RPC requests in a single HTTP round-trip
+		using geth's underlying rpc.Client.
+
+		Each element's Result/Error is populated in place (geth semantics): a
+		per-request RPC error is stored on the element's Error field, while the
+		returned error is only set for I/O level failures.
+	*/
+	BatchCall(elems []rpc.BatchElem) error
 
 	/* get  the number of the most recent block. */
 	BlockNumber() (uint64, error)
