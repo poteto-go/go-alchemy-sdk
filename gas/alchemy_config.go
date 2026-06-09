@@ -28,8 +28,10 @@ type AlchemyConfig struct {
 }
 
 func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
-	if err := validate.Url(setting.PrivateNetworkConfig.Url); err != nil {
-		return AlchemyConfig{}, err
+	if isPrivateNetwork(setting) {
+		if err := validate.Url(resolvePrivateNetUrl(setting)); err != nil {
+			return AlchemyConfig{}, err
+		}
 	}
 
 	decodedJwt, err := internal.DecodeHex(setting.PrivateNetworkConfig.JwtSecret)

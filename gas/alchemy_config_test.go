@@ -124,6 +124,17 @@ func TestNewAlchemyConfig_PrivateNetworkUrlValidation(t *testing.T) {
 		})
 		assert.NoError(t, err)
 	})
+
+	t.Run("host+port path with empty host returns error", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Host: "",
+				Port: 8545,
+			},
+			IsPrivateNetwork: func(AlchemySetting) bool { return true },
+		})
+		assert.ErrorIs(t, err, constant.ErrInvalidPrivateNetworkUrl)
+	})
 }
 
 func TestNewAlchemyConfig_MaxResponseBytes(t *testing.T) {

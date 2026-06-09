@@ -118,6 +118,7 @@ func TestUrl(t *testing.T) {
 		{"invalid scheme", "ftp://bad-scheme.com", constant.ErrInvalidPrivateNetworkUrl},
 		{"missing scheme", "localhost:8545", constant.ErrInvalidPrivateNetworkUrl},
 		{"empty host", "http://", constant.ErrInvalidPrivateNetworkUrl},
+		{"empty hostname with port", "http://:8545", constant.ErrInvalidPrivateNetworkUrl},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

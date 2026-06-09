@@ -61,7 +61,7 @@ func Url(rawUrl string) error {
 		return nil
 	}
 	u, _ := url.Parse(rawUrl)
-	if u == nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+	if u == nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
 		return constant.ErrInvalidPrivateNetworkUrl
 	}
 	return nil
