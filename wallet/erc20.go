@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"golang.org/x/crypto/sha3"
 )
 
 type walletERC20 struct {
@@ -33,25 +33,6 @@ func (api *walletERC20) Transfer(ctx context.Context, contractAddress, toAddress
 	})
 }
 
-func buildERC20TxData(signature []byte, params ...[]byte) ([]byte, error) {
-	hash := sha3.NewLegacyKeccak256()
-	if _, err := hash.Write(signature); err != nil {
-		return nil, err
-	}
-	methodID := hash.Sum(nil)[:4]
-
-	size := 4
-	for _, p := range params {
-		size += len(p)
-	}
-	data := make([]byte, 0, size)
-	data = append(data, methodID...)
-	for _, p := range params {
-		data = append(data, p...)
-	}
-	return data, nil
-}
-
 func resolveGasLimit(gasLimit *uint64) uint64 {
 	if gasLimit == nil {
 		return 300000
@@ -66,16 +47,12 @@ func (api *walletERC20) sendERC20Tx(contractAddress string, gasLimit *uint64, si
 	if api.w.snapshot() == nil {
 		return common.Hash{}, constant.ErrWalletIsNotConnected
 	}
-	data, err := buildERC20TxData(sig, params...)
-	if err != nil {
-		return common.Hash{}, err
-	}
 	return api.w.SendTransaction(types.TransactionRequest{
 		From:     api.w.GetAddress(),
 		To:       contractAddress,
 		Value:    "0x0",
 		GasLimit: resolveGasLimit(gasLimit),
-		Data:     data,
+		Data:     encode.ReadCalldata(sig, params...),
 	})
 }
 

@@ -1,4 +1,4 @@
-package utils
+package encode
 
 import (
 	"crypto/ecdsa"
@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-func EncodePrivateKey(privateKeyStr string) (*ecdsa.PrivateKey, error) {
+func PrivateKey(privateKeyStr string) (*ecdsa.PrivateKey, error) {
 	privateKeyStr = strings.TrimPrefix(privateKeyStr, "0x")
 
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)

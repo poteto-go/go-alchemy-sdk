@@ -20,6 +20,7 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -864,7 +865,7 @@ func (ether *Ether) CallReadMethod(
 	contractAddress string,
 	args ...[]byte,
 ) ([]byte, error) {
-	data := utils.EncodeReadCalldata(method, args...)
+	data := encode.ReadCalldata(method, args...)
 
 	contractAddr := common.HexToAddress(contractAddress)
 	msg := ethereum.CallMsg{

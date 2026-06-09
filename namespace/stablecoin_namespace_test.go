@@ -8,9 +8,9 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -111,7 +111,7 @@ func TestStableCoin_Currency(t *testing.T) {
 		expected := "USD"
 
 		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-			return utils.EncodeABIString(expected), nil
+			return encode.ABIString(expected), nil
 		})
 
 		result, err := sc.Currency(contractAddress)
@@ -159,7 +159,7 @@ func TestStableCoin_Version(t *testing.T) {
 		expected := "1"
 
 		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-			return utils.EncodeABIString(expected), nil
+			return encode.ABIString(expected), nil
 		})
 
 		result, err := sc.Version(contractAddress)

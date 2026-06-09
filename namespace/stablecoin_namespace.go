@@ -5,8 +5,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/decode"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
@@ -68,12 +69,12 @@ func (s *stableCoin) IsBlacklisted(contractAddress, address string) (bool, error
 	output, err := s.ether.CallReadMethod(
 		constant.IsBlacklistedFnSignature,
 		contractAddress,
-		utils.EncodeABIAddress(address),
+		encode.ABIAddress(address),
 	)
 	if err != nil {
 		return false, err
 	}
-	return utils.DecodeBool(output)
+	return decode.Bool(output)
 }
 
 func (s *stableCoin) Currency(contractAddress string) (string, error) {
@@ -87,7 +88,7 @@ func (s *stableCoin) Currency(contractAddress string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return utils.DecodeABIString(output)
+	return decode.ABIString(output)
 }
 
 func (s *stableCoin) Version(contractAddress string) (string, error) {
@@ -101,7 +102,7 @@ func (s *stableCoin) Version(contractAddress string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return utils.DecodeABIString(output)
+	return decode.ABIString(output)
 }
 
 func (s *stableCoin) Paused(contractAddress string) (bool, error) {
@@ -115,7 +116,7 @@ func (s *stableCoin) Paused(contractAddress string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return utils.DecodeBool(output)
+	return decode.Bool(output)
 }
 
 func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
@@ -126,7 +127,7 @@ func (s *stableCoin) Owner(contractAddress string) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
-	return utils.DecodeABIAddress(output)
+	return decode.ABIAddress(output)
 }
 
 func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error) {
@@ -137,7 +138,7 @@ func (s *stableCoin) MasterMinter(contractAddress string) (common.Address, error
 	if err != nil {
 		return common.Address{}, err
 	}
-	return utils.DecodeABIAddress(output)
+	return decode.ABIAddress(output)
 }
 
 func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
@@ -148,7 +149,7 @@ func (s *stableCoin) Pauser(contractAddress string) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
-	return utils.DecodeABIAddress(output)
+	return decode.ABIAddress(output)
 }
 
 func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error) {
@@ -159,7 +160,7 @@ func (s *stableCoin) Blacklister(contractAddress string) (common.Address, error)
 	if err != nil {
 		return common.Address{}, err
 	}
-	return utils.DecodeABIAddress(output)
+	return decode.ABIAddress(output)
 }
 
 func (s *stableCoin) IsMinter(contractAddress, address string) (bool, error) {
@@ -169,12 +170,12 @@ func (s *stableCoin) IsMinter(contractAddress, address string) (bool, error) {
 	output, err := s.ether.CallReadMethod(
 		constant.IsMinterFnSignature,
 		contractAddress,
-		utils.EncodeABIAddress(address),
+		encode.ABIAddress(address),
 	)
 	if err != nil {
 		return false, err
 	}
-	return utils.DecodeBool(output)
+	return decode.Bool(output)
 }
 
 func (s *stableCoin) MinterAllowance(contractAddress, address string) (*big.Int, error) {
@@ -184,12 +185,12 @@ func (s *stableCoin) MinterAllowance(contractAddress, address string) (*big.Int,
 	output, err := s.ether.CallReadMethod(
 		constant.MinterAllowanceFnSignature,
 		contractAddress,
-		utils.EncodeABIAddress(address),
+		encode.ABIAddress(address),
 	)
 	if err != nil {
 		return nil, err
 	}
-	return utils.DecodeUint256(output)
+	return decode.Uint256(output)
 }
 
 func (s *stableCoin) Nonces(contractAddress, ownerAddress string) (*big.Int, error) {
@@ -199,25 +200,25 @@ func (s *stableCoin) Nonces(contractAddress, ownerAddress string) (*big.Int, err
 	output, err := s.ether.CallReadMethod(
 		constant.NoncesFnSignature,
 		contractAddress,
-		utils.EncodeABIAddress(ownerAddress),
+		encode.ABIAddress(ownerAddress),
 	)
 	if err != nil {
 		return nil, err
 	}
-	return utils.DecodeUint256(output)
+	return decode.Uint256(output)
 }
 
 func (s *stableCoin) AuthorizationState(contractAddress, authorizer string, nonce [32]byte) (bool, error) {
 	output, err := s.ether.CallReadMethod(
 		constant.AuthorizationStateFnSignature,
 		contractAddress,
-		utils.EncodeABIAddress(authorizer),
+		encode.ABIAddress(authorizer),
 		nonce[:],
 	)
 	if err != nil {
 		return false, err
 	}
-	return utils.DecodeBool(output)
+	return decode.Bool(output)
 }
 
 func (s *stableCoin) DomainSeparator(contractAddress string) ([32]byte, error) {
@@ -231,5 +232,5 @@ func (s *stableCoin) DomainSeparator(contractAddress string) ([32]byte, error) {
 	if err != nil {
 		return [32]byte{}, err
 	}
-	return utils.DecodeBytes32(output)
+	return decode.Bytes32(output)
 }

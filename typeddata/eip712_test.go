@@ -6,8 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/typeddata"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -93,7 +93,7 @@ func TestEncodeWords_bigIntPadding(t *testing.T) {
 }
 
 func TestSignEIP712(t *testing.T) {
-	privateKey, err := utils.EncodePrivateKey(testPrivateKey)
+	privateKey, err := encode.PrivateKey(testPrivateKey)
 	assert.NoError(t, err)
 
 	var domainSeparator [32]byte
@@ -116,7 +116,7 @@ func TestSignEIP712(t *testing.T) {
 }
 
 func TestSignEIP712_deterministicForSameInput(t *testing.T) {
-	privateKey, err := utils.EncodePrivateKey(testPrivateKey)
+	privateKey, err := encode.PrivateKey(testPrivateKey)
 	assert.NoError(t, err)
 
 	var domainSeparator [32]byte
@@ -133,7 +133,7 @@ func TestSignEIP712_deterministicForSameInput(t *testing.T) {
 }
 
 func TestSignEIP712_differentDomainProducesDifferentSig(t *testing.T) {
-	privateKey, err := utils.EncodePrivateKey(testPrivateKey)
+	privateKey, err := encode.PrivateKey(testPrivateKey)
 	assert.NoError(t, err)
 
 	encoded := typeddata.EncodeWords(big.NewInt(1))
@@ -189,7 +189,7 @@ func TestSignEIP712Str_invalidKey(t *testing.T) {
 }
 
 func TestSignEIP712Str_matchesSignEIP712(t *testing.T) {
-	privateKey, err := utils.EncodePrivateKey(testPrivateKey)
+	privateKey, err := encode.PrivateKey(testPrivateKey)
 	assert.NoError(t, err)
 
 	var domainSeparator [32]byte
