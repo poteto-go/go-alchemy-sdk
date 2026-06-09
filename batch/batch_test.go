@@ -1,8 +1,11 @@
 package batch_test
 
 import (
+	"encoding/hex"
+	"fmt"
 	"math/big"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,8 +16,11 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
+
+// --- shared test settings and addresses --------------------------------------
 
 var batchSetting = gas.AlchemySetting{
 	ApiKey:  "hoge",
@@ -23,6 +29,20 @@ var batchSetting = gas.AlchemySetting{
 		MaxRetries: 0,
 	},
 }
+
+const (
+	contractAddr = "0x1111111111111111111111111111111111111111"
+	walletAddr   = "0x2222222222222222222222222222222222222222"
+	ownerAddr    = "0x3333333333333333333333333333333333333333"
+	spenderAddr  = "0x4444444444444444444444444444444444444444"
+)
+
+// ABI-encoded "MTK" string (offset, length, data).
+const abiStringMTK = "0000000000000000000000000000000000000000000000000000000000000020" +
+	"0000000000000000000000000000000000000000000000000000000000000003" +
+	"4d544b0000000000000000000000000000000000000000000000000000000000"
+
+// --- shared constructor -------------------------------------------------------
 
 // newBatchEther builds an EtherApi that exercises the real HTTP path with a
 // non-zero timeout and no retries.
@@ -35,7 +55,7 @@ func newBatchEther() types.EtherApi {
 	return ether.NewEtherApi(provider, ether.NewEtherApiConfig(
 		config.GetUrl(),
 		0,
-		time.Duration(2*time.Second),
+		2*time.Second,
 		&types.BackoffConfig{MaxRetries: 0},
 		[]http.Header{},
 		nil,
@@ -43,6 +63,58 @@ func newBatchEther() types.EtherApi {
 		nil,
 	))
 }
+
+// --- ABI word helpers --------------------------------------------------------
+
+func uintWord(n int64) string {
+	b := make([]byte, 32)
+	big.NewInt(n).FillBytes(b)
+	return hex.EncodeToString(b)
+}
+
+func boolWord(v bool) string {
+	if v {
+		return uintWord(1)
+	}
+	return uintWord(0)
+}
+
+func addrWord(a string) string {
+	b := make([]byte, 32)
+	copy(b[12:], common.HexToAddress(a).Bytes())
+	return hex.EncodeToString(b)
+}
+
+func abiStrWord(s string) string {
+	return hex.EncodeToString(utils.EncodeABIString(s))
+}
+
+// resp builds a JSON-RPC batch response, assigning sequential ids 1..N.
+func resp(results ...string) string {
+	parts := make([]string, len(results))
+	for i, r := range results {
+		parts[i] = fmt.Sprintf(`{"jsonrpc":"2.0","id":%d,"result":"0x%s"}`, i+1, r)
+	}
+	return "[" + strings.Join(parts, ",") + "]"
+}
+
+// --- assert helpers ----------------------------------------------------------
+
+func assertUnwrap[T comparable](t *testing.T, r *batch.Result[T], want T) {
+	t.Helper()
+	got, err := r.Unwrap()
+	assert.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+func assertUnwrapStr(t *testing.T, r *batch.Result[*big.Int], want string) {
+	t.Helper()
+	got, err := r.Unwrap()
+	assert.NoError(t, err)
+	assert.Equal(t, want, got.String())
+}
+
+// --- Batcher infrastructure tests --------------------------------------------
 
 func TestBatcher_Send(t *testing.T) {
 	t.Run("typed scalar results are decoded after Send in a single round-trip", func(t *testing.T) {
