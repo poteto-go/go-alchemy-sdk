@@ -9,6 +9,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
 type AlchemyConfig struct {
@@ -27,6 +28,11 @@ type AlchemyConfig struct {
 }
 
 func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
+	resolvedUrl := settingToUrl(setting)
+	if err := validate.Url(resolvedUrl); err != nil {
+		return AlchemyConfig{}, err
+	}
+
 	decodedJwt, err := internal.DecodeHex(setting.PrivateNetworkConfig.JwtSecret)
 	if err != nil {
 		return AlchemyConfig{}, err
@@ -39,7 +45,7 @@ func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
 	config := AlchemyConfig{
 		apiKey:               setting.ApiKey,
 		network:              setting.Network,
-		url:                  settingToUrl(setting),
+		url:                  resolvedUrl,
 		maxRetries:           setting.MaxRetries,
 		requestTimeout:       setting.RequestTimeout,
 		isRequestBatch:       setting.IsRequestBatch,

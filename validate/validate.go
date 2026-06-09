@@ -2,6 +2,7 @@ package validate
 
 import (
 	"math/big"
+	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
@@ -51,6 +52,17 @@ func BlockTag(blockTag string) error {
 	}
 	if _, ok := new(big.Int).SetString(blockTag[2:], 16); !ok {
 		return constant.ErrInvalidBlockTag
+	}
+	return nil
+}
+
+func Url(rawUrl string) error {
+	if rawUrl == "" {
+		return nil
+	}
+	u, _ := url.Parse(rawUrl)
+	if u == nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
+		return constant.ErrInvalidPrivateNetworkUrl
 	}
 	return nil
 }

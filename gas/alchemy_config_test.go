@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -67,6 +68,72 @@ func TestNewAlchemyConfig(t *testing.T) {
 		assert.Equal(t, config.apiKey, "api-key")
 		assert.Equal(t, string(config.network), "matic-mainnet")
 		assert.Equal(t, config.url, "https://matic-mainnet.g.alchemy.com/v2/api-key")
+	})
+}
+
+func TestNewAlchemyConfig_PrivateNetworkUrlValidation(t *testing.T) {
+	t.Run("valid http url is accepted", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Url: "http://localhost:8545",
+			},
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("valid https url is accepted", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Url: "https://my-rpc.example.com",
+			},
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("invalid scheme returns error", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Url: "ftp://bad-scheme.com",
+			},
+		})
+		assert.ErrorIs(t, err, constant.ErrInvalidPrivateNetworkUrl)
+	})
+
+	t.Run("missing scheme returns error", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Url: "localhost:8545",
+			},
+		})
+		assert.ErrorIs(t, err, constant.ErrInvalidPrivateNetworkUrl)
+	})
+
+	t.Run("empty host returns error", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Url: "http://",
+			},
+		})
+		assert.ErrorIs(t, err, constant.ErrInvalidPrivateNetworkUrl)
+	})
+
+	t.Run("empty url is not validated (no private network)", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			ApiKey:  "api-key",
+			Network: types.MaticMainnet,
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("host+port path with empty host returns error", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Host: "",
+				Port: 8545,
+			},
+			IsPrivateNetwork: func(AlchemySetting) bool { return true },
+		})
+		assert.ErrorIs(t, err, constant.ErrInvalidPrivateNetworkUrl)
 	})
 }
 
