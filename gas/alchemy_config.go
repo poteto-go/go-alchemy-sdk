@@ -28,10 +28,9 @@ type AlchemyConfig struct {
 }
 
 func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
-	if isPrivateNetwork(setting) {
-		if err := validate.Url(resolvePrivateNetUrl(setting)); err != nil {
-			return AlchemyConfig{}, err
-		}
+	resolvedUrl := settingToUrl(setting)
+	if err := validate.Url(resolvedUrl); err != nil {
+		return AlchemyConfig{}, err
 	}
 
 	decodedJwt, err := internal.DecodeHex(setting.PrivateNetworkConfig.JwtSecret)
@@ -46,7 +45,7 @@ func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
 	config := AlchemyConfig{
 		apiKey:               setting.ApiKey,
 		network:              setting.Network,
-		url:                  settingToUrl(setting),
+		url:                  resolvedUrl,
 		maxRetries:           setting.MaxRetries,
 		requestTimeout:       setting.RequestTimeout,
 		isRequestBatch:       setting.IsRequestBatch,
