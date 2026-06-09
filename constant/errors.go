@@ -50,6 +50,7 @@ var (
 	ErrBatchNotSent                     = errors.New("batch has not been sent yet")
 	ErrBatchAlreadySent                 = errors.New("batch has already been sent")
 	ErrInvalidPrivateNetworkUrl         = errors.New("invalid private network url")
+	ErrNilSnapshotId                    = errors.New("snapshot id must not be nil")
 )
 
 var HttpClientErrorCodeList = []int{
