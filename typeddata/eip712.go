@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
 
 // EncodeWords ABI-encodes each argument as a 32-byte word for use with SignEIP712.
@@ -49,7 +49,7 @@ refs: https://eips.ethereum.org/EIPS/eip-712
 func SignEIP712Str(
 	privateKeyStr string, domainSeparator [32]byte, encoded []byte,
 ) (types.Signature, error) {
-	privateKey, err := utils.EncodePrivateKey(privateKeyStr)
+	privateKey, err := encode.PrivateKey(privateKeyStr)
 	if err != nil {
 		return types.Signature{}, err
 	}

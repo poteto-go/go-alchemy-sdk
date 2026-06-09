@@ -4,8 +4,9 @@ import (
 	"math/big"
 
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/decode"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
@@ -52,13 +53,13 @@ func (e *ERC20) BalanceOf(
 	output, err := e.ether.CallReadMethod(
 		constant.BalanceOfFnSignature,
 		contractAddress,
-		utils.EncodeABIAddress(walletAddress),
+		encode.ABIAddress(walletAddress),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return utils.DecodeUint256(output)
+	return decode.Uint256(output)
 }
 
 func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
@@ -73,7 +74,7 @@ func (e *ERC20) TotalSupply(contractAddress string) (*big.Int, error) {
 		return nil, err
 	}
 
-	return utils.DecodeUint256(output)
+	return decode.Uint256(output)
 }
 
 func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, error) {
@@ -83,14 +84,14 @@ func (e *ERC20) Allowance(contractAddress, owner, spender string) (*big.Int, err
 	output, err := e.ether.CallReadMethod(
 		constant.AllowanceFnSignature,
 		contractAddress,
-		utils.EncodeABIAddress(owner),
-		utils.EncodeABIAddress(spender),
+		encode.ABIAddress(owner),
+		encode.ABIAddress(spender),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return utils.DecodeUint256(output)
+	return decode.Uint256(output)
 }
 
 func (e *ERC20) Name(contractAddress string) (string, error) {
@@ -105,7 +106,7 @@ func (e *ERC20) Name(contractAddress string) (string, error) {
 		return "", err
 	}
 
-	return utils.DecodeABIString(output)
+	return decode.ABIString(output)
 }
 
 func (e *ERC20) Symbol(contractAddress string) (string, error) {
@@ -120,7 +121,7 @@ func (e *ERC20) Symbol(contractAddress string) (string, error) {
 		return "", err
 	}
 
-	return utils.DecodeABIString(output)
+	return decode.ABIString(output)
 }
 
 func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
@@ -135,5 +136,5 @@ func (e *ERC20) Decimals(contractAddress string) (uint8, error) {
 		return 0, err
 	}
 
-	return utils.DecodeUint8(output)
+	return decode.Uint8(output)
 }

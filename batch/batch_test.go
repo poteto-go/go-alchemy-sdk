@@ -13,10 +13,10 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/alchemymock"
 	"github.com/poteto-go/go-alchemy-sdk/batch"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,7 +86,7 @@ func addrWord(a string) string {
 }
 
 func abiStrWord(s string) string {
-	return hex.EncodeToString(utils.EncodeABIString(s))
+	return hex.EncodeToString(encode.ABIString(s))
 }
 
 // resp builds a JSON-RPC batch response, assigning sequential ids 1..N.

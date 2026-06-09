@@ -12,9 +12,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -500,7 +500,7 @@ func TestWallet_StableCoin_Currency(t *testing.T) {
 			reflect.TypeOf(w.provider.Eth()),
 			"CallContract",
 			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-				return utils.EncodeABIString(expected), nil
+				return encode.ABIString(expected), nil
 			},
 		)
 
@@ -533,7 +533,7 @@ func TestWallet_StableCoin_Version(t *testing.T) {
 			reflect.TypeOf(w.provider.Eth()),
 			"CallContract",
 			func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
-				return utils.EncodeABIString(expected), nil
+				return encode.ABIString(expected), nil
 			},
 		)
 

@@ -5,8 +5,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/types"
-	"github.com/poteto-go/go-alchemy-sdk/utils"
 )
 
 /*
@@ -167,7 +167,7 @@ the latest block) and decodes the returned bytes with decode. The typed token
 sub-namespaces (ERC20, StableCoin) are built on it.
 
 signature is the function signature (e.g. []byte("balanceOf(address)")) and args
-are the already ABI-encoded 32-byte words (see utils.EncodeABIAddress).
+are the already ABI-encoded 32-byte words (see encode.ABIAddress).
 */
 func AddCall[T any](
 	b *Batcher,
@@ -176,7 +176,7 @@ func AddCall[T any](
 	decode func([]byte) (T, error),
 	args ...[]byte,
 ) *Result[T] {
-	calldata := utils.EncodeReadCalldata(signature, args...)
+	calldata := encode.ReadCalldata(signature, args...)
 	call := ethCallObject{
 		To:   common.HexToAddress(contractAddress).Hex(),
 		Data: hexutil.Encode(calldata),

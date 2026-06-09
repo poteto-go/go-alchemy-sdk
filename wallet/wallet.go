@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/typeddata"
@@ -37,7 +38,7 @@ type wallet struct {
 }
 
 func New(privateKeyStr string) (types.Wallet, error) {
-	privateKey, err := utils.EncodePrivateKey(privateKeyStr)
+	privateKey, err := encode.PrivateKey(privateKeyStr)
 	if err != nil {
 		return &wallet{}, err
 	}
