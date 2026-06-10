@@ -42,27 +42,29 @@ func NewNftNamespace(ether types.EtherApi) INft {
 	}
 }
 
-func (n *Nft) OwnerOf(contractAddress string, tokenId *big.Int) (string, error) {
+// callAddressTokenMethod validates the inputs, calls fnSig with the given
+// tokenId, decodes the result as an ABI address, and returns it as a
+// lowercase hex string. OwnerOf and GetApproved share this logic.
+func (n *Nft) callAddressTokenMethod(fnSig []byte, contractAddress string, tokenId *big.Int) (string, error) {
 	if err := validate.Address(contractAddress); err != nil {
 		return "", err
 	}
 	if err := validate.Uint256(tokenId); err != nil {
 		return "", err
 	}
-	output, err := n.ether.CallReadMethod(
-		constant.OwnerOfFnSignature,
-		contractAddress,
-		encode.ABIUint256(tokenId),
-	)
+	output, err := n.ether.CallReadMethod(fnSig, contractAddress, encode.ABIUint256(tokenId))
 	if err != nil {
 		return "", err
 	}
-
 	addr, err := decode.ABIAddress(output)
 	if err != nil {
 		return "", err
 	}
 	return strings.ToLower(addr.Hex()), nil
+}
+
+func (n *Nft) OwnerOf(contractAddress string, tokenId *big.Int) (string, error) {
+	return n.callAddressTokenMethod(constant.OwnerOfFnSignature, contractAddress, tokenId)
 }
 
 func (n *Nft) TokenURI(contractAddress string, tokenId *big.Int) (string, error) {
@@ -115,26 +117,7 @@ func (n *Nft) Symbol(contractAddress string) (string, error) {
 }
 
 func (n *Nft) GetApproved(contractAddress string, tokenId *big.Int) (string, error) {
-	if err := validate.Address(contractAddress); err != nil {
-		return "", err
-	}
-	if err := validate.Uint256(tokenId); err != nil {
-		return "", err
-	}
-	output, err := n.ether.CallReadMethod(
-		constant.GetApprovedFnSignature,
-		contractAddress,
-		encode.ABIUint256(tokenId),
-	)
-	if err != nil {
-		return "", err
-	}
-
-	addr, err := decode.ABIAddress(output)
-	if err != nil {
-		return "", err
-	}
-	return strings.ToLower(addr.Hex()), nil
+	return n.callAddressTokenMethod(constant.GetApprovedFnSignature, contractAddress, tokenId)
 }
 
 func (n *Nft) IsApprovedForAll(contractAddress, owner, operator string) (bool, error) {
