@@ -900,3 +900,47 @@ func TestScenario_SendTransaction(t *testing.T) {
 		assert.Equal(t, txHash, tx.Hash())
 	})
 }
+
+func TestScenario_DebugSnapshotRevertTo(t *testing.T) {
+	// 1. snapshot
+	snapshotId, err := alchemy.Debug.Snapshot()
+	if err != nil {
+		// evm_snapshot is only supported on development chains
+		// (anvil, hardhat, ganache, ...), not on the kurtosis geth network.
+		t.Skipf("node does not support evm_snapshot: %v", err)
+	}
+
+	balanceBefore, err := alchemy.Core.GetBalance(otherAddress, "latest")
+	assert.Nil(t, err)
+
+	// 2. transfer native
+	w, err := wallet.New(initPrivateKey)
+	assert.Nil(t, err)
+	w.Connect(alchemy.GetProvider())
+
+	txHash, err := w.SendTransaction(types.TransactionRequest{
+		From:     initAddress,
+		To:       otherAddress,
+		Value:    "0x123",
+		GasLimit: 300000,
+	})
+	assert.Nil(t, err)
+
+	_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+	assert.Nil(t, err)
+
+	// 3. balance check
+	balanceAfter, err := alchemy.Core.GetBalance(otherAddress, "latest")
+	assert.Nil(t, err)
+	assert.Equal(t, 1, balanceAfter.Cmp(balanceBefore))
+
+	// 4. revert to
+	reverted, err := alchemy.Debug.RevertTo(snapshotId)
+	assert.Nil(t, err)
+	assert.True(t, reverted)
+
+	// 5. balance check
+	balanceReverted, err := alchemy.Core.GetBalance(otherAddress, "latest")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, balanceReverted.Cmp(balanceBefore))
+}
