@@ -1,6 +1,7 @@
 package encode_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -50,4 +51,31 @@ func TestABIAddress(t *testing.T) {
 	assert.Equal(t, constant.ABIWordSize, len(out))
 	assert.Equal(t, make([]byte, 12), out[:12])
 	assert.Equal(t, common.HexToAddress("0xabc0000000000000000000000000000000000abc").Bytes(), out[12:])
+}
+
+func TestABIUint256(t *testing.T) {
+	t.Run("encodes to 32-byte word", func(t *testing.T) {
+		v := big.NewInt(1)
+		out := encode.ABIUint256(v)
+
+		assert.Equal(t, constant.ABIWordSize, len(out))
+		assert.Equal(t, make([]byte, 31), out[:31])
+		assert.Equal(t, byte(0x01), out[31])
+	})
+
+	t.Run("encodes zero", func(t *testing.T) {
+		out := encode.ABIUint256(big.NewInt(0))
+
+		assert.Equal(t, constant.ABIWordSize, len(out))
+		assert.Equal(t, make([]byte, 32), out)
+	})
+
+	t.Run("roundtrip with decode.Uint256", func(t *testing.T) {
+		v := big.NewInt(123456789)
+		out := encode.ABIUint256(v)
+
+		decoded, err := decode.Uint256(out)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, v.Cmp(decoded))
+	})
 }

@@ -856,6 +856,39 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 	})
 }
 
+func TestScenario_Nft(t *testing.T) {
+	t.Run("1. can create wallet 2. connect wallet 3. deploy erc20 as name/symbol stand-in", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		erc20Metadata := &artifacts.ERC20MetaData
+		deployer.BindDeploymentMetadata(erc20Metadata, big.NewInt(1000))
+		contractAddress, err := w.DeployContract(context.Background(), erc20Metadata)
+
+		assert.Nil(t, err)
+		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+		contractHex := contractAddress.Hex()
+
+		// name() and symbol() share the same ABI signature across ERC20 and ERC721;
+		// using the deployed ERC20 contract verifies that the Nft namespace routes
+		// the call correctly and decodes the response.
+		t.Run("can get name via Nft namespace", func(t *testing.T) {
+			name, err := alchemy.Nft.Name(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "Minimal Token", name)
+		})
+
+		t.Run("can get symbol via Nft namespace", func(t *testing.T) {
+			symbol, err := alchemy.Nft.Symbol(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "MTK", symbol)
+		})
+	})
+}
+
 func TestScenario_SendTransaction(t *testing.T) {
 	w, err := wallet.New(initPrivateKey)
 
