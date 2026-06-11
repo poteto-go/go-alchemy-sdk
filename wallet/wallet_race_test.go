@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
@@ -76,7 +75,6 @@ func TestWallet_NoRaceConnectVsReaders(t *testing.T) {
 		"ContractCall",
 		func(
 			_ *ether.Ether,
-			_ types.ContractInstance,
 			_ common.Address,
 			_ *bind.CallOpts,
 			_ []byte,
@@ -114,7 +112,6 @@ func TestWallet_NoRaceConnectVsReaders(t *testing.T) {
 	w, _ := New(testPrivHex)
 	w.Connect(provider) // ensure erc20 is set before readers start
 
-	contract := artifacts.NewPotetoStorage()
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	callData := []byte("call data")
 	callOpts := &bind.CallOpts{}
@@ -155,7 +152,7 @@ func TestWallet_NoRaceConnectVsReaders(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < iterations; i++ {
-			_, _ = w.ContractCall(contract, contractAddress, callOpts, callData, unpack)
+			_, _ = w.ContractCall(contractAddress, callOpts, callData, unpack)
 		}
 	}()
 

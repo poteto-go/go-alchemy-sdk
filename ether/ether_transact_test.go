@@ -7,24 +7,14 @@ import (
 	"testing"
 
 	"math/big"
-	"strings"
 
 	"github.com/agiledragon/gomonkey"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/stretchr/testify/assert"
 )
-
-type mockContract struct {
-	abi abi.ABI
-}
-
-func (m *mockContract) Instance(backend bind.ContractBackend, addr common.Address) *bind.BoundContract {
-	return bind.NewBoundContract(addr, m.abi, backend, backend, backend)
-}
 
 func TestEther_ContractCall(t *testing.T) {
 	t.Run("normal case", func(t *testing.T) {
@@ -33,12 +23,6 @@ func TestEther_ContractCall(t *testing.T) {
 		alchemyMock := newAlchemyMockOnEtherTest(t)
 		defer alchemyMock.DeactivateAndReset()
 
-		// Mock ABI
-		abiJSON := `[{"constant":true,"inputs":[],"name":"test","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]`
-		parsedABI, err := abi.JSON(strings.NewReader(abiJSON))
-		assert.NoError(t, err)
-
-		mockInstance := &mockContract{abi: parsedABI}
 		addr := common.HexToAddress("0x123")
 
 		expectedVal := big.NewInt(1)
@@ -52,7 +36,7 @@ func TestEther_ContractCall(t *testing.T) {
 		callData := []byte{0x12, 0x34}
 
 		// Act
-		res, err := ether.ContractCall(mockInstance, addr, nil, callData, unpack)
+		res, err := ether.ContractCall(addr, nil, callData, unpack)
 
 		// Assert
 		assert.NoError(t, err)
@@ -77,15 +61,12 @@ func TestEther_ContractCall(t *testing.T) {
 			)
 
 			// Mock objects
-			abiJSON := `[]`
-			parsedABI, _ := abi.JSON(strings.NewReader(abiJSON))
-			mockInstance := &mockContract{abi: parsedABI}
 			addr := common.HexToAddress("0x123")
 			callData := []byte{}
 			unpack := func(b []byte) (any, error) { return nil, nil }
 
 			// Act
-			res, err := ether.ContractCall(mockInstance, addr, nil, callData, unpack)
+			res, err := ether.ContractCall(addr, nil, callData, unpack)
 
 			// Assert
 			assert.Error(t, err)
@@ -102,15 +83,12 @@ func TestEther_ContractCall(t *testing.T) {
 			alchemyMock.RegisterResponderOnce("eth_call", `{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"execution reverted"}}`)
 
 			// Mock objects
-			abiJSON := `[{"constant":true,"inputs":[],"name":"test","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]`
-			parsedABI, _ := abi.JSON(strings.NewReader(abiJSON))
-			mockInstance := &mockContract{abi: parsedABI}
 			addr := common.HexToAddress("0x123")
 			callData := []byte{0x12, 0x34}
 			unpack := func(b []byte) (any, error) { return nil, nil }
 
 			// Act
-			res, err := ether.ContractCall(mockInstance, addr, nil, callData, unpack)
+			res, err := ether.ContractCall(addr, nil, callData, unpack)
 
 			// Assert
 			assert.Error(t, err)

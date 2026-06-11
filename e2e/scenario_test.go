@@ -221,7 +221,6 @@ func TestScenario_ContractTransact(t *testing.T) {
 
 		// verify stored value via retrieve
 		res, err := w.ContractCall(
-			contract,
 			contractAddress.Hex(),
 			&bind.CallOpts{},
 			contract.PackRetrieve(),

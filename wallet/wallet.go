@@ -275,7 +275,6 @@ func (w *wallet) ContractTransactNoWait(
 }
 
 func (w *wallet) ContractCall(
-	contract types.ContractInstance,
 	contractAddress string,
 	opts *bind.CallOpts,
 	callData []byte,
@@ -287,7 +286,7 @@ func (w *wallet) ContractCall(
 	}
 
 	addr := common.HexToAddress(contractAddress)
-	return provider.Eth().ContractCall(contract, addr, opts, callData, unpack)
+	return provider.Eth().ContractCall(addr, opts, callData, unpack)
 }
 
 func (w *wallet) SignEIP712(domainSeparator [32]byte, encoded []byte) (types.Signature, error) {
