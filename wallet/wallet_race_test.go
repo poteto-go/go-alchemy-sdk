@@ -104,7 +104,6 @@ func TestWallet_NoRaceConnectVsReaders(t *testing.T) {
 		func(
 			_ *ether.Ether,
 			_ *bind.TransactOpts,
-			_ types.ContractInstance,
 			_ string,
 			_ []byte,
 		) (*gethTypes.Transaction, error) {
@@ -165,7 +164,7 @@ func TestWallet_NoRaceConnectVsReaders(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < iterations; i++ {
-			_, _ = w.ContractTransactNoWait(contract, contractAddress, callData)
+			_, _ = w.ContractTransactNoWait(contractAddress, callData)
 		}
 	}()
 

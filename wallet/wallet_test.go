@@ -1244,7 +1244,6 @@ func TestWallet_DeployContractNoWait(t *testing.T) {
 }
 
 func TestWallet_ContractTransact(t *testing.T) {
-	contract := artifacts.NewPotetoStorage()
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	data := []byte("test data")
 
@@ -1280,7 +1279,6 @@ func TestWallet_ContractTransact(t *testing.T) {
 			"ContractTransactNoWait",
 			func(
 				_ *wallet,
-				_ types.ContractInstance,
 				_ string,
 				_ []byte,
 			) (*gethTypes.Transaction, error) {
@@ -1296,7 +1294,7 @@ func TestWallet_ContractTransact(t *testing.T) {
 		)
 
 		// Act
-		txReceipt, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
+		txReceipt, err := w.ContractTransact(context.Background(), contractAddress, data)
 
 		//Assert
 		assert.Nil(t, err)
@@ -1307,7 +1305,7 @@ func TestWallet_ContractTransact(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
+		_, err := w.ContractTransact(context.Background(), contractAddress, data)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -1333,7 +1331,6 @@ func TestWallet_ContractTransact(t *testing.T) {
 			"ContractTransactNoWait",
 			func(
 				_ *wallet,
-				_ types.ContractInstance,
 				_ string,
 				_ []byte,
 			) (*gethTypes.Transaction, error) {
@@ -1342,7 +1339,7 @@ func TestWallet_ContractTransact(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
+		_, err := w.ContractTransact(context.Background(), contractAddress, data)
 
 		//Assert
 		assert.Error(t, err)
@@ -1377,7 +1374,6 @@ func TestWallet_ContractTransact(t *testing.T) {
 			"ContractTransactNoWait",
 			func(
 				_ *wallet,
-				_ types.ContractInstance,
 				_ string,
 				_ []byte,
 			) (*gethTypes.Transaction, error) {
@@ -1393,7 +1389,7 @@ func TestWallet_ContractTransact(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.ContractTransact(context.Background(), contract, contractAddress, data)
+		_, err := w.ContractTransact(context.Background(), contractAddress, data)
 
 		// Assert
 		assert.Error(t, err)
@@ -1401,7 +1397,6 @@ func TestWallet_ContractTransact(t *testing.T) {
 }
 
 func TestWallet_ContractTransactNoWait(t *testing.T) {
-	contract := artifacts.NewPotetoStorage()
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	data := []byte("test data")
 
@@ -1435,7 +1430,6 @@ func TestWallet_ContractTransactNoWait(t *testing.T) {
 			func(
 				_ *ether.Ether,
 				auth *bind.TransactOpts,
-				contract types.ContractInstance,
 				contractAddress string,
 				data []byte,
 			) (*gethTypes.Transaction, error) {
@@ -1444,7 +1438,7 @@ func TestWallet_ContractTransactNoWait(t *testing.T) {
 		)
 
 		// Act
-		tx, err := w.ContractTransactNoWait(contract, contractAddress, data)
+		tx, err := w.ContractTransactNoWait(contractAddress, data)
 
 		// Assert
 		assert.Nil(t, err)
@@ -1455,7 +1449,7 @@ func TestWallet_ContractTransactNoWait(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
+		_, err := w.ContractTransactNoWait(contractAddress, data)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -1478,7 +1472,7 @@ func TestWallet_ContractTransactNoWait(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
+		_, err := w.ContractTransactNoWait(contractAddress, data)
 
 		// Assert
 		assert.Error(t, err)
@@ -1505,7 +1499,6 @@ func TestWallet_ContractTransactNoWait(t *testing.T) {
 			func(
 				_ *ether.Ether,
 				auth *bind.TransactOpts,
-				contract types.ContractInstance,
 				contractAddress string,
 				data []byte,
 			) (*gethTypes.Transaction, error) {
@@ -1514,7 +1507,7 @@ func TestWallet_ContractTransactNoWait(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
+		_, err := w.ContractTransactNoWait(contractAddress, data)
 
 		// Assert
 		assert.Error(t, err)
@@ -1745,7 +1738,6 @@ func TestWallet_ResetPool(t *testing.T) {
 
 		// Arrange
 		w := createConnectedWallet()
-		contract := artifacts.NewPotetoStorage()
 		contractAddress := "0x1234567890123456789012345678901234567890"
 		data := []byte("test data")
 
@@ -1766,7 +1758,6 @@ func TestWallet_ResetPool(t *testing.T) {
 			func(
 				_ *ether.Ether,
 				auth *bind.TransactOpts,
-				contract types.ContractInstance,
 				contractAddress string,
 				data []byte,
 			) (*gethTypes.Transaction, error) {
@@ -1775,12 +1766,12 @@ func TestWallet_ResetPool(t *testing.T) {
 		)
 
 		// Act - First call should cache
-		_, err := w.ContractTransactNoWait(contract, contractAddress, data)
+		_, err := w.ContractTransactNoWait(contractAddress, data)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, callCount, "ChainID should be called once")
 
 		// Act - Second call should use cache
-		_, err = w.ContractTransactNoWait(contract, contractAddress, data)
+		_, err = w.ContractTransactNoWait(contractAddress, data)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, callCount, "ChainID should still be called only once (cached)")
 
@@ -1788,7 +1779,7 @@ func TestWallet_ResetPool(t *testing.T) {
 		w.ResetPool()
 
 		// Act - Third call should fetch ChainID again
-		_, err = w.ContractTransactNoWait(contract, contractAddress, data)
+		_, err = w.ContractTransactNoWait(contractAddress, data)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, callCount, "ChainID should be called again after reset")
 	})
@@ -1799,7 +1790,6 @@ func TestWallet_ResetPool(t *testing.T) {
 
 		// Arrange
 		w := createConnectedWallet()
-		contract := artifacts.NewPotetoStorage()
 		contractAddress := "0x1234567890123456789012345678901234567890"
 		data := []byte("test data")
 
@@ -1817,7 +1807,6 @@ func TestWallet_ResetPool(t *testing.T) {
 			func(
 				_ *ether.Ether,
 				auth *bind.TransactOpts,
-				contract types.ContractInstance,
 				contractAddress string,
 				data []byte,
 			) (*gethTypes.Transaction, error) {
@@ -1826,7 +1815,7 @@ func TestWallet_ResetPool(t *testing.T) {
 		)
 
 		// Act - Create cache
-		_, _ = w.ContractTransactNoWait(contract, contractAddress, data)
+		_, _ = w.ContractTransactNoWait(contractAddress, data)
 		assert.NotNil(t, w.cachedChainID, "ChainID should be cached")
 
 		// Act - Reset

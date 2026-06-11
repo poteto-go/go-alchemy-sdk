@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -777,19 +778,16 @@ func (ether *Ether) DeployContract(
 }
 
 // TODO: backoff
-func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contract types.ContractInstance, contractAddress string, data []byte) (*gethTypes.Transaction, error) {
-	if contract == nil {
-		return nil, constant.ErrContractInstanceIsNil
-	}
-
+func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contractAddress string, data []byte) (*gethTypes.Transaction, error) {
 	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
 	}
 	defer ether.Close()
 
+	// data is already ABI-encoded, so bind only needs the address and backend.
 	c := ether.Client()
-	instance := contract.Instance(c, common.HexToAddress(contractAddress))
+	instance := bind.NewBoundContract(common.HexToAddress(contractAddress), abi.ABI{}, c, c, c)
 
 	tx, err := bind.Transact(
 		instance, auth, data,

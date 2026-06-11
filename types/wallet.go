@@ -69,7 +69,6 @@ type Wallet interface {
 	*/
 	ContractTransact(
 		ctx context.Context,
-		contract ContractInstance,
 		contractAddress string,
 		data []byte,
 	) (*gethTypes.Receipt, error)
@@ -79,11 +78,10 @@ type Wallet interface {
 
 		You can wait deployment using deployRes.
 
-			tx, err := wallet.ContractTransactNoWait(contract, addr, data)
+			tx, err := wallet.ContractTransactNoWait(addr, data)
 			txReceipt, err := alchemy.Transact.WaitDeployed(tx.Hash().Hex())
 	*/
 	ContractTransactNoWait(
-		contract ContractInstance,
 		contractAddress string,
 		data []byte,
 	) (*gethTypes.Transaction, error)

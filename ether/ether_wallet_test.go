@@ -171,7 +171,6 @@ func TestEther_ContractTransact(t *testing.T) {
 
 			// Arrange
 			ether := newEtherApiForTest()
-			contract := artifacts.NewPotetoStorage()
 
 			signedTx := gethTypes.NewTx(txData)
 
@@ -184,7 +183,7 @@ func TestEther_ContractTransact(t *testing.T) {
 			)
 
 			// Act
-			res, err := ether.ContractTransact(nil, contract, "", []byte(""))
+			res, err := ether.ContractTransact(nil, "", []byte(""))
 
 			// Assert
 			assert.NoError(t, err)
@@ -193,27 +192,12 @@ func TestEther_ContractTransact(t *testing.T) {
 	})
 
 	t.Run("error case", func(t *testing.T) {
-		t.Run("if contract is nil, return error", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			ether := newEtherApiForTest()
-
-			// Act
-			_, err := ether.ContractTransact(nil, nil, "", []byte(""))
-
-			// Assert
-			assert.Error(t, err)
-		})
-
 		t.Run("if failed to create connection, retunr error", func(t *testing.T) {
 			patches := gomonkey.NewPatches()
 			defer patches.Reset()
 
 			// Arrange
 			ether := newEtherApiForTest()
-			contract := artifacts.NewPotetoStorage()
 
 			// Mock
 			patches.ApplyMethod(
@@ -225,7 +209,7 @@ func TestEther_ContractTransact(t *testing.T) {
 			)
 
 			// Act
-			_, err := ether.ContractTransact(nil, contract, "", []byte(""))
+			_, err := ether.ContractTransact(nil, "", []byte(""))
 
 			// Assert
 			assert.Error(t, err)
@@ -237,7 +221,6 @@ func TestEther_ContractTransact(t *testing.T) {
 
 			// Arrange
 			ether := newEtherApiForTest()
-			contract := artifacts.NewPotetoStorage()
 
 			// Mock
 			patches.ApplyFunc(
@@ -248,7 +231,7 @@ func TestEther_ContractTransact(t *testing.T) {
 			)
 
 			// Act
-			_, err := ether.ContractTransact(nil, contract, "", []byte(""))
+			_, err := ether.ContractTransact(nil, "", []byte(""))
 
 			// Assert
 			assert.Error(t, err)

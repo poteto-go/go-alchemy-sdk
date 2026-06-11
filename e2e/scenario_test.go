@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
 	"github.com/poteto-go/go-alchemy-sdk/batch"
@@ -195,6 +196,40 @@ func TestSenario_DeployContract(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Greater(t, blockNumber, uint64(0))
 		})
+	})
+}
+
+func TestScenario_ContractTransact(t *testing.T) {
+	t.Run("1. deploy contract 2. transact store 3. verify stored value", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		contract := artifacts.NewPotetoStorage()
+		contractAddress, err := w.DeployContract(context.Background(), &artifacts.PotetoStorageMetaData)
+
+		assert.Nil(t, err)
+
+		// transact store(42) without a contract instance
+		data := contract.PackStore(big.NewInt(42))
+		receipt, err := w.ContractTransact(context.Background(), contractAddress.Hex(), data)
+
+		assert.Nil(t, err)
+		assert.Equal(t, uint64(1), receipt.Status)
+
+		// verify stored value via retrieve
+		res, err := w.ContractCall(
+			contract,
+			contractAddress.Hex(),
+			&bind.CallOpts{},
+			contract.PackRetrieve(),
+			func(b []byte) (any, error) { return contract.UnpackRetrieve(b) },
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, 0, res.(*big.Int).Cmp(big.NewInt(42)))
 	})
 }
 

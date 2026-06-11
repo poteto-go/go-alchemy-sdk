@@ -233,7 +233,6 @@ func (w *wallet) DeployContractNoWait(metaData *bind.MetaData) (*bind.Deployment
 
 func (w *wallet) ContractTransact(
 	ctx context.Context,
-	contract types.ContractInstance,
 	contractAddress string,
 	data []byte,
 ) (*gethTypes.Receipt, error) {
@@ -243,7 +242,6 @@ func (w *wallet) ContractTransact(
 	}
 
 	tx, err := w.ContractTransactNoWait(
-		contract,
 		contractAddress,
 		data,
 	)
@@ -255,7 +253,6 @@ func (w *wallet) ContractTransact(
 }
 
 func (w *wallet) ContractTransactNoWait(
-	contract types.ContractInstance,
 	contractAddress string,
 	data []byte,
 ) (*gethTypes.Transaction, error) {
@@ -269,7 +266,7 @@ func (w *wallet) ContractTransactNoWait(
 		return nil, err
 	}
 
-	tx, err := provider.Eth().ContractTransact(auth, contract, contractAddress, data)
+	tx, err := provider.Eth().ContractTransact(auth, contractAddress, data)
 	if err != nil {
 		return nil, err
 	}
