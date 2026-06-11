@@ -7,6 +7,7 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -887,6 +888,111 @@ func TestScenario_StableCoin_FiatToken(t *testing.T) {
 			usedAfter, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
 			assert.Nil(t, err)
 			assert.True(t, usedAfter)
+		})
+	})
+}
+
+func TestScenario_Nft(t *testing.T) {
+	t.Run("1. can create wallet 2. connect wallet 3. deploy erc721 contract", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		// ERC721 has a no-arg constructor; no BindDeploymentMetadata needed.
+		contractAddress, err := w.DeployContract(context.Background(), &artifacts.ERC721MetaData)
+
+		assert.Nil(t, err)
+		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+		contractHex := contractAddress.Hex()
+
+		erc721 := artifacts.NewERC721()
+		tokenId := big.NewInt(1)
+
+		// Mint token 1 to initAddress.
+		mintData := erc721.PackMint(common.HexToAddress(initAddress), tokenId)
+		txHash, err := w.SendTransaction(types.TransactionRequest{
+			From:     initAddress,
+			To:       contractHex,
+			Value:    "0x0",
+			GasLimit: 300000,
+			Data:     mintData,
+		})
+		assert.Nil(t, err)
+		_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+		assert.Nil(t, err)
+
+		t.Run("can get name via Nft namespace", func(t *testing.T) {
+			name, err := alchemy.Nft.Name(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "Minimal NFT", name)
+		})
+
+		t.Run("can get symbol via Nft namespace", func(t *testing.T) {
+			symbol, err := alchemy.Nft.Symbol(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "MNFT", symbol)
+		})
+
+		t.Run("can get ownerOf minted token", func(t *testing.T) {
+			owner, err := alchemy.Nft.OwnerOf(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(initAddress), owner)
+		})
+
+		t.Run("can get tokenURI for minted token", func(t *testing.T) {
+			uri, err := alchemy.Nft.TokenURI(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, "https://example.com/nft/1", uri)
+		})
+
+		t.Run("getApproved returns approved address after approve", func(t *testing.T) {
+			// No approval yet — should return zero address.
+			approvedBefore, err := alchemy.Nft.GetApproved(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(common.HexToAddress("0x0").Hex()), approvedBefore)
+
+			// Approve otherAddress for token 1.
+			approveData := erc721.PackApprove(common.HexToAddress(otherAddress), tokenId)
+			txHash, err := w.SendTransaction(types.TransactionRequest{
+				From:     initAddress,
+				To:       contractHex,
+				Value:    "0x0",
+				GasLimit: 300000,
+				Data:     approveData,
+			})
+			assert.Nil(t, err)
+			_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+			assert.Nil(t, err)
+
+			approvedAfter, err := alchemy.Nft.GetApproved(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(otherAddress), approvedAfter)
+		})
+
+		t.Run("isApprovedForAll returns false before setApprovalForAll", func(t *testing.T) {
+			isApproved, err := alchemy.Nft.IsApprovedForAll(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isApproved)
+		})
+
+		t.Run("isApprovedForAll returns true after setApprovalForAll", func(t *testing.T) {
+			setApprovalData := erc721.PackSetApprovalForAll(common.HexToAddress(otherAddress), true)
+			txHash, err := w.SendTransaction(types.TransactionRequest{
+				From:     initAddress,
+				To:       contractHex,
+				Value:    "0x0",
+				GasLimit: 300000,
+				Data:     setApprovalData,
+			})
+			assert.Nil(t, err)
+			_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+			assert.Nil(t, err)
+
+			isApproved, err := alchemy.Nft.IsApprovedForAll(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.True(t, isApproved)
 		})
 	})
 }

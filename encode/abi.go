@@ -2,6 +2,7 @@ package encode
 
 import (
 	"encoding/binary"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
@@ -42,4 +43,9 @@ func ABIString(s string) []byte {
 // ABIAddress left-pads an address to a 32-byte ABI word.
 func ABIAddress(address string) []byte {
 	return common.LeftPadBytes(common.HexToAddress(address).Bytes(), constant.ABIWordSize)
+}
+
+// ABIUint256 encodes a *big.Int as a 32-byte ABI word (big-endian, left-padded with zeros).
+func ABIUint256(v *big.Int) []byte {
+	return common.LeftPadBytes(v.Bytes(), constant.ABIWordSize)
 }
