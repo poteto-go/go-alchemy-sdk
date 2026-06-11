@@ -19,7 +19,6 @@ cf.) [`wallet.ContractTransact`](./ContractTransact.md)
 
 ```go
 func ContractTransactNoWait(
-	contract types.ContractInstance,
 	contractAddress string,
 	data []byte,
 ) (tx *gethTypes.Transaction, err error)
@@ -36,15 +35,13 @@ func main() {
 	w, _ := wallet.New("<privateKey>")
 	w.Connect(alchemy.GetProvider())
 
-	// Create contract instance
-	contract := abi.NewYourContract()
 	contractAddress := "0x1234567890123456789012345678901234567890"
 
 	// Prepare transaction data (e.g., encoded function call)
 	data := abi.PackXXX(<data>)
 
 	// Execute transaction
-	tx, err := w.ContractTransactNoWait(contract, contractAddress, data)
+	tx, err := w.ContractTransactNoWait(contractAddress, data)
 	if err != nil {
 		panic(err)
 	}

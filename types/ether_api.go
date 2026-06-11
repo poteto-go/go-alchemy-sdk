@@ -207,7 +207,6 @@ type EtherApi interface {
 	*/
 	ContractTransact(
 		auth *bind.TransactOpts,
-		contract ContractInstance,
 		contractAddress string,
 		data []byte,
 	) (txReceipt *gethTypes.Transaction, err error)

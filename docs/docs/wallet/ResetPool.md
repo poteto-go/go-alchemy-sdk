@@ -32,18 +32,17 @@ func main() {
 	w.Connect(alchemy.GetProvider())
 
 	// Use wallet for transactions
-	contract := artifacts.NewYourContract()
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	data := []byte("encoded transaction data")
-	
-	receipt, _ := w.ContractTransact(contract, contractAddress, data)
+
+	receipt, _ := w.ContractTransact(context.Background(), contractAddress, data)
 	fmt.Printf("Transaction 1: %s\n", receipt.TxHash)
 
 	// Reset cache if needed (e.g., after network switch)
 	w.ResetPool()
 
 	// Next transaction will fetch fresh ChainID and create new auth
-	receipt2, _ := w.ContractTransact(contract, contractAddress, data)
+	receipt2, _ := w.ContractTransact(context.Background(), contractAddress, data)
 	fmt.Printf("Transaction 2: %s\n", receipt2.TxHash)
 }
 ```
