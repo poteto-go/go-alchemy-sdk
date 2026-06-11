@@ -49,12 +49,6 @@ jobs:
           path: coverage.out
           retention-days: 1
 
-  anvil-up:
-    runs-on: ubuntu-latest
-    container: ghcr.io/foundry-rs/foundry:latest
-    steps:
-      - name: anvil up
-
   e2e-test:
     name: E2E Tests
     runs-on: ubuntu-latest
