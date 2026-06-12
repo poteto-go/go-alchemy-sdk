@@ -1014,10 +1014,9 @@ func TestScenario_SendTransaction(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotEqual(t, txHash.Hex(), "0x0000000000000000000000000000000000000000000000000000000000000000")
 
-		// Verify transaction is pending
-		tx, isPending, err := alchemy.Core.GetTransaction(txHash.Hex())
+		// faster anvil, so not assert isPending
+		tx, _, err := alchemy.Core.GetTransaction(txHash.Hex())
 		assert.Nil(t, err)
-		assert.True(t, isPending, "transaction should be pending immediately after sending")
 		assert.Equal(t, txHash, tx.Hash())
 
 		// wait for transact finish
@@ -1026,7 +1025,7 @@ func TestScenario_SendTransaction(t *testing.T) {
 		assert.Equal(t, txReceipt.TxHash.Hex(), txHash.Hex())
 
 		// Verify transaction is not pending
-		tx, isPending, err = alchemy.Core.GetTransaction(txHash.Hex())
+		tx, isPending, err := alchemy.Core.GetTransaction(txHash.Hex())
 		assert.Nil(t, err)
 		assert.False(t, isPending, "transaction should be finished after waitMined")
 		assert.Equal(t, txHash, tx.Hash())
@@ -1036,11 +1035,7 @@ func TestScenario_SendTransaction(t *testing.T) {
 func TestScenario_DebugSnapshotRevertTo(t *testing.T) {
 	// 1. snapshot
 	snapshotId, err := alchemy.Debug.Snapshot()
-	if err != nil {
-		// evm_snapshot is only supported on development chains
-		// (anvil, hardhat, ganache, ...), not on the kurtosis geth network.
-		t.Skipf("node does not support evm_snapshot: %v", err)
-	}
+	assert.NoError(t, err)
 
 	balanceBefore, err := alchemy.Core.GetBalance(otherAddress, "latest")
 	assert.Nil(t, err)

@@ -45,7 +45,6 @@ This project uses `alchemymock` to mock Alchemy RPC responses (which `ethclient`
 ### e2e testing
 
 ```bash
-$ just k-port
-$ just k-up # if not detected port
-$ just ci-e2e <PORT>
+$ just a-up
+$ just ci-e2e
 ```
