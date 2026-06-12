@@ -91,7 +91,6 @@ type Wallet interface {
 		It is used for read-only methods.
 	*/
 	ContractCall(
-		contract ContractInstance,
 		contractAddress string,
 		opts *bind.CallOpts,
 		callData []byte,

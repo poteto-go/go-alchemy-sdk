@@ -9,13 +9,12 @@ import (
 
 func ContractCall[T any](
 	w types.Wallet,
-	contract types.ContractInstance,
 	contractAddress string,
 	opts *bind.CallOpts,
 	callData []byte,
 	unpack func([]byte) (T, error),
 ) (T, error) {
-	res, err := w.ContractCall(contract, contractAddress, opts, callData, func(b []byte) (any, error) {
+	res, err := w.ContractCall(contractAddress, opts, callData, func(b []byte) (any, error) {
 		return unpack(b)
 	})
 	if err != nil {

@@ -12,18 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-type ContractInstance interface {
-	Instance(backend bind.ContractBackend, addr common.Address) *bind.BoundContract
-}
-
-type ERC20ContractInstance interface {
-	ContractInstance
-	PackBalanceOf(walletAddress common.Address) []byte
-	UnpackBalanceOf(data []byte) (*big.Int, error)
-	PackTransfer(to common.Address, amount *big.Int) []byte
-	UnpackTransfer(data []byte) (bool, error)
-}
-
 type EtherApi interface {
 	/*
 		set ether client if client is nil,
@@ -247,7 +235,6 @@ type EtherApi interface {
 		internal call geth
 	*/
 	ContractCall(
-		contract ContractInstance,
 		contractAddress common.Address,
 		ops *bind.CallOpts,
 		callData []byte,

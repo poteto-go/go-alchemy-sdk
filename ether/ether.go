@@ -777,6 +777,13 @@ func (ether *Ether) DeployContract(
 	return deployRes, err
 }
 
+// rawBoundContract binds the address to the backend with an empty ABI.
+// Callers pass pre-encoded data and decode results themselves, so bind
+// only needs the address and backend.
+func rawBoundContract(addr common.Address, backend bind.ContractBackend) *bind.BoundContract {
+	return bind.NewBoundContract(addr, abi.ABI{}, backend, backend, backend)
+}
+
 // TODO: backoff
 func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contractAddress string, data []byte) (*gethTypes.Transaction, error) {
 	err := ether.SetEthClient()
@@ -785,9 +792,7 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contractAddress st
 	}
 	defer ether.Close()
 
-	// data is already ABI-encoded, so bind only needs the address and backend.
-	c := ether.Client()
-	instance := bind.NewBoundContract(common.HexToAddress(contractAddress), abi.ABI{}, c, c, c)
+	instance := rawBoundContract(common.HexToAddress(contractAddress), ether.Client())
 
 	tx, err := bind.Transact(
 		instance, auth, data,
@@ -835,7 +840,6 @@ func (ether *Ether) WaitDeployed(ctx context.Context, txHash common.Hash) (commo
 func (
 	ether *Ether,
 ) ContractCall(
-	contract types.ContractInstance,
 	contractAddress common.Address,
 	opts *bind.CallOpts,
 	callData []byte,
@@ -847,8 +851,7 @@ func (
 	}
 	defer ether.Close()
 
-	c := ether.Client()
-	instance := contract.Instance(c, contractAddress)
+	instance := rawBoundContract(contractAddress, ether.Client())
 
 	val, err := bind.Call(instance, opts, callData, unpack)
 	if err != nil {

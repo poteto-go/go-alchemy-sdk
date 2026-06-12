@@ -1515,7 +1515,6 @@ func TestWallet_ContractTransactNoWait(t *testing.T) {
 }
 
 func TestWallet_ContractCall(t *testing.T) {
-	contract := artifacts.NewPotetoStorage()
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	data := []byte("test data")
 	unpack := func(b []byte) (any, error) { return nil, nil }
@@ -1535,7 +1534,6 @@ func TestWallet_ContractCall(t *testing.T) {
 			"ContractCall",
 			func(
 				_ *ether.Ether,
-				_ types.ContractInstance,
 				_ common.Address,
 				_ *bind.CallOpts,
 				_ []byte,
@@ -1546,7 +1544,7 @@ func TestWallet_ContractCall(t *testing.T) {
 		)
 
 		// Act
-		res, err := w.ContractCall(contract, contractAddress, callOpts, data, unpack)
+		res, err := w.ContractCall(contractAddress, callOpts, data, unpack)
 
 		// Assert
 		assert.Nil(t, err)
@@ -1557,7 +1555,7 @@ func TestWallet_ContractCall(t *testing.T) {
 		w, _ := New(testPrivHex)
 
 		// Act
-		_, err := w.ContractCall(contract, contractAddress, callOpts, data, unpack)
+		_, err := w.ContractCall(contractAddress, callOpts, data, unpack)
 
 		// Assert
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
@@ -1576,7 +1574,6 @@ func TestWallet_ContractCall(t *testing.T) {
 			"ContractCall",
 			func(
 				_ *ether.Ether,
-				_ types.ContractInstance,
 				_ common.Address,
 				_ *bind.CallOpts,
 				_ []byte,
@@ -1587,7 +1584,7 @@ func TestWallet_ContractCall(t *testing.T) {
 		)
 
 		// Act
-		_, err := w.ContractCall(contract, contractAddress, callOpts, data, unpack)
+		_, err := w.ContractCall(contractAddress, callOpts, data, unpack)
 
 		// Assert
 		assert.Error(t, err)

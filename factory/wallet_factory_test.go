@@ -17,7 +17,6 @@ type mockWallet struct {
 }
 
 func (m *mockWallet) ContractCall(
-	contract types.ContractInstance,
 	contractAddress string,
 	opts *bind.CallOpts,
 	callData []byte,
@@ -35,7 +34,7 @@ func TestContractCall(t *testing.T) {
 		}
 
 		// Act
-		res, err := ContractCall(w, nil, "0x123", nil, nil, unpack)
+		res, err := ContractCall(w, "0x123", nil, nil, unpack)
 
 		// Assert
 		assert.NoError(t, err)
@@ -53,7 +52,6 @@ func TestContractCall(t *testing.T) {
 			"ContractCall",
 			func(
 				_ *mockWallet,
-				_ types.ContractInstance,
 				_ string,
 				_ *bind.CallOpts,
 				_ []byte,
@@ -68,7 +66,7 @@ func TestContractCall(t *testing.T) {
 		}
 
 		// Act
-		_, err := ContractCall(w, nil, "0x123", nil, nil, unpack)
+		_, err := ContractCall(w, "0x123", nil, nil, unpack)
 
 		// Assert
 		assert.Error(t, err)
@@ -85,7 +83,6 @@ func TestContractCall(t *testing.T) {
 			"ContractCall",
 			func(
 				_ *mockWallet,
-				_ types.ContractInstance,
 				_ string,
 				_ *bind.CallOpts,
 				_ []byte,
@@ -100,7 +97,7 @@ func TestContractCall(t *testing.T) {
 		}
 
 		// Act
-		_, err := ContractCall(w, nil, "0x123", nil, nil, unpack)
+		_, err := ContractCall(w, "0x123", nil, nil, unpack)
 
 		// Assert
 		assert.Error(t, err)

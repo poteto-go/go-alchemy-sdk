@@ -18,7 +18,6 @@ you can use factory pattern for more type safety.
 ```go
 func ContractCall[T any](
 	w wallet.Wallet,
-	contract types.ContractInstance,
 	contractAddress string,
 	opts *bind.CallOpts,
 	callData []byte,
@@ -50,7 +49,7 @@ func main() {
 	}
 
 	// Execute call
-	result, err := factory.ContractCall(w, contract, contractAddress, nil, data, unpack)
+	result, err := factory.ContractCall(w, contractAddress, nil, data, unpack)
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +69,6 @@ func main() {
 
 ```go
 func ContractCall(
-	contract types.ContractInstance,
 	contractAddress string,
 	opts *bind.CallOpts,
 	callData []byte,
@@ -102,7 +100,7 @@ func main() {
 	}
 
 	// Execute call
-	result, err := w.ContractCall(contract, contractAddress, nil, data, unpack)
+	result, err := w.ContractCall(contractAddress, nil, data, unpack)
 	if err != nil {
 		panic(err)
 	}
