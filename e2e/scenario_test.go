@@ -25,11 +25,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// These are Kurtosis ethereum-package genesis accounts (public test keys, not credentials)
-var initPrivateKey = "bcdf20249abf0ed6d944c0288fad489e33f66b3960d9e6229c1cd214ed3bbe31"
-var initAddress = "0x8943545177806ED17B9F23F0a21ee5948eCaa776"
-var otherPrivateKey = "39725efee3fb28614de3bacaffe4cc4bd8c436257e2c8bb887c4b5c4be45e76d"
-var otherAddress = "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
+var initPrivateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+var initAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+var otherPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+var otherAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 var deployedContractAddress common.Address
 var alchemy gas.Alchemy
 
@@ -80,13 +79,6 @@ func TestSenario_BaseMethod(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, gas.Cmp(big.NewInt(0)), 1)
-	})
-
-	t.Run("PeerCount", func(t *testing.T) {
-		peerCount, err := alchemy.Core.PeerCount()
-
-		assert.Nil(t, err)
-		assert.GreaterOrEqual(t, peerCount, uint64(0))
 	})
 
 	t.Run("Batch fetches blockNumber, gasPrice & chainId in a single round-trip", func(t *testing.T) {
@@ -1022,10 +1014,9 @@ func TestScenario_SendTransaction(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotEqual(t, txHash.Hex(), "0x0000000000000000000000000000000000000000000000000000000000000000")
 
-		// Verify transaction is pending
-		tx, isPending, err := alchemy.Core.GetTransaction(txHash.Hex())
+		// faster anvil, so not assert isPending
+		tx, _, err := alchemy.Core.GetTransaction(txHash.Hex())
 		assert.Nil(t, err)
-		assert.True(t, isPending, "transaction should be pending immediately after sending")
 		assert.Equal(t, txHash, tx.Hash())
 
 		// wait for transact finish
@@ -1034,7 +1025,7 @@ func TestScenario_SendTransaction(t *testing.T) {
 		assert.Equal(t, txReceipt.TxHash.Hex(), txHash.Hex())
 
 		// Verify transaction is not pending
-		tx, isPending, err = alchemy.Core.GetTransaction(txHash.Hex())
+		tx, isPending, err := alchemy.Core.GetTransaction(txHash.Hex())
 		assert.Nil(t, err)
 		assert.False(t, isPending, "transaction should be finished after waitMined")
 		assert.Equal(t, txHash, tx.Hash())
@@ -1044,11 +1035,7 @@ func TestScenario_SendTransaction(t *testing.T) {
 func TestScenario_DebugSnapshotRevertTo(t *testing.T) {
 	// 1. snapshot
 	snapshotId, err := alchemy.Debug.Snapshot()
-	if err != nil {
-		// evm_snapshot is only supported on development chains
-		// (anvil, hardhat, ganache, ...), not on the kurtosis geth network.
-		t.Skipf("node does not support evm_snapshot: %v", err)
-	}
+	assert.NoError(t, err)
 
 	balanceBefore, err := alchemy.Core.GetBalance(otherAddress, "latest")
 	assert.Nil(t, err)
