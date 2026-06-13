@@ -265,3 +265,102 @@ func TestWallet_NoRaceConnectVsERC20Readers(t *testing.T) {
 
 	wg.Wait()
 }
+
+// TestWallet_NoRaceConnectVsNftReaders verifies that concurrent Connect
+// calls do not race with walletNft readers that touch w.nft.
+// Refs: https://github.com/poteto-go/go-alchemy-sdk/issues/332
+func TestWallet_NoRaceConnectVsNftReaders(t *testing.T) {
+	patches := gomonkey.NewPatches()
+	defer patches.Reset()
+
+	setting := gas.AlchemySetting{
+		ApiKey:  "api-key",
+		Network: types.EthMainnet,
+	}
+	alchemy, err := gas.NewAlchemy(setting)
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider := alchemy.GetProvider()
+
+	patches.ApplyMethod(
+		reflect.TypeOf(&namespace.Nft{}),
+		"OwnerOf",
+		func(_ *namespace.Nft, _ string, _ *big.Int) (string, error) {
+			return "", nil
+		},
+	)
+	patches.ApplyMethod(
+		reflect.TypeOf(&namespace.Nft{}),
+		"TokenURI",
+		func(_ *namespace.Nft, _ string, _ *big.Int) (string, error) {
+			return "", nil
+		},
+	)
+	patches.ApplyMethod(
+		reflect.TypeOf(&namespace.Nft{}),
+		"Name",
+		func(_ *namespace.Nft, _ string) (string, error) {
+			return "", nil
+		},
+	)
+	patches.ApplyMethod(
+		reflect.TypeOf(&namespace.Nft{}),
+		"Symbol",
+		func(_ *namespace.Nft, _ string) (string, error) {
+			return "", nil
+		},
+	)
+	patches.ApplyMethod(
+		reflect.TypeOf(&namespace.Nft{}),
+		"GetApproved",
+		func(_ *namespace.Nft, _ string, _ *big.Int) (string, error) {
+			return "", nil
+		},
+	)
+	patches.ApplyMethod(
+		reflect.TypeOf(&namespace.Nft{}),
+		"IsApprovedForAll",
+		func(_ *namespace.Nft, _, _, _ string) (bool, error) {
+			return false, nil
+		},
+	)
+
+	w, _ := New(testPrivHex)
+	w.Connect(provider)
+
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	tokenId := big.NewInt(1)
+
+	const iterations = 200
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			w.Connect(provider)
+		}
+	}()
+
+	readers := []func(){
+		func() { _, _ = w.Nft().OwnerOf(contractAddress, tokenId) },
+		func() { _, _ = w.Nft().TokenURI(contractAddress, tokenId) },
+		func() { _, _ = w.Nft().Name(contractAddress) },
+		func() { _, _ = w.Nft().Symbol(contractAddress) },
+		func() { _, _ = w.Nft().GetApproved(contractAddress, tokenId) },
+		func() { _, _ = w.Nft().IsApprovedForAll(contractAddress, contractAddress, contractAddress) },
+	}
+
+	for _, r := range readers {
+		wg.Add(1)
+		go func(read func()) {
+			defer wg.Done()
+			for i := 0; i < iterations; i++ {
+				read()
+			}
+		}(r)
+	}
+
+	wg.Wait()
+}

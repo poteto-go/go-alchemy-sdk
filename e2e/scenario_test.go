@@ -985,6 +985,23 @@ func TestScenario_Nft(t *testing.T) {
 			assert.Nil(t, err)
 			assert.True(t, isApproved)
 		})
+
+		// The wallet Nft namespace delegates to alchemy.Nft (verified in detail
+		// above), so a few representative reads are enough to prove the wiring.
+		t.Run("can call read methods via wallet Nft namespace", func(t *testing.T) {
+			name, err := w.Nft().Name(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "Minimal NFT", name)
+
+			owner, err := w.Nft().OwnerOf(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(initAddress), owner)
+
+			// setApprovalForAll(otherAddress, true) was executed in the earlier subtest.
+			isApproved, err := w.Nft().IsApprovedForAll(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.True(t, isApproved)
+		})
 	})
 }
 
