@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient/simulated"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/internal"
 	"github.com/poteto-go/go-alchemy-sdk/types"
@@ -26,7 +25,6 @@ type AlchemyConfig struct {
 	jwtSecret            []byte
 	maxResponseBytes     int64
 	transport            http.RoundTripper
-	simulatedBackend     *simulated.Backend
 }
 
 func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {

@@ -625,7 +625,7 @@ func TestEther_CodeAtHash(t *testing.T) {
 			)
 
 			// Assert
-			assert.ErrorContains(t, err, "simulated backend doesn't support CodeAtHash")
+			assert.ErrorIs(t, constant.ErrUnSupportSimulatedMethod, err)
 		})
 	})
 }

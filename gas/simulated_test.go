@@ -20,6 +20,7 @@ func TestNewSimulated(t *testing.T) {
 		// Assert
 		assert.Nil(t, err)
 		assert.NotNil(t, alchemy)
+		assert.NotNil(t, alchemy.GetProvider())
 	})
 
 	t.Run("cannot create from nil", func(t *testing.T) {

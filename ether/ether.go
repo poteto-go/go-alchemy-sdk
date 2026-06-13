@@ -214,7 +214,7 @@ func (ether *Ether) BatchCall(elems []rpc.BatchElem) error {
 
 	c, ok := ether.Client().(*ethclient.Client)
 	if !ok {
-		return errors.New("simulated backend doesn't support BatchCall")
+		return constant.ErrUnSupportSimulatedMethod
 	}
 
 	return internal.GethRequestSingleErrorWithBackOff(
@@ -328,7 +328,7 @@ func (ether *Ether) CodeAtHash(address string, blockHash string) (string, error)
 
 	c, ok := ether.Client().(*ethclient.Client)
 	if !ok {
-		return "", errors.New("simulated backend doesn't support CodeAtHash")
+		return "", constant.ErrUnSupportSimulatedMethod
 	}
 
 	code, err := internal.GethRequestTwoArgWithBackOff(
@@ -782,7 +782,7 @@ func (ether *Ether) PeerCount() (uint64, error) {
 
 	c, ok := ether.Client().(*ethclient.Client)
 	if !ok {
-		return 0, errors.New("simulated backend doesn't support PeerCount")
+		return 0, constant.ErrUnSupportSimulatedMethod
 	}
 
 	res, err := internal.GethRequestWithBackOff(
@@ -853,7 +853,7 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contractAddress st
 
 func (ether *Ether) simulatedMined(txHash common.Hash) (*gethTypes.Receipt, error) {
 	if ether.simBackend == nil {
-		return nil, errors.New("unexpected nil of simulated backend")
+		return nil, constant.ErrUnexpectedNilSimulatedBackend
 	}
 
 	ether.simBackend.Commit()
@@ -888,7 +888,7 @@ func (ether *Ether) simulatedDeployed(txHash common.Hash) (common.Address, error
 	}
 
 	if txReceipt.ContractAddress == (common.Address{}) {
-		return common.Address{}, errors.New("no contract address in receipt")
+		return common.Address{}, constant.ErrUnexpectedNoContractAddress
 	}
 
 	return txReceipt.ContractAddress, nil

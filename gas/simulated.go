@@ -9,6 +9,17 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
+// simulated alchemy connect to simulated backend
+type SimulatedAlchemy struct {
+	Core       namespace.ICore
+	Transact   namespace.ITransact
+	Nft        namespace.INft
+	ERC20      namespace.IERC20
+	StableCoin namespace.IStableCoin
+	Debug      namespace.IDebug
+	provider   types.IAlchemyProvider
+}
+
 /*
 With Geth's simulatedBackend, you can connect to a simulated blockchain node without launching a chain.
 This enables the execution of high-speed tests.
@@ -22,16 +33,6 @@ This enables the execution of high-speed tests.
 	defer sim.Close()
 	alchemy := gas.NewSimulatedAlchemy(sim)
 */
-type SimulatedAlchemy struct {
-	Core       namespace.ICore
-	Transact   namespace.ITransact
-	Nft        namespace.INft
-	ERC20      namespace.IERC20
-	StableCoin namespace.IStableCoin
-	Debug      namespace.IDebug
-	provider   types.IAlchemyProvider
-}
-
 func NewSimulatedAlchemy(backend *simulated.Backend) (SimulatedAlchemy, error) {
 	if backend == nil {
 		return SimulatedAlchemy{}, errors.New("no connected simulated backend")

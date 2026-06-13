@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -90,6 +91,6 @@ func TestEther_BatchCall(t *testing.T) {
 		})
 
 		// Assert
-		assert.ErrorContains(t, err, "simulated backend doesn't support BatchCall")
+		assert.ErrorIs(t, constant.ErrUnSupportSimulatedMethod, err)
 	})
 }
