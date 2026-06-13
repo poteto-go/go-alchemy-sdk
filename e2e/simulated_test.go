@@ -11,8 +11,10 @@ import (
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient/simulated"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/deployer"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
+	"github.com/poteto-go/go-alchemy-sdk/typeddata"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/wallet"
 	"github.com/stretchr/testify/assert"
@@ -485,6 +487,434 @@ func TestSimulated_SendTransaction(t *testing.T) {
 		assert.Nil(t, err)
 		assert.False(t, isPending, "transaction should be finished after waitMined")
 		assert.Equal(t, txHash, tx.Hash())
+	})
+}
+
+func TestSimulated_StableCoin_FiatToken(t *testing.T) {
+	alchemy, cleanup := newSimulatedAlchemy(t)
+	defer cleanup()
+
+	t.Run("1. can create wallet 2. connect wallet 3. can deploy fiat token contract as stablecoin", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+
+		assert.Nil(t, err)
+
+		w.Connect(alchemy.GetProvider())
+
+		ownerAddr := common.HexToAddress(initAddress)
+		fiatTokenMetadata := &artifacts.FiatTokenMetaData
+		err = deployer.BindDeploymentMetadata(fiatTokenMetadata,
+			"USD Coin",
+			"USDC",
+			"USD",
+			uint8(6),
+			ownerAddr,
+			ownerAddr,
+			ownerAddr,
+			ownerAddr,
+		)
+		assert.Nil(t, err)
+
+		contractAddress, err := w.DeployContract(context.Background(), fiatTokenMetadata)
+
+		assert.Nil(t, err)
+		assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+		contractHex := contractAddress.Hex()
+
+		t.Run("IsContractAddress is true", func(t *testing.T) {
+			isContractAddress := alchemy.Core.IsContractAddress(contractHex)
+
+			assert.True(t, isContractAddress)
+		})
+
+		t.Run("can read stablecoin metadata via StableCoin", func(t *testing.T) {
+			name, err := w.StableCoin().Name(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "USD Coin", name)
+
+			symbol, err := w.StableCoin().Symbol(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "USDC", symbol)
+
+			decimals, err := w.StableCoin().Decimals(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, uint8(6), decimals)
+
+			totalSupply, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, totalSupply.Cmp(big.NewInt(0)))
+
+			currency, err := w.StableCoin().Currency(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "USD", currency)
+
+			version, err := w.StableCoin().Version(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, "1", version)
+		})
+
+		t.Run("can configure minter and mint tokens", func(t *testing.T) {
+			fiatToken := artifacts.NewFiatToken()
+
+			// configure minter allowance (owner == initAddress in this test setup)
+			configureMinterData := fiatToken.PackConfigureMinter(
+				common.HexToAddress(initAddress),
+				big.NewInt(1_000_000),
+			)
+			txHash, err := w.SendTransaction(types.TransactionRequest{
+				From:     initAddress,
+				To:       contractHex,
+				Value:    "0x0",
+				GasLimit: 300000,
+				Data:     configureMinterData,
+			})
+			assert.Nil(t, err)
+			_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+			assert.Nil(t, err)
+
+			mintAmount := big.NewInt(500_000)
+			receipt, err := w.StableCoin().Mint(
+				context.Background(),
+				contractHex,
+				initAddress,
+				mintAmount,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			totalSupply, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, totalSupply.Cmp(mintAmount))
+		})
+
+		t.Run("can burn tokens", func(t *testing.T) {
+			burnAmount := big.NewInt(100_000)
+
+			supplyBefore, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+
+			receipt, err := w.StableCoin().Burn(
+				context.Background(),
+				contractHex,
+				burnAmount,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			supplyAfter, err := w.StableCoin().TotalSupply(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, new(big.Int).Sub(supplyBefore, burnAmount).Cmp(supplyAfter))
+		})
+
+		t.Run("can blacklist and unBlacklist an address", func(t *testing.T) {
+			// address should not be blacklisted initially
+			isBlacklisted, err := w.StableCoin().IsBlacklisted(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isBlacklisted)
+
+			// blacklist the address (initAddress is the blacklister in this test setup)
+			receipt, err := w.StableCoin().Blacklist(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should now be blacklisted
+			isBlacklisted, err = w.StableCoin().IsBlacklisted(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.True(t, isBlacklisted)
+
+			// unBlacklist the address
+			receipt, err = w.StableCoin().UnBlacklist(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should no longer be blacklisted
+			isBlacklisted, err = w.StableCoin().IsBlacklisted(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isBlacklisted)
+		})
+
+		t.Run("pause prevents transfer and unpause restores it", func(t *testing.T) {
+			// contract should not be paused initially
+			paused, err := w.StableCoin().Paused(contractHex)
+			assert.Nil(t, err)
+			assert.False(t, paused)
+
+			// pause the contract (initAddress is the pauser in this test setup)
+			receipt, err := w.StableCoin().Pause(context.Background(), contractHex, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// contract should now be paused
+			paused, err = w.StableCoin().Paused(contractHex)
+			assert.Nil(t, err)
+			assert.True(t, paused)
+
+			// transfer should fail while paused
+			_, err = w.StableCoin().Transfer(context.Background(), contractHex, otherAddress, big.NewInt(100), nil)
+			assert.Error(t, err, "transfer should fail when contract is paused")
+
+			// unpause the contract
+			receipt, err = w.StableCoin().Unpause(context.Background(), contractHex, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// contract should no longer be paused
+			paused, err = w.StableCoin().Paused(contractHex)
+			assert.Nil(t, err)
+			assert.False(t, paused)
+
+			// transfer should succeed after unpause
+			balanceBefore, err := w.StableCoin().BalanceOf(contractHex)
+			assert.Nil(t, err)
+
+			transferAmount := big.NewInt(100)
+			_, err = w.StableCoin().Transfer(context.Background(), contractHex, otherAddress, transferAmount, nil)
+			assert.Nil(t, err)
+
+			balanceAfter, err := w.StableCoin().BalanceOf(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, new(big.Int).Sub(balanceBefore, transferAmount).Cmp(balanceAfter))
+		})
+
+		t.Run("can configure minter, check allowance, and remove minter", func(t *testing.T) {
+			allowance := big.NewInt(5_000_000)
+
+			// address should not be a minter initially
+			isMinter, err := alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isMinter)
+
+			// configure minter with allowance (initAddress is the masterMinter in this test setup)
+			receipt, err := w.StableCoin().ConfigureMinter(context.Background(), contractHex, otherAddress, allowance, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should now be a minter
+			isMinter, err = alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.True(t, isMinter)
+
+			// allowance should match what was configured
+			minterAllowance, err := alchemy.StableCoin.MinterAllowance(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, allowance.Cmp(minterAllowance))
+
+			// remove the minter
+			receipt, err = w.StableCoin().RemoveMinter(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			// address should no longer be a minter
+			isMinter, err = alchemy.StableCoin.IsMinter(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.False(t, isMinter)
+		})
+
+		// UpdateMasterMinter/UpdateBlacklister/UpdatePauser require owner role.
+		// Run these before TransferOwnership so initAddress still has the owner role.
+		t.Run("can update master minter", func(t *testing.T) {
+			masterMinterBefore, err := alchemy.StableCoin.MasterMinter(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), masterMinterBefore)
+
+			receipt, err := w.StableCoin().UpdateMasterMinter(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			masterMinterAfter, err := alchemy.StableCoin.MasterMinter(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(otherAddress), masterMinterAfter)
+		})
+
+		t.Run("can update blacklister", func(t *testing.T) {
+			blacklisterBefore, err := alchemy.StableCoin.Blacklister(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), blacklisterBefore)
+
+			receipt, err := w.StableCoin().UpdateBlacklister(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			blacklisterAfter, err := alchemy.StableCoin.Blacklister(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(otherAddress), blacklisterAfter)
+		})
+
+		t.Run("can update pauser", func(t *testing.T) {
+			pauserBefore, err := alchemy.StableCoin.Pauser(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), pauserBefore)
+
+			receipt, err := w.StableCoin().UpdatePauser(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			pauserAfter, err := alchemy.StableCoin.Pauser(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(otherAddress), pauserAfter)
+		})
+
+		t.Run("transferOwnership transfers owner to new address", func(t *testing.T) {
+			ownerBefore, err := alchemy.StableCoin.Owner(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(initAddress), ownerBefore)
+
+			receipt, err := w.StableCoin().TransferOwnership(context.Background(), contractHex, otherAddress, nil)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			ownerAfter, err := alchemy.StableCoin.Owner(contractHex)
+			assert.Nil(t, err)
+			assert.Equal(t, common.HexToAddress(otherAddress), ownerAfter)
+		})
+
+		t.Run("EIP-2612: nonces returns 0 for new owner", func(t *testing.T) {
+			nonce, err := alchemy.StableCoin.Nonces(contractHex, initAddress)
+
+			assert.Nil(t, err)
+			assert.Equal(t, int64(0), nonce.Int64())
+		})
+
+		t.Run("EIP-2612: domain separator returns non-zero value", func(t *testing.T) {
+			ds, err := alchemy.StableCoin.DomainSeparator(contractHex)
+
+			assert.Nil(t, err)
+			var zero [32]byte
+			assert.NotEqual(t, zero, ds)
+		})
+
+		t.Run("EIP-2612: permit sets allowance and increments nonce", func(t *testing.T) {
+			permitValue := big.NewInt(999)
+			deadline := new(big.Int).SetInt64(9999999999)
+
+			allowanceBefore, err := alchemy.StableCoin.Allowance(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+
+			receipt, err := w.StableCoin().Permit(
+				context.Background(),
+				contractHex,
+				otherAddress,
+				permitValue,
+				deadline,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			allowanceAfter, err := alchemy.StableCoin.Allowance(contractHex, initAddress, otherAddress)
+			assert.Nil(t, err)
+			assert.NotEqual(t, allowanceBefore.Int64(), allowanceAfter.Int64())
+			assert.Equal(t, permitValue.Int64(), allowanceAfter.Int64())
+
+			nonce, err := alchemy.StableCoin.Nonces(contractHex, initAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, int64(1), nonce.Int64())
+		})
+
+		t.Run("EIP-3009: authorizationState returns false for unused nonce", func(t *testing.T) {
+			var nonce [32]byte
+			nonce[0] = 0xde
+			nonce[31] = 0xad
+
+			used, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
+
+			assert.Nil(t, err)
+			assert.False(t, used)
+		})
+
+		t.Run("EIP-3009: transferWithAuthorization moves tokens and marks nonce used", func(t *testing.T) {
+			transferValue := big.NewInt(1)
+			validAfter := big.NewInt(0)
+			validBefore := new(big.Int).SetInt64(9999999999)
+			var nonce [32]byte
+			nonce[0] = 0xEE
+			nonce[31] = 0xFF
+
+			domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractHex)
+			assert.Nil(t, err)
+
+			sig, err := typeddata.SignEIP712Str(
+				initPrivateKey,
+				domainSeparator,
+				typeddata.EncodeWords(
+					constant.TransferWithAuthorizationTypeHash,
+					initAddress,
+					otherAddress,
+					transferValue,
+					validAfter,
+					validBefore,
+					nonce,
+				),
+			)
+			assert.Nil(t, err)
+
+			balanceBefore, err := alchemy.StableCoin.BalanceOf(contractHex, otherAddress)
+			assert.Nil(t, err)
+
+			receipt, err := w.StableCoin().TransferWithAuthorization(
+				context.Background(),
+				contractHex,
+				initAddress,
+				otherAddress,
+				transferValue,
+				validAfter,
+				validBefore,
+				nonce,
+				sig,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			balanceAfter, err := alchemy.StableCoin.BalanceOf(contractHex, otherAddress)
+			assert.Nil(t, err)
+			assert.Equal(t, new(big.Int).Add(balanceBefore, transferValue).Int64(), balanceAfter.Int64())
+
+			used, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
+			assert.Nil(t, err)
+			assert.True(t, used)
+		})
+
+		t.Run("EIP-3009: cancelAuthorization marks nonce as used", func(t *testing.T) {
+			var nonce [32]byte
+			nonce[0] = 0xCA
+			nonce[31] = 0xC1
+
+			usedBefore, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
+			assert.Nil(t, err)
+			assert.False(t, usedBefore)
+
+			domainSeparator, err := alchemy.StableCoin.DomainSeparator(contractHex)
+			assert.Nil(t, err)
+
+			sig, err := typeddata.SignEIP712Str(
+				initPrivateKey,
+				domainSeparator,
+				typeddata.EncodeWords(
+					constant.CancelAuthorizationTypeHash,
+					initAddress,
+					nonce,
+				),
+			)
+			assert.Nil(t, err)
+
+			receipt, err := w.StableCoin().CancelAuthorization(
+				context.Background(),
+				contractHex,
+				initAddress,
+				nonce,
+				sig,
+				nil,
+			)
+			assert.Nil(t, err)
+			assert.NotNil(t, receipt)
+
+			usedAfter, err := alchemy.StableCoin.AuthorizationState(contractHex, initAddress, nonce)
+			assert.Nil(t, err)
+			assert.True(t, usedAfter)
+		})
 	})
 }
 
