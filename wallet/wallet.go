@@ -32,9 +32,10 @@ type wallet struct {
 	cachedChainID *big.Int
 	legacyChain   bool
 
-	// for ERC20 / StableCoin
+	// for ERC20 / StableCoin / Nft
 	erc20      namespace.IERC20
 	stablecoin namespace.IStableCoin
+	nft        namespace.INft
 }
 
 func New(privateKeyStr string) (types.Wallet, error) {
@@ -81,6 +82,12 @@ func (w *wallet) snapshotStableCoin() namespace.IStableCoin {
 	return w.stablecoin
 }
 
+func (w *wallet) snapshotNft() namespace.INft {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.nft
+}
+
 func (w *wallet) GetBalance() (*big.Int, error) {
 	provider := w.snapshot()
 	if provider == nil {
@@ -101,6 +108,7 @@ func (w *wallet) Connect(provider types.IAlchemyProvider) {
 	w.provider = provider
 	w.erc20 = namespace.NewERC20Namespace(provider.Eth())
 	w.stablecoin = namespace.NewStableCoinNamespace(provider.Eth())
+	w.nft = namespace.NewNftNamespace(provider.Eth())
 }
 
 func (w *wallet) PendingNonceAt() (uint64, error) {
@@ -299,6 +307,10 @@ func (w *wallet) ERC20() types.WalletERC20 {
 
 func (w *wallet) StableCoin() types.WalletStableCoin {
 	return &walletStableCoin{walletERC20{w: w}}
+}
+
+func (w *wallet) Nft() types.WalletNft {
+	return &walletNft{w: w}
 }
 
 func (w *wallet) buildAuth() (*bind.TransactOpts, error) {
