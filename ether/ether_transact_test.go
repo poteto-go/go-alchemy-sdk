@@ -199,6 +199,21 @@ func TestEther_WaitMined(t *testing.T) {
 			assert.Nil(t, receipt)
 		})
 	})
+
+	t.Run("simulated backend mines the pending tx and returns its receipt", func(t *testing.T) {
+		// Arrange
+		ether, cleanup := newSimulatedEtherForTest(t)
+		defer cleanup()
+		hash := simSendValueTx(t, ether)
+
+		// Act
+		receipt, err := ether.WaitMined(context.Background(), hash)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(1), receipt.Status)
+		assert.Equal(t, hash, receipt.TxHash)
+	})
 }
 
 func TestEther_WaitDeployed(t *testing.T) {

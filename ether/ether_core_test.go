@@ -612,6 +612,21 @@ func TestEther_CodeAtHash(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 		})
+
+		t.Run("simulated backend does not support CodeAtHash", func(t *testing.T) {
+			// Arrange
+			ether, cleanup := newSimulatedEtherForTest(t)
+			defer cleanup()
+
+			// Act
+			_, err := ether.CodeAtHash(
+				"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+				"0xbd05b61cc68595a7c30039b2b092ea293c9a2faee20158d578528e399f4d4244",
+			)
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnSupportSimulatedMethod, err)
+		})
 	})
 }
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/stretchr/testify/assert"
 )
@@ -63,6 +64,18 @@ func TestEther_PeerCount(t *testing.T) {
 
 			// Assert
 			assert.Error(t, err)
+		})
+
+		t.Run("simulated backend does not support PeerCount", func(t *testing.T) {
+			// Arrange
+			ether, cleanup := newSimulatedEtherForTest(t)
+			defer cleanup()
+
+			// Act
+			_, err := ether.PeerCount()
+
+			// Assert
+			assert.ErrorIs(t, constant.ErrUnSupportSimulatedMethod, err)
 		})
 	})
 }

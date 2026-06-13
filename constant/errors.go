@@ -50,6 +50,9 @@ var (
 	ErrBatchAlreadySent                 = errors.New("batch has already been sent")
 	ErrInvalidPrivateNetworkUrl         = errors.New("invalid private network url")
 	ErrNilSnapshotId                    = errors.New("snapshot id must not be nil")
+	ErrUnexpectedNoContractAddress      = errors.New("unexpected no contract address")
+	ErrUnSupportSimulatedMethod         = errors.New("unsupported method on simulated backend")
+	ErrUnexpectedNilSimulatedBackend    = errors.New("unexpected nil of simulated backend")
 )
 
 var HttpClientErrorCodeList = []int{

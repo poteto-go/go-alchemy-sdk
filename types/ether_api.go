@@ -8,9 +8,34 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 )
+
+// EthClient is the go-ethereum client surface that Ether depends on, narrowed to
+// the subset that BOTH *ethclient.Client (URL/RPC backed) and simulated.Client
+// (in-process simulated.Backend) implement. It lets Ether hold a single client
+// value without caring which transport it talks to.
+//
+// Methods exposed only by *ethclient.Client are intentionally excluded because
+// simulated.Client (an interface that deliberately hides the raw client) does
+// not provide them:
+//   - Client() *rpc.Client (raw rpc access used by BatchCall)
+//   - CodeAtHash
+//   - PeerCount
+//
+// bind.ContractBackend / bind.DeployBackend are embedded so an EthClient value
+// can be passed straight to bind.LinkAndDeploy / WaitMined / WaitDeployed.
+type EthClient interface {
+	bind.ContractBackend
+	bind.DeployBackend
+
+	BlockNumber(ctx context.Context) (uint64, error)
+	ChainID(ctx context.Context) (*big.Int, error)
+	StorageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error)
+	BlockByNumber(ctx context.Context, number *big.Int) (*gethTypes.Block, error)
+	BlockByHash(ctx context.Context, hash common.Hash) (*gethTypes.Block, error)
+	TransactionByHash(ctx context.Context, txHash common.Hash) (tx *gethTypes.Transaction, isPending bool, err error)
+}
 
 type EtherApi interface {
 	/*
@@ -28,7 +53,7 @@ type EtherApi interface {
 	/*
 		get raw ethclient
 	*/
-	Client() *ethclient.Client
+	Client() EthClient
 
 	/*
 		BatchCall sends multiple JSON-RPC requests in a single HTTP round-trip
