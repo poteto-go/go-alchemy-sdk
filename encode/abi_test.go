@@ -28,6 +28,36 @@ func TestABIString_roundtrip(t *testing.T) {
 	})
 }
 
+func TestABIBytes(t *testing.T) {
+	t.Run("encodes length word + right-padded data", func(t *testing.T) {
+		data := []byte{0xde, 0xad, 0xbe, 0xef}
+		out := encode.ABIBytes(data)
+
+		// length word (4) + one padded data word.
+		assert.Equal(t, 2*constant.ABIWordSize, len(out))
+		assert.Equal(t, byte(0x04), out[constant.ABIWordSize-1])
+		assert.Equal(t, data, out[constant.ABIWordSize:constant.ABIWordSize+4])
+		// trailing bytes of the data word are zero-padded.
+		assert.Equal(t, make([]byte, constant.ABIWordSize-4), out[constant.ABIWordSize+4:])
+	})
+
+	t.Run("empty data -> length word only", func(t *testing.T) {
+		out := encode.ABIBytes([]byte{})
+
+		assert.Equal(t, constant.ABIWordSize, len(out))
+		assert.Equal(t, make([]byte, constant.ABIWordSize), out)
+	})
+
+	t.Run("data spanning multiple words is padded to a word boundary", func(t *testing.T) {
+		data := make([]byte, 33)
+		out := encode.ABIBytes(data)
+
+		// length word + two data words (33 bytes rounds up to 64).
+		assert.Equal(t, 3*constant.ABIWordSize, len(out))
+		assert.Equal(t, byte(0x21), out[constant.ABIWordSize-1])
+	})
+}
+
 func TestReadCalldata(t *testing.T) {
 	t.Run("prepends the 4-byte selector and appends args", func(t *testing.T) {
 		arg := common.LeftPadBytes(common.HexToAddress("0x1").Bytes(), constant.ABIWordSize)

@@ -444,6 +444,36 @@ func TestSimulated_Nft(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, strings.ToLower(initAddress), owner)
 		})
+
+		t.Run("can transfer NFT via wallet Nft namespace", func(t *testing.T) {
+			otherWallet, err := wallet.New(otherPrivateKey)
+			assert.Nil(t, err)
+			otherWallet.Connect(alchemy.GetProvider())
+
+			// TransferFrom: initAddress -> otherAddress.
+			_, err = w.Nft().TransferFrom(context.Background(), contractHex, initAddress, otherAddress, tokenId, nil)
+			assert.Nil(t, err)
+
+			owner, err := w.Nft().OwnerOf(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(otherAddress), owner)
+
+			// SafeTransferFrom: otherAddress -> initAddress.
+			_, err = otherWallet.Nft().SafeTransferFrom(context.Background(), contractHex, otherAddress, initAddress, tokenId, nil)
+			assert.Nil(t, err)
+
+			owner, err = w.Nft().OwnerOf(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(initAddress), owner)
+
+			// SafeTransferFromWithData: initAddress -> otherAddress with payload.
+			_, err = w.Nft().SafeTransferFromWithData(context.Background(), contractHex, initAddress, otherAddress, tokenId, []byte{0xde, 0xad, 0xbe, 0xef}, nil)
+			assert.Nil(t, err)
+
+			owner, err = w.Nft().OwnerOf(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(otherAddress), owner)
+		})
 	})
 }
 

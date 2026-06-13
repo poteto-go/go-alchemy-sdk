@@ -1,12 +1,60 @@
 package types
 
 import (
+	"context"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // Nft (ERC721) interface for wallet.
 // This is only defined for UX.
 type WalletNft interface {
+	/*
+		transfer the NFT with the given tokenId from one address to another
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	TransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		transfer the NFT with the given tokenId from one address to another
+			- gas limit is 300000 for default
+	*/
+	TransferFromNoWait(contractAddress, fromAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		safely transfer the NFT with the given tokenId from one address to another
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	SafeTransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		safely transfer the NFT with the given tokenId from one address to another
+			- gas limit is 300000 for default
+	*/
+	SafeTransferFromNoWait(contractAddress, fromAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		safely transfer the NFT with the given tokenId, passing additional data
+		to the recipient's onERC721Received hook
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	SafeTransferFromWithData(ctx context.Context, contractAddress, fromAddress, toAddress string, tokenId *big.Int, data []byte, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		safely transfer the NFT with the given tokenId, passing additional data
+		to the recipient's onERC721Received hook
+			- gas limit is 300000 for default
+	*/
+	SafeTransferFromWithDataNoWait(contractAddress, fromAddress, toAddress string, tokenId *big.Int, data []byte, gasLimit *uint64) (common.Hash, error)
+
 	/*
 		get owner of the NFT with the given tokenId
 	*/
