@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/ethclient/simulated"
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -36,6 +37,10 @@ type Ether struct {
 	clientCreatedAt int64
 	mu              *sync.Mutex
 	httpClient      *http.Client // shared across all rpc.Client creations
+
+	// simulated backend
+	simBackend *simulated.Backend
+	simClient  *simulated.Client
 }
 
 func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.EtherApi {
@@ -49,6 +54,22 @@ func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.E
 	}
 }
 
+func NewSimulatedApi(backend *simulated.Backend) types.EtherApi {
+	client := backend.Client()
+	return &Ether{
+		// The simulated backend is in-process, so only the request timeout and
+		// backoff config (used by the geth-request dispatcher) matter here.
+		// A zero timeout would make every call deadline-exceed immediately.
+		config:     NewEtherApiConfig("", 0, 10*time.Second, &types.DefaultBackoffConfig, nil, nil, 0, nil),
+		simBackend: backend,
+		connCount:  0,
+		client:     nil,
+		mu:         &sync.Mutex{},
+		simClient:  &client,
+	}
+}
+
+// it will return nil on simulated alchemy
 func (ether *Ether) HttpClient() *http.Client {
 	return ether.httpClient
 }
@@ -56,6 +77,12 @@ func (ether *Ether) HttpClient() *http.Client {
 func (ether *Ether) SetEthClient() error {
 	ether.mu.Lock()
 	defer ether.mu.Unlock()
+
+	// simulated client must not killed or re-create
+	// user should manage backend.Close w/o sdk
+	if ether.simBackend != nil {
+		return nil
+	}
 
 	ether.connCount++
 	if ether.isClientJwsAlive() {
@@ -92,6 +119,12 @@ func (ether *Ether) isClientJwsAlive() bool {
 
 // kill all client
 func (ether *Ether) kill() {
+	// simulated client must not killed or re-create
+	// user should manage backend.Close w/o sdk
+	if ether.simBackend != nil {
+		return
+	}
+
 	if ether.client == nil {
 		return
 	}
@@ -156,9 +189,12 @@ func (ether *Ether) Close() {
 	ether.kill()
 }
 
-func (ether *Ether) Client() *ethclient.Client {
+func (ether *Ether) Client() types.EthClient {
 	ether.mu.Lock()
 	defer ether.mu.Unlock()
+	if ether.simBackend != nil {
+		return *ether.simClient
+	}
 	return ether.client
 }
 
@@ -176,8 +212,11 @@ func (ether *Ether) BatchCall(elems []rpc.BatchElem) error {
 	}
 	defer ether.Close()
 
-	// ethclient does not surface batching, so reach the underlying rpc.Client.
-	c := ether.Client()
+	c, ok := ether.Client().(*ethclient.Client)
+	if !ok {
+		return errors.New("simulated backend doesn't support BatchCall")
+	}
+
 	return internal.GethRequestSingleErrorWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
@@ -287,7 +326,11 @@ func (ether *Ether) CodeAtHash(address string, blockHash string) (string, error)
 	}
 	defer ether.Close()
 
-	c := ether.Client()
+	c, ok := ether.Client().(*ethclient.Client)
+	if !ok {
+		return "", errors.New("simulated backend doesn't support CodeAtHash")
+	}
+
 	code, err := internal.GethRequestTwoArgWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
@@ -737,7 +780,11 @@ func (ether *Ether) PeerCount() (uint64, error) {
 	}
 	defer ether.Close()
 
-	c := ether.Client()
+	c, ok := ether.Client().(*ethclient.Client)
+	if !ok {
+		return 0, errors.New("simulated backend doesn't support PeerCount")
+	}
+
 	res, err := internal.GethRequestWithBackOff(
 		ether.config.backoffConfig,
 		ether.config.requestTimeout,
@@ -804,8 +851,21 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contractAddress st
 	return tx, nil
 }
 
+func (ether *Ether) simulatedMined(txHash common.Hash) (*gethTypes.Receipt, error) {
+	if ether.simBackend == nil {
+		return nil, errors.New("unexpected nil of simulated backend")
+	}
+
+	ether.simBackend.Commit()
+	return ether.GetTransactionReceipt(txHash.Hex())
+}
+
 // TODO: support backoff
 func (ether *Ether) WaitMined(ctx context.Context, txHash common.Hash) (*gethTypes.Receipt, error) {
+	if ether.simBackend != nil {
+		return ether.simulatedMined(txHash)
+	}
+
 	err := ether.SetEthClient()
 	if err != nil {
 		return nil, err
@@ -821,7 +881,24 @@ func (ether *Ether) WaitMined(ctx context.Context, txHash common.Hash) (*gethTyp
 	return tx, nil
 }
 
+func (ether *Ether) simulatedDeployed(txHash common.Hash) (common.Address, error) {
+	txReceipt, err := ether.simulatedMined(txHash)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	if txReceipt.ContractAddress == (common.Address{}) {
+		return common.Address{}, errors.New("no contract address in receipt")
+	}
+
+	return txReceipt.ContractAddress, nil
+}
+
 func (ether *Ether) WaitDeployed(ctx context.Context, txHash common.Hash) (common.Address, error) {
+	if ether.simBackend != nil {
+		return ether.simulatedDeployed(txHash)
+	}
+
 	err := ether.SetEthClient()
 	if err != nil {
 		return common.Address{}, err

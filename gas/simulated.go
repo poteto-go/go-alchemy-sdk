@@ -1,13 +1,28 @@
 package gas
 
 import (
+	"errors"
+
+	"github.com/ethereum/go-ethereum/ethclient/simulated"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
-type Alchemy struct {
-	config     AlchemyConfig
+/*
+With Geth's simulatedBackend, you can connect to a simulated blockchain node without launching a chain.
+This enables the execution of high-speed tests.
+
+! simulated backend doesn't support un-geth supported method
+
+	sim := simulated.NewBackend(
+		types.GenesisAlloc{ addr: {Balance: big.NewInt(...)} },
+		options...,
+	)
+	defer sim.Close()
+	alchemy := gas.NewSimulatedAlchemy(sim)
+*/
+type SimulatedAlchemy struct {
 	Core       namespace.ICore
 	Transact   namespace.ITransact
 	Nft        namespace.INft
@@ -17,17 +32,13 @@ type Alchemy struct {
 	provider   types.IAlchemyProvider
 }
 
-func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
-	alchemyConfig, err := NewAlchemyConfig(setting)
-	if err != nil {
-		return Alchemy{}, err
+func NewSimulatedAlchemy(backend *simulated.Backend) (SimulatedAlchemy, error) {
+	if backend == nil {
+		return SimulatedAlchemy{}, errors.New("no connected simulated backend")
 	}
 
-	alchemyProvider := NewAlchemyProvider(alchemyConfig)
-	eth := ether.NewEtherApi(
-		alchemyProvider,
-		alchemyConfig.toEtherApiConfig(),
-	)
+	alchemyProvider := NewAlchemyProvider(AlchemyConfig{})
+	eth := ether.NewSimulatedApi(backend)
 	alchemyProvider.SetEth(eth)
 	coreNamespace := namespace.NewCore(eth)
 	transactNamespace := namespace.NewTransactNamespace(eth)
@@ -35,9 +46,7 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 	erc20Namespace := namespace.NewERC20Namespace(eth)
 	stableCoinNamespace := namespace.NewStableCoinNamespace(eth)
 	debugNamespace := namespace.NewDebugNamespace(eth)
-
-	return Alchemy{
-		config:     alchemyConfig,
+	return SimulatedAlchemy{
 		Core:       coreNamespace,
 		Transact:   transactNamespace,
 		Nft:        nftNamespace,
@@ -48,6 +57,6 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 	}, nil
 }
 
-func (gas *Alchemy) GetProvider() types.IAlchemyProvider {
+func (gas *SimulatedAlchemy) GetProvider() types.IAlchemyProvider {
 	return gas.provider
 }

@@ -78,4 +78,18 @@ func TestEther_BatchCall(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 	})
+
+	t.Run("simulated backend does not support BatchCall", func(t *testing.T) {
+		// Arrange
+		ether, cleanup := newSimulatedEtherForTest(t)
+		defer cleanup()
+
+		// Act
+		err := ether.BatchCall([]rpc.BatchElem{
+			{Method: "eth_blockNumber", Args: []any{}, Result: new(string)},
+		})
+
+		// Assert
+		assert.ErrorContains(t, err, "simulated backend doesn't support BatchCall")
+	})
 }

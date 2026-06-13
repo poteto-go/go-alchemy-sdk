@@ -64,5 +64,17 @@ func TestEther_PeerCount(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 		})
+
+		t.Run("simulated backend does not support PeerCount", func(t *testing.T) {
+			// Arrange
+			ether, cleanup := newSimulatedEtherForTest(t)
+			defer cleanup()
+
+			// Act
+			_, err := ether.PeerCount()
+
+			// Assert
+			assert.ErrorContains(t, err, "simulated backend doesn't support PeerCount")
+		})
 	})
 }
