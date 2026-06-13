@@ -56,6 +56,34 @@ type WalletNft interface {
 	SafeTransferFromWithDataNoWait(contractAddress, fromAddress, toAddress string, tokenId *big.Int, data []byte, gasLimit *uint64) (common.Hash, error)
 
 	/*
+		approve another address to transfer the NFT with the given tokenId
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	Approve(ctx context.Context, contractAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		approve another address to transfer the NFT with the given tokenId
+			- gas limit is 300000 for default
+	*/
+	ApproveNoWait(contractAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		grant or revoke an operator's approval to manage all of the caller's NFTs
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	SetApprovalForAll(ctx context.Context, contractAddress, operator string, approved bool, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		grant or revoke an operator's approval to manage all of the caller's NFTs
+			- gas limit is 300000 for default
+	*/
+	SetApprovalForAllNoWait(contractAddress, operator string, approved bool, gasLimit *uint64) (common.Hash, error)
+
+	/*
 		get owner of the NFT with the given tokenId
 	*/
 	OwnerOf(contractAddress string, tokenId *big.Int) (string, error)

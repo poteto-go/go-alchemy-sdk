@@ -43,6 +43,9 @@ var (
 	IsApprovedForAllFnSignature         = []byte("isApprovedForAll(address,address)")
 	SafeTransferFromFnSignature         = []byte("safeTransferFrom(address,address,uint256)")
 	SafeTransferFromWithDataFnSignature = []byte("safeTransferFrom(address,address,uint256,bytes)")
+	SetApprovalForAllFnSignature        = []byte("setApprovalForAll(address,bool)")
+	// NOTE: ERC-721 approve(to, tokenId) has the same selector as ERC-20's
+	// approve(address,uint256), so it reuses ApproveFnSignature above.
 
 	// EIP-2612
 	PermitFnSignature          = []byte("permit(address,address,uint256,uint256,uint8,bytes32,bytes32)")

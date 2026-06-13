@@ -114,3 +114,40 @@ receipt, err := w.Nft().SafeTransferFromWithData(
 
 txHash, err := w.Nft().SafeTransferFromWithDataNoWait("<contractAddress>", "<fromAddress>", "<toAddress>", big.NewInt(1), data, nil)
 ```
+
+### Approve & ApproveNoWait
+
+Approve another address to transfer the NFT with the given `tokenId`. The
+approval is cleared automatically when the token is transferred.
+
+```go
+receipt, err := w.Nft().Approve(
+	context.Background(),
+	"<contractAddress>",
+	"<toAddress>",
+	big.NewInt(1),
+	nil,
+)
+
+// or without waiting for the receipt
+txHash, err := w.Nft().ApproveNoWait("<contractAddress>", "<toAddress>", big.NewInt(1), nil)
+```
+
+### SetApprovalForAll & SetApprovalForAllNoWait
+
+Grant or revoke an operator's approval to manage **all** of the connected
+wallet's NFTs in the collection. Pass `approved=true` to grant and `false` to
+revoke.
+
+```go
+receipt, err := w.Nft().SetApprovalForAll(
+	context.Background(),
+	"<contractAddress>",
+	"<operatorAddress>",
+	true,
+	nil,
+)
+
+// or without waiting for the receipt
+txHash, err := w.Nft().SetApprovalForAllNoWait("<contractAddress>", "<operatorAddress>", true, nil)
+```
