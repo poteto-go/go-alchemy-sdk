@@ -56,7 +56,8 @@ func ABIUint256(v *big.Int) []byte {
 func ABIBytes(data []byte) []byte {
 	paddedDataLen := ((len(data) + constant.ABIWordSize - 1) / constant.ABIWordSize) * constant.ABIWordSize
 	b := make([]byte, constant.ABIWordSize+paddedDataLen)
-	binary.BigEndian.PutUint64(b[constant.ABIWordSize-8:constant.ABIWordSize], uint64(len(data)))
+	// First word is the byte length, encoded as a 32-byte ABI uint256.
+	copy(b, ABIUint256(big.NewInt(int64(len(data)))))
 	copy(b[constant.ABIWordSize:], data)
 	return b
 }

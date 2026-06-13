@@ -466,6 +466,21 @@ func TestSimulated_Nft(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, strings.ToLower(initAddress), owner)
 
+			// SafeTransferFrom must reject a contract that does not implement
+			// onERC721Received. Deploy an arbitrary (ERC20) contract and confirm
+			// the safe transfer to it reverts while the token stays put.
+			erc20Metadata := &artifacts.ERC20MetaData
+			deployer.BindDeploymentMetadata(erc20Metadata, big.NewInt(1000))
+			nonReceiver, err := w.DeployContract(context.Background(), erc20Metadata)
+			assert.Nil(t, err)
+
+			_, err = w.Nft().SafeTransferFrom(context.Background(), contractHex, initAddress, nonReceiver.Hex(), tokenId, nil)
+			assert.Error(t, err)
+
+			owner, err = w.Nft().OwnerOf(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(initAddress), owner)
+
 			// SafeTransferFromWithData: initAddress -> otherAddress with payload.
 			_, err = w.Nft().SafeTransferFromWithData(context.Background(), contractHex, initAddress, otherAddress, tokenId, []byte{0xde, 0xad, 0xbe, 0xef}, nil)
 			assert.Nil(t, err)
