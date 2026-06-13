@@ -23,7 +23,7 @@ Because the simulated backend runs in-process and does not have an HTTP JSON-RPC
 
 ## Tutorial: Integration in Unit Tests
 
-The following example demonstrates how to set up an in-process `simulated.Backend` to test your smart contract interactions.
+The following example demonstrates how to set up an in-process `simulated.Backend` to test your smart contract interactions, including deployment and transaction.
 
 ```go
 func TestMyContractInteraction(t *testing.T) {
@@ -40,8 +40,17 @@ func TestMyContractInteraction(t *testing.T) {
 	alchemy, err := gas.NewSimulatedAlchemy(backend)
 	assert.NoError(t, err)
 
-	// 3. Now use the 'alchemy' object for operations
-	// e.g., deploy, transact, or call contract methods
+	// 3. Deploy a contract
+	w, _ := wallet.New(initPrivateKey)
+	w.Connect(alchemy.GetProvider())
+	contractAddress, err := w.DeployContract(context.Background(), &artifacts.MyContractMetaData)
+	assert.NoError(t, err)
+
+	// 4. Transact with the contract
+	data := myContract.PackStore(big.NewInt(42))
+	receipt, err := w.ContractTransact(context.Background(), contractAddress.Hex(), data)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(1), receipt.Status)
 }
 ```
 
