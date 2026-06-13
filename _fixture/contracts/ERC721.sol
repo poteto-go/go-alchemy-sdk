@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+interface IERC721Receiver {
+    function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data)
+        external
+        returns (bytes4);
+}
+
 contract ERC721 {
     string public name = "Minimal NFT";
     string public symbol = "MNFT";
@@ -69,6 +75,18 @@ contract ERC721 {
         emit Transfer(from, to, tokenId);
     }
 
+    function safeTransferFrom(address from, address to, uint256 tokenId) public {
+        safeTransferFrom(from, to, tokenId, "");
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public {
+        transferFrom(from, to, tokenId);
+        require(
+            _checkOnERC721Received(from, to, tokenId, data),
+            "ERC721: transfer to non ERC721Receiver implementer"
+        );
+    }
+
     function mint(address to, uint256 tokenId) public {
         require(to != address(0), "ERC721: mint to the zero address");
         require(_owners[tokenId] == address(0), "ERC721: token already minted");
@@ -76,6 +94,21 @@ contract ERC721 {
         _balances[to] += 1;
         _owners[tokenId] = to;
         emit Transfer(address(0), to, tokenId);
+    }
+
+    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data)
+        private
+        returns (bool)
+    {
+        if (to.code.length == 0) {
+            // Recipient is an EOA; nothing to call.
+            return true;
+        }
+        try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) returns (bytes4 retval) {
+            return retval == IERC721Receiver.onERC721Received.selector;
+        } catch {
+            return false;
+        }
     }
 
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {

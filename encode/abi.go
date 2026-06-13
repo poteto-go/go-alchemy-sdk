@@ -49,3 +49,15 @@ func ABIAddress(address string) []byte {
 func ABIUint256(v *big.Int) []byte {
 	return common.LeftPadBytes(v.Bytes(), constant.ABIWordSize)
 }
+
+// ABIBytes encodes the tail of a dynamic `bytes` argument: a 32-byte length
+// word followed by the data right-padded to a word boundary. The caller is
+// responsible for emitting the preceding offset word that points at this tail.
+func ABIBytes(data []byte) []byte {
+	paddedDataLen := ((len(data) + constant.ABIWordSize - 1) / constant.ABIWordSize) * constant.ABIWordSize
+	b := make([]byte, constant.ABIWordSize+paddedDataLen)
+	// First word is the byte length, encoded as a 32-byte ABI uint256.
+	copy(b, ABIUint256(big.NewInt(int64(len(data)))))
+	copy(b[constant.ABIWordSize:], data)
+	return b
+}

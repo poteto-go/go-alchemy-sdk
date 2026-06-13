@@ -37,10 +37,12 @@ var (
 	UpdatePauserFnSignature       = []byte("updatePauser(address)")
 
 	// ERC-721 function signatures
-	OwnerOfFnSignature          = []byte("ownerOf(uint256)")
-	TokenURIFnSignature         = []byte("tokenURI(uint256)")
-	GetApprovedFnSignature      = []byte("getApproved(uint256)")
-	IsApprovedForAllFnSignature = []byte("isApprovedForAll(address,address)")
+	OwnerOfFnSignature                  = []byte("ownerOf(uint256)")
+	TokenURIFnSignature                 = []byte("tokenURI(uint256)")
+	GetApprovedFnSignature              = []byte("getApproved(uint256)")
+	IsApprovedForAllFnSignature         = []byte("isApprovedForAll(address,address)")
+	SafeTransferFromFnSignature         = []byte("safeTransferFrom(address,address,uint256)")
+	SafeTransferFromWithDataFnSignature = []byte("safeTransferFrom(address,address,uint256,bytes)")
 
 	// EIP-2612
 	PermitFnSignature          = []byte("permit(address,address,uint256,uint256,uint8,bytes32,bytes32)")
