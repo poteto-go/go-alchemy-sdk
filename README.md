@@ -18,7 +18,7 @@ It supports not only Alchemy, but also other EVM chains.
 
 ⚙️ Designed to meet the needs of custom private chains, such as those requiring custom headers.
 
-🧪 easily mock rpc responses w/ `alchemymock`.
+🧪 easily ut your web3.0 application or smart contract w/ simulated backend.
 
 🪙 StableCoin native support
 
