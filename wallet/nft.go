@@ -116,6 +116,42 @@ func (api *walletNft) SafeTransferFromWithDataNoWait(contractAddress, fromAddres
 	)
 }
 
+func (api *walletNft) Approve(ctx context.Context, contractAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.ApproveNoWait(contractAddress, toAddress, tokenId, gasLimit)
+	})
+}
+
+func (api *walletNft) ApproveNoWait(contractAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(toAddress); err != nil {
+		return common.Hash{}, err
+	}
+	if err := validateUint256(tokenId); err != nil {
+		return common.Hash{}, err
+	}
+	// ERC721 approve(to, tokenId) shares the ERC20 approve selector.
+	return api.sendNftTx(contractAddress, gasLimit, constant.ApproveFnSignature,
+		encode.ABIAddress(toAddress),
+		encode.ABIUint256(tokenId),
+	)
+}
+
+func (api *walletNft) SetApprovalForAll(ctx context.Context, contractAddress, operator string, approved bool, gasLimit *uint64) (*gethTypes.Receipt, error) {
+	return api.waitMined(ctx, func() (common.Hash, error) {
+		return api.SetApprovalForAllNoWait(contractAddress, operator, approved, gasLimit)
+	})
+}
+
+func (api *walletNft) SetApprovalForAllNoWait(contractAddress, operator string, approved bool, gasLimit *uint64) (common.Hash, error) {
+	if err := validateAddress(operator); err != nil {
+		return common.Hash{}, err
+	}
+	return api.sendNftTx(contractAddress, gasLimit, constant.SetApprovalForAllFnSignature,
+		encode.ABIAddress(operator),
+		encode.ABIBool(approved),
+	)
+}
+
 func (api *walletNft) OwnerOf(contractAddress string, tokenId *big.Int) (string, error) {
 	nft := api.w.snapshotNft()
 	if nft == nil {

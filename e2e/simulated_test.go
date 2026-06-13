@@ -489,6 +489,36 @@ func TestSimulated_Nft(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, strings.ToLower(otherAddress), owner)
 		})
+
+		t.Run("can approve & setApprovalForAll via wallet Nft namespace", func(t *testing.T) {
+			otherWallet, err := wallet.New(otherPrivateKey)
+			assert.Nil(t, err)
+			otherWallet.Connect(alchemy.GetProvider())
+
+			// Token 1 is currently owned by otherAddress; approve initAddress.
+			_, err = otherWallet.Nft().Approve(context.Background(), contractHex, initAddress, tokenId, nil)
+			assert.Nil(t, err)
+
+			approved, err := w.Nft().GetApproved(contractHex, tokenId)
+			assert.Nil(t, err)
+			assert.Equal(t, strings.ToLower(initAddress), approved)
+
+			// Grant initAddress operator approval over all of otherAddress's NFTs.
+			_, err = otherWallet.Nft().SetApprovalForAll(context.Background(), contractHex, initAddress, true, nil)
+			assert.Nil(t, err)
+
+			isApproved, err := w.Nft().IsApprovedForAll(contractHex, otherAddress, initAddress)
+			assert.Nil(t, err)
+			assert.True(t, isApproved)
+
+			// Revoke it again.
+			_, err = otherWallet.Nft().SetApprovalForAll(context.Background(), contractHex, initAddress, false, nil)
+			assert.Nil(t, err)
+
+			isApproved, err = w.Nft().IsApprovedForAll(contractHex, otherAddress, initAddress)
+			assert.Nil(t, err)
+			assert.False(t, isApproved)
+		})
 	})
 }
 

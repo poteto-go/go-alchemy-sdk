@@ -610,3 +610,304 @@ func TestWallet_NftSafeTransferFromWithDataNoWait(t *testing.T) {
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
 }
+
+func TestWallet_NftApprove(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	toAddress := "0xAbcdef1234567890abcdef1234567890AbCdEf12"
+	tokenId := big.NewInt(1)
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can approve", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.Nft().Approve(context.Background(), contractAddress, toAddress, tokenId, nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("handle error on approve", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.Nft().Approve(context.Background(), contractAddress, toAddress, tokenId, nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.Nft().Approve(context.Background(), contractAddress, toAddress, tokenId, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_NftApproveNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	toAddress := "0xAbcdef1234567890abcdef1234567890AbCdEf12"
+	tokenId := big.NewInt(1)
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can approve no wait & encodes approve calldata", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		var captured types.TransactionRequest
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, req types.TransactionRequest) (common.Hash, error) {
+				captured = req
+				return expectedHash, nil
+			},
+		)
+
+		txHash, err := w.Nft().ApproveNoWait(contractAddress, toAddress, tokenId, nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, txHash)
+
+		expectedData := encode.ReadCalldata(
+			constant.ApproveFnSignature,
+			encode.ABIAddress(toAddress),
+			encode.ABIUint256(tokenId),
+		)
+		assert.Equal(t, expectedData, captured.Data)
+		assert.Equal(t, contractAddress, captured.To)
+		assert.Equal(t, uint64(300000), captured.GasLimit)
+	})
+
+	t.Run("can approve no wait w/ custom gasLimit", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		var captured types.TransactionRequest
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, req types.TransactionRequest) (common.Hash, error) {
+				captured = req
+				return expectedHash, nil
+			},
+		)
+
+		gasLimit := uint64(500000)
+		_, err := w.Nft().ApproveNoWait(contractAddress, toAddress, tokenId, &gasLimit)
+
+		assert.Nil(t, err)
+		assert.Equal(t, uint64(500000), captured.GasLimit)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.Nft().ApproveNoWait(contractAddress, toAddress, tokenId, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("invalid to-address returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.Nft().ApproveNoWait(contractAddress, "invalid", tokenId, nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("nil tokenId returns ErrNilAmount", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.Nft().ApproveNoWait(contractAddress, toAddress, nil, nil)
+
+		assert.ErrorIs(t, err, constant.ErrNilAmount)
+	})
+
+	t.Run("invalid contractAddress returns ErrInvalidAddress", func(t *testing.T) {
+		w := createConnectedWallet()
+
+		_, err := w.Nft().ApproveNoWait("invalid", toAddress, tokenId, nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+}
+
+func TestWallet_NftSetApprovalForAll(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	operatorAddress := "0xAbcdef1234567890abcdef1234567890AbCdEf12"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("can set approval for all", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return expectedHash, nil
+			},
+		)
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"WaitMined",
+			func(_ *ether.Ether, _ context.Context, _ common.Hash) (*gethTypes.Receipt, error) {
+				return &gethTypes.Receipt{}, nil
+			},
+		)
+
+		_, err := w.Nft().SetApprovalForAll(context.Background(), contractAddress, operatorAddress, true, nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("handle error on set approval for all", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, _ types.TransactionRequest) (common.Hash, error) {
+				return common.Hash{}, errors.New("error")
+			},
+		)
+
+		_, err := w.Nft().SetApprovalForAll(context.Background(), contractAddress, operatorAddress, true, nil)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.Nft().SetApprovalForAll(context.Background(), contractAddress, operatorAddress, true, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+}
+
+func TestWallet_NftSetApprovalForAllNoWait(t *testing.T) {
+	contractAddress := "0x1234567890123456789012345678901234567890"
+	operatorAddress := "0xAbcdef1234567890abcdef1234567890AbCdEf12"
+	expectedHash := common.HexToHash("0x123")
+
+	t.Run("encodes setApprovalForAll calldata (approved=true)", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		var captured types.TransactionRequest
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, req types.TransactionRequest) (common.Hash, error) {
+				captured = req
+				return expectedHash, nil
+			},
+		)
+
+		txHash, err := w.Nft().SetApprovalForAllNoWait(contractAddress, operatorAddress, true, nil)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedHash, txHash)
+
+		expectedData := encode.ReadCalldata(
+			constant.SetApprovalForAllFnSignature,
+			encode.ABIAddress(operatorAddress),
+			encode.ABIBool(true),
+		)
+		assert.Equal(t, expectedData, captured.Data)
+		assert.Equal(t, contractAddress, captured.To)
+		assert.Equal(t, uint64(300000), captured.GasLimit)
+	})
+
+	t.Run("encodes setApprovalForAll calldata (approved=false)", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		w := createConnectedWallet()
+
+		var captured types.TransactionRequest
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"SendTransaction",
+			func(_ *wallet, req types.TransactionRequest) (common.Hash, error) {
+				captured = req
+				return expectedHash, nil
+			},
+		)
+
+		_, err := w.Nft().SetApprovalForAllNoWait(contractAddress, operatorAddress, false, nil)
+
+		assert.Nil(t, err)
+
+		expectedData := encode.ReadCalldata(
+			constant.SetApprovalForAllFnSignature,
+			encode.ABIAddress(operatorAddress),
+			encode.ABIBool(false),
+		)
+		assert.Equal(t, expectedData, captured.Data)
+	})
+
+	t.Run("error w/o connect wallet", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.Nft().SetApprovalForAllNoWait(contractAddress, operatorAddress, true, nil)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
+	})
+
+	t.Run("invalid operator returns ErrInvalidAddress", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.Nft().SetApprovalForAllNoWait(contractAddress, "invalid", true, nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("invalid contractAddress returns ErrInvalidAddress", func(t *testing.T) {
+		w := createConnectedWallet()
+
+		_, err := w.Nft().SetApprovalForAllNoWait("invalid", operatorAddress, true, nil)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+}

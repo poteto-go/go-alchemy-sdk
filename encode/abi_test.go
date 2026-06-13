@@ -109,3 +109,20 @@ func TestABIUint256(t *testing.T) {
 		assert.Equal(t, 0, v.Cmp(decoded))
 	})
 }
+
+func TestABIBool(t *testing.T) {
+	t.Run("encodes true to 0x00..01", func(t *testing.T) {
+		out := encode.ABIBool(true)
+
+		assert.Equal(t, constant.ABIWordSize, len(out))
+		assert.Equal(t, make([]byte, 31), out[:31])
+		assert.Equal(t, byte(0x01), out[31])
+	})
+
+	t.Run("encodes false to all zeros", func(t *testing.T) {
+		out := encode.ABIBool(false)
+
+		assert.Equal(t, constant.ABIWordSize, len(out))
+		assert.Equal(t, make([]byte, 32), out)
+	})
+}

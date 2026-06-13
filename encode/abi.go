@@ -50,6 +50,16 @@ func ABIUint256(v *big.Int) []byte {
 	return common.LeftPadBytes(v.Bytes(), constant.ABIWordSize)
 }
 
+// ABIBool encodes a bool as a 32-byte ABI word (0x00..01 for true, all zeros
+// for false).
+func ABIBool(v bool) []byte {
+	b := make([]byte, constant.ABIWordSize)
+	if v {
+		b[constant.ABIWordSize-1] = 1
+	}
+	return b
+}
+
 // ABIBytes encodes the tail of a dynamic `bytes` argument: a 32-byte length
 // word followed by the data right-padded to a word boundary. The caller is
 // responsible for emitting the preceding offset word that points at this tail.
