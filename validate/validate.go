@@ -67,6 +67,14 @@ func Url(rawUrl string) error {
 	return nil
 }
 
+// declaredLengthExceedsAvailable returns true when a declared length (items or
+// bytes) would read past the end of the available data region.
+// Compare as *big.Int to avoid Int64() overflow: a length whose lower 64
+// bits are >= 2^63 would become negative and slip past a naive bounds check.
+func declaredLengthExceedsAvailable(declared *big.Int, available int) bool {
+	return declared.Cmp(big.NewInt(int64(available))) > 0
+}
+
 // ABIUint256Array validates an ABI-encoded uint256[] return value
 // (offset word + length word + element words) against the available output,
 // guarding callers against a slice out-of-range panic.
@@ -75,11 +83,8 @@ func ABIUint256Array(output []byte) error {
 		return constant.ErrInvalidABIArray
 	}
 	dataStart := constant.ABIWordSize * 2
-	// Compare as *big.Int to avoid Int64() overflow: a length whose lower 64
-	// bits are >= 2^63 would become negative and slip past a naive bounds check.
 	length := new(big.Int).SetBytes(output[constant.ABIWordSize:dataStart])
-	maxLength := big.NewInt(int64((len(output) - dataStart) / constant.ABIWordSize))
-	if length.Cmp(maxLength) > 0 {
+	if declaredLengthExceedsAvailable(length, (len(output)-dataStart)/constant.ABIWordSize) {
 		return constant.ErrInvalidABIArray
 	}
 	return nil
@@ -92,14 +97,9 @@ func ABIString(output []byte) error {
 	if len(output) < constant.ABIStringHeaderSize {
 		return constant.ErrInvalidABIString
 	}
-
-	// Compare as *big.Int to avoid Int64() overflow: a length whose lower 64
-	// bits are >= 2^63 would become negative and slip past a naive bounds check.
 	length := new(big.Int).SetBytes(output[constant.ABIWordSize : constant.ABIWordSize*2])
-	maxLength := big.NewInt(int64(len(output) - constant.ABIStringHeaderSize))
-	if length.Cmp(maxLength) > 0 {
+	if declaredLengthExceedsAvailable(length, len(output)-constant.ABIStringHeaderSize) {
 		return constant.ErrInvalidABIString
 	}
-
 	return nil
 }

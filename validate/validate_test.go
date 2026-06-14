@@ -127,6 +127,40 @@ func TestUrl(t *testing.T) {
 	}
 }
 
+func TestABIUint256Array(t *testing.T) {
+	t.Run("valid: empty array", func(t *testing.T) {
+		out := make([]byte, constant.ABIWordSize*2)
+		assert.NoError(t, validate.ABIUint256Array(out))
+	})
+
+	t.Run("valid: length fits within output", func(t *testing.T) {
+		// offset(32) + length=2(32) + 2 item words(64) = 128 bytes
+		out := make([]byte, constant.ABIWordSize*4)
+		out[constant.ABIWordSize*2-1] = 2
+		assert.NoError(t, validate.ABIUint256Array(out))
+	})
+
+	t.Run("too short: under 64 bytes", func(t *testing.T) {
+		assert.ErrorIs(t, validate.ABIUint256Array(make([]byte, 31)), constant.ErrInvalidABIArray)
+	})
+
+	t.Run("declared length exceeds output", func(t *testing.T) {
+		// offset + length=5 but no element words follow
+		out := append(make([]byte, constant.ABIWordSize), append(make([]byte, constant.ABIWordSize-1), 0x05)...)
+		assert.ErrorIs(t, validate.ABIUint256Array(out), constant.ErrInvalidABIArray)
+	})
+
+	t.Run("malicious length does not panic", func(t *testing.T) {
+		out := make([]byte, constant.ABIWordSize*2)
+		for i := constant.ABIWordSize; i < constant.ABIWordSize*2; i++ {
+			out[i] = 0xFF
+		}
+		assert.NotPanics(t, func() {
+			assert.ErrorIs(t, validate.ABIUint256Array(out), constant.ErrInvalidABIArray)
+		})
+	})
+}
+
 func TestABIString(t *testing.T) {
 	t.Run("normal case: valid header and length", func(t *testing.T) {
 		// header declares length 3 with a full data word following.

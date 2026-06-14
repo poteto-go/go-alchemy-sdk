@@ -1021,21 +1021,8 @@ func TestScenario_Erc1155(t *testing.T) {
 	tokenId1 := big.NewInt(1)
 	tokenId2 := big.NewInt(2)
 
-	mint := func(id, amount *big.Int) {
-		data := erc1155Contract.PackMint(common.HexToAddress(initAddress), id, amount)
-		txHash, err := w.SendTransaction(types.TransactionRequest{
-			From:     initAddress,
-			To:       contractHex,
-			Value:    "0x0",
-			GasLimit: 300000,
-			Data:     data,
-		})
-		assert.Nil(t, err)
-		_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
-		assert.Nil(t, err)
-	}
-	mint(tokenId1, big.NewInt(10))
-	mint(tokenId2, big.NewInt(20))
+	mintERC1155(t, erc1155Contract, w, contractHex, alchemy.Transact, tokenId1, big.NewInt(10))
+	mintERC1155(t, erc1155Contract, w, contractHex, alchemy.Transact, tokenId2, big.NewInt(20))
 
 	t.Run("can get uri via ERC1155 namespace", func(t *testing.T) {
 		uri, err := alchemy.ERC1155.Uri(contractHex, tokenId1)

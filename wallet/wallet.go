@@ -321,7 +321,7 @@ func (w *wallet) Nft() types.WalletNft {
 	return &walletNft{w: w}
 }
 
-func (w *wallet) ERC1155() types.WalletErc1155 {
+func (w *wallet) ERC1155() types.WalletERC1155 {
 	return &walletErc1155{walletNft: &walletNft{w: w}}
 }
 

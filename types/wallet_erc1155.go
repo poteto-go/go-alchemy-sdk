@@ -2,9 +2,9 @@ package types
 
 import "math/big"
 
-// WalletErc1155 (ERC1155 multi-token) interface for wallet.
+// WalletERC1155 (ERC1155 multi-token) interface for wallet.
 // Embeds WalletNft to inherit ERC-721 compatible read/write methods.
-type WalletErc1155 interface {
+type WalletERC1155 interface {
 	WalletNft
 
 	/*

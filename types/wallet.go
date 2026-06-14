@@ -119,7 +119,7 @@ type Wallet interface {
 	Nft() WalletNft
 
 	/* ERC1155 (multi-token) support */
-	ERC1155() WalletErc1155
+	ERC1155() WalletERC1155
 
 	/*
 		ResetPool clears the cached ChainID and TransactOpts.

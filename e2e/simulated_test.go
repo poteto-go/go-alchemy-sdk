@@ -14,6 +14,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/deployer"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
+	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/typeddata"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/wallet"
@@ -541,21 +542,8 @@ func TestSimulated_Erc1155(t *testing.T) {
 	tokenId1 := big.NewInt(1)
 	tokenId2 := big.NewInt(2)
 
-	mint := func(id, amount *big.Int) {
-		data := erc1155Contract.PackMint(common.HexToAddress(initAddress), id, amount)
-		txHash, err := w.SendTransaction(types.TransactionRequest{
-			From:     initAddress,
-			To:       contractHex,
-			Value:    "0x0",
-			GasLimit: 300000,
-			Data:     data,
-		})
-		assert.Nil(t, err)
-		_, err = alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
-		assert.Nil(t, err)
-	}
-	mint(tokenId1, big.NewInt(10))
-	mint(tokenId2, big.NewInt(20))
+	mintERC1155(t, erc1155Contract, w, contractHex, alchemy.Transact, tokenId1, big.NewInt(10))
+	mintERC1155(t, erc1155Contract, w, contractHex, alchemy.Transact, tokenId2, big.NewInt(20))
 
 	t.Run("can get uri via ERC1155 namespace", func(t *testing.T) {
 		uri, err := alchemy.ERC1155.Uri(contractHex, tokenId1)
@@ -1065,4 +1053,19 @@ func TestSimulated_StableCoin_FiatToken(t *testing.T) {
 
 func TestSimulated_Debug(t *testing.T) {
 	t.Skip("Debug.Snapshot / Debug.RevertTo use evm_snapshot / evm_revert over provider.Send, unavailable on simulated backend")
+}
+
+func mintERC1155(t *testing.T, contract *artifacts.ERC1155, w types.Wallet, contractHex string, transact namespace.ITransact, id, amount *big.Int) {
+	t.Helper()
+	data := contract.PackMint(common.HexToAddress(initAddress), id, amount)
+	txHash, err := w.SendTransaction(types.TransactionRequest{
+		From:     initAddress,
+		To:       contractHex,
+		Value:    "0x0",
+		GasLimit: 300000,
+		Data:     data,
+	})
+	assert.Nil(t, err)
+	_, err = transact.WaitMined(context.Background(), txHash.Hex())
+	assert.Nil(t, err)
 }
