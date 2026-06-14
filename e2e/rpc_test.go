@@ -1005,6 +1005,10 @@ func TestScenario_Nft(t *testing.T) {
 	})
 }
 
+func TestScenario_Erc1155(t *testing.T) {
+	runErc1155ReadScenario(t, alchemy.Erc1155, alchemy.Transact, alchemy.GetProvider())
+}
+
 func TestScenario_SendTransaction(t *testing.T) {
 	w, err := wallet.New(initPrivateKey)
 

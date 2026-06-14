@@ -14,6 +14,31 @@ func Uint256(output []byte) (*big.Int, error) {
 	return new(big.Int).SetBytes(output), nil
 }
 
+// Uint256Array decodes an ABI-encoded dynamic uint256[] return value
+// (offset, length, items). The leading offset word points at the length field
+// and is assumed to be the standard 0x20 for a single dynamic return.
+func Uint256Array(output []byte) ([]*big.Int, error) {
+	// Need at least the offset and length words.
+	if len(output) < constant.ABIWordSize*2 {
+		return nil, fmt.Errorf("invalid ABI uint256[]: output too short, got %d bytes", len(output))
+	}
+	dataStart := constant.ABIWordSize * 2
+	// Compare as *big.Int to avoid Int64() overflow: a length whose lower 64
+	// bits are >= 2^63 would become negative and slip past a naive bounds check.
+	length := new(big.Int).SetBytes(output[constant.ABIWordSize:dataStart])
+	maxLength := big.NewInt(int64((len(output) - dataStart) / constant.ABIWordSize))
+	if length.Cmp(maxLength) > 0 {
+		return nil, fmt.Errorf("invalid ABI uint256[]: declared length %s exceeds output", length)
+	}
+	n := int(length.Int64())
+	result := make([]*big.Int, n)
+	for i := 0; i < n; i++ {
+		start := dataStart + i*constant.ABIWordSize
+		result[i] = new(big.Int).SetBytes(output[start : start+constant.ABIWordSize])
+	}
+	return result, nil
+}
+
 // Bool decodes an ABI bool (non-zero last byte is true).
 func Bool(output []byte) (bool, error) {
 	return len(output) > 0 && output[len(output)-1] == 1, nil

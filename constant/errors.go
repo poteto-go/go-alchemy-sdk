@@ -53,6 +53,7 @@ var (
 	ErrUnexpectedNoContractAddress      = errors.New("unexpected no contract address")
 	ErrUnSupportSimulatedMethod         = errors.New("unsupported method on simulated backend")
 	ErrUnexpectedNilSimulatedBackend    = errors.New("unexpected nil of simulated backend")
+	ErrMismatchedArrayLength            = errors.New("array arguments must have the same length")
 )
 
 var HttpClientErrorCodeList = []int{

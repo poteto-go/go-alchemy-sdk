@@ -522,6 +522,13 @@ func TestSimulated_Nft(t *testing.T) {
 	})
 }
 
+func TestSimulated_Erc1155(t *testing.T) {
+	alchemy, cleanup := newSimulatedAlchemy(t)
+	defer cleanup()
+
+	runErc1155ReadScenario(t, alchemy.Erc1155, alchemy.Transact, alchemy.GetProvider())
+}
+
 func TestSimulated_SendTransaction(t *testing.T) {
 	alchemy, cleanup := newSimulatedAlchemy(t)
 	defer cleanup()

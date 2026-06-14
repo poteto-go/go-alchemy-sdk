@@ -71,3 +71,52 @@ func ABIBytes(data []byte) []byte {
 	copy(b[constant.ABIWordSize:], data)
 	return b
 }
+
+// ABIUint256Array encodes the tail of a dynamic `uint256[]` argument: a 32-byte
+// length word followed by one ABI word per element. The caller is responsible
+// for emitting the preceding offset word that points at this tail.
+func ABIUint256Array(vs []*big.Int) []byte {
+	b := make([]byte, 0, constant.ABIWordSize*(1+len(vs)))
+	b = append(b, ABIUint256(big.NewInt(int64(len(vs))))...)
+	for _, v := range vs {
+		b = append(b, ABIUint256(v)...)
+	}
+	return b
+}
+
+// ABIAddressArray encodes the tail of a dynamic `address[]` argument: a 32-byte
+// length word followed by one left-padded ABI word per address. The caller is
+// responsible for emitting the preceding offset word that points at this tail.
+func ABIAddressArray(addresses []string) []byte {
+	b := make([]byte, 0, constant.ABIWordSize*(1+len(addresses)))
+	b = append(b, ABIUint256(big.NewInt(int64(len(addresses))))...)
+	for _, addr := range addresses {
+		b = append(b, ABIAddress(addr)...)
+	}
+	return b
+}
+
+// ABIDynamicArgs packs a sequence of all-dynamic arguments (e.g. the tails from
+// ABIBytes / ABIUint256Array / ABIAddressArray) into a single calldata blob:
+// one offset word per argument forming the head, followed by every tail. Each
+// offset points at where its tail begins relative to the start of the head.
+// Use this for methods whose arguments are all dynamic, such as
+// balanceOfBatch(address[],uint256[]).
+func ABIDynamicArgs(tails ...[]byte) []byte {
+	headSize := len(tails) * constant.ABIWordSize
+	total := headSize
+	for _, tail := range tails {
+		total += len(tail)
+	}
+
+	b := make([]byte, 0, total)
+	offset := headSize
+	for _, tail := range tails {
+		b = append(b, ABIUint256(big.NewInt(int64(offset)))...)
+		offset += len(tail)
+	}
+	for _, tail := range tails {
+		b = append(b, tail...)
+	}
+	return b
+}

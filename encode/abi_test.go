@@ -58,6 +58,83 @@ func TestABIBytes(t *testing.T) {
 	})
 }
 
+func TestABIUint256Array(t *testing.T) {
+	t.Run("encodes length word + one word per element", func(t *testing.T) {
+		out := encode.ABIUint256Array([]*big.Int{big.NewInt(1), big.NewInt(256)})
+
+		// length word + two element words.
+		assert.Equal(t, 3*constant.ABIWordSize, len(out))
+		assert.Equal(t, byte(0x02), out[constant.ABIWordSize-1])
+		assert.Equal(t, byte(0x01), out[2*constant.ABIWordSize-1])
+		assert.Equal(t, byte(0x01), out[3*constant.ABIWordSize-2])
+		assert.Equal(t, byte(0x00), out[3*constant.ABIWordSize-1])
+	})
+
+	t.Run("empty slice -> length word only", func(t *testing.T) {
+		out := encode.ABIUint256Array(nil)
+
+		assert.Equal(t, constant.ABIWordSize, len(out))
+		assert.Equal(t, make([]byte, constant.ABIWordSize), out)
+	})
+
+	t.Run("roundtrip with decode.Uint256Array", func(t *testing.T) {
+		vs := []*big.Int{big.NewInt(0), big.NewInt(7), big.NewInt(123456789)}
+		// Prepend the standard single-array return offset (0x20).
+		out := append(encode.ABIUint256(big.NewInt(constant.ABIWordSize)), encode.ABIUint256Array(vs)...)
+
+		decoded, err := decode.Uint256Array(out)
+		assert.NoError(t, err)
+		assert.Equal(t, len(vs), len(decoded))
+		for i := range vs {
+			assert.Equal(t, 0, vs[i].Cmp(decoded[i]))
+		}
+	})
+}
+
+func TestABIAddressArray(t *testing.T) {
+	t.Run("encodes length word + one left-padded word per address", func(t *testing.T) {
+		addr := "0xabc0000000000000000000000000000000000abc"
+		out := encode.ABIAddressArray([]string{addr})
+
+		// length word + one address word.
+		assert.Equal(t, 2*constant.ABIWordSize, len(out))
+		assert.Equal(t, byte(0x01), out[constant.ABIWordSize-1])
+		assert.Equal(t, make([]byte, 12), out[constant.ABIWordSize:constant.ABIWordSize+12])
+		assert.Equal(t, common.HexToAddress(addr).Bytes(), out[constant.ABIWordSize+12:])
+	})
+
+	t.Run("empty slice -> length word only", func(t *testing.T) {
+		out := encode.ABIAddressArray(nil)
+
+		assert.Equal(t, constant.ABIWordSize, len(out))
+		assert.Equal(t, make([]byte, constant.ABIWordSize), out)
+	})
+}
+
+func TestABIDynamicArgs(t *testing.T) {
+	t.Run("emits one offset word per arg then the tails", func(t *testing.T) {
+		accounts := encode.ABIAddressArray([]string{"0xabc0000000000000000000000000000000000abc"})
+		ids := encode.ABIUint256Array([]*big.Int{big.NewInt(1)})
+
+		out := encode.ABIDynamicArgs(accounts, ids)
+
+		// head: two offset words, then both tails.
+		assert.Equal(t, 2*constant.ABIWordSize+len(accounts)+len(ids), len(out))
+		// first offset points past the head (2 words = 0x40).
+		assert.Equal(t, byte(0x40), out[constant.ABIWordSize-1])
+		// second offset points past the head + accounts tail.
+		expectedSecond := big.NewInt(int64(2*constant.ABIWordSize + len(accounts)))
+		assert.Equal(t, encode.ABIUint256(expectedSecond), out[constant.ABIWordSize:2*constant.ABIWordSize])
+		// tails follow the head in order.
+		assert.Equal(t, accounts, out[2*constant.ABIWordSize:2*constant.ABIWordSize+len(accounts)])
+		assert.Equal(t, ids, out[2*constant.ABIWordSize+len(accounts):])
+	})
+
+	t.Run("no args -> empty", func(t *testing.T) {
+		assert.Equal(t, 0, len(encode.ABIDynamicArgs()))
+	})
+}
+
 func TestReadCalldata(t *testing.T) {
 	t.Run("prepends the 4-byte selector and appends args", func(t *testing.T) {
 		arg := common.LeftPadBytes(common.HexToAddress("0x1").Bytes(), constant.ABIWordSize)

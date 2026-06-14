@@ -1,6 +1,7 @@
 package decode_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -134,6 +135,47 @@ func TestBytes32(t *testing.T) {
 
 	t.Run("too short -> error", func(t *testing.T) {
 		_, err := decode.Bytes32(make([]byte, 31))
+		assert.Error(t, err)
+	})
+}
+
+func TestUint256Array(t *testing.T) {
+	// abiUint256Array builds the standard single dynamic return encoding:
+	// offset(0x20) + length + items.
+	abiUint256Array := func(vs ...int64) []byte {
+		out := make([]byte, 0)
+		out = append(out, append(make([]byte, 31), 0x20)...) // offset
+		out = append(out, append(make([]byte, 31), byte(len(vs)))...)
+		for _, v := range vs {
+			out = append(out, new(big.Int).SetInt64(v).FillBytes(make([]byte, 32))...)
+		}
+		return out
+	}
+
+	t.Run("decodes elements", func(t *testing.T) {
+		out, err := decode.Uint256Array(abiUint256Array(1, 256, 0))
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(out))
+		assert.Equal(t, "1", out[0].String())
+		assert.Equal(t, "256", out[1].String())
+		assert.Equal(t, "0", out[2].String())
+	})
+
+	t.Run("empty array", func(t *testing.T) {
+		out, err := decode.Uint256Array(abiUint256Array())
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(out))
+	})
+
+	t.Run("too short -> error", func(t *testing.T) {
+		_, err := decode.Uint256Array(make([]byte, 31))
+		assert.Error(t, err)
+	})
+
+	t.Run("declared length exceeds output -> error", func(t *testing.T) {
+		// offset + length=5 but no element words follow.
+		in := append(append(make([]byte, 31), 0x20), append(make([]byte, 31), 0x05)...)
+		_, err := decode.Uint256Array(in)
 		assert.Error(t, err)
 	})
 }
