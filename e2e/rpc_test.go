@@ -1005,6 +1005,60 @@ func TestScenario_Nft(t *testing.T) {
 	})
 }
 
+func TestScenario_Erc1155(t *testing.T) {
+	const erc1155Uri = "https://example.com/erc1155/{id}.json"
+
+	w, err := wallet.New(initPrivateKey)
+	assert.Nil(t, err)
+	w.Connect(alchemy.GetProvider())
+
+	contractAddress, err := w.DeployContract(context.Background(), &artifacts.ERC1155MetaData)
+	assert.Nil(t, err)
+	assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+	contractHex := contractAddress.Hex()
+
+	erc1155Contract := artifacts.NewERC1155()
+	tokenId1 := big.NewInt(1)
+	tokenId2 := big.NewInt(2)
+
+	mintERC1155(t, erc1155Contract, w, contractHex, alchemy.Transact, tokenId1, big.NewInt(10))
+	mintERC1155(t, erc1155Contract, w, contractHex, alchemy.Transact, tokenId2, big.NewInt(20))
+
+	t.Run("can get uri via ERC1155 namespace", func(t *testing.T) {
+		uri, err := alchemy.ERC1155.Uri(contractHex, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, erc1155Uri, uri)
+	})
+
+	t.Run("can get balanceOfToken minted token", func(t *testing.T) {
+		balance, err := alchemy.ERC1155.BalanceOfToken(contractHex, initAddress, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, "10", balance.String())
+	})
+
+	t.Run("can get balanceOfBatch", func(t *testing.T) {
+		balances, err := alchemy.ERC1155.BalanceOfBatch(
+			contractHex,
+			[]string{initAddress, initAddress},
+			[]*big.Int{tokenId1, tokenId2},
+		)
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(balances))
+		assert.Equal(t, "10", balances[0].String())
+		assert.Equal(t, "20", balances[1].String())
+	})
+
+	t.Run("can call read methods via wallet ERC1155 namespace", func(t *testing.T) {
+		balance, err := w.ERC1155().BalanceOfToken(contractHex, initAddress, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, "10", balance.String())
+
+		uri, err := w.ERC1155().Uri(contractHex, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, erc1155Uri, uri)
+	})
+}
+
 func TestScenario_SendTransaction(t *testing.T) {
 	w, err := wallet.New(initPrivateKey)
 

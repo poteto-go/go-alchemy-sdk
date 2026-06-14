@@ -14,6 +14,7 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/deployer"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
+	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/typeddata"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/wallet"
@@ -522,6 +523,63 @@ func TestSimulated_Nft(t *testing.T) {
 	})
 }
 
+func TestSimulated_Erc1155(t *testing.T) {
+	const erc1155Uri = "https://example.com/erc1155/{id}.json"
+
+	alchemy, cleanup := newSimulatedAlchemy(t)
+	defer cleanup()
+
+	w, err := wallet.New(initPrivateKey)
+	assert.Nil(t, err)
+	w.Connect(alchemy.GetProvider())
+
+	contractAddress, err := w.DeployContract(context.Background(), &artifacts.ERC1155MetaData)
+	assert.Nil(t, err)
+	assert.NotEqual(t, contractAddress, common.HexToAddress("0x0"))
+	contractHex := contractAddress.Hex()
+
+	erc1155Contract := artifacts.NewERC1155()
+	tokenId1 := big.NewInt(1)
+	tokenId2 := big.NewInt(2)
+
+	mintERC1155(t, erc1155Contract, w, contractHex, alchemy.Transact, tokenId1, big.NewInt(10))
+	mintERC1155(t, erc1155Contract, w, contractHex, alchemy.Transact, tokenId2, big.NewInt(20))
+
+	t.Run("can get uri via ERC1155 namespace", func(t *testing.T) {
+		uri, err := alchemy.ERC1155.Uri(contractHex, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, erc1155Uri, uri)
+	})
+
+	t.Run("can get balanceOfToken minted token", func(t *testing.T) {
+		balance, err := alchemy.ERC1155.BalanceOfToken(contractHex, initAddress, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, "10", balance.String())
+	})
+
+	t.Run("can get balanceOfBatch", func(t *testing.T) {
+		balances, err := alchemy.ERC1155.BalanceOfBatch(
+			contractHex,
+			[]string{initAddress, initAddress},
+			[]*big.Int{tokenId1, tokenId2},
+		)
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(balances))
+		assert.Equal(t, "10", balances[0].String())
+		assert.Equal(t, "20", balances[1].String())
+	})
+
+	t.Run("can call read methods via wallet ERC1155 namespace", func(t *testing.T) {
+		balance, err := w.ERC1155().BalanceOfToken(contractHex, initAddress, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, "10", balance.String())
+
+		uri, err := w.ERC1155().Uri(contractHex, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, erc1155Uri, uri)
+	})
+}
+
 func TestSimulated_SendTransaction(t *testing.T) {
 	alchemy, cleanup := newSimulatedAlchemy(t)
 	defer cleanup()
@@ -995,4 +1053,19 @@ func TestSimulated_StableCoin_FiatToken(t *testing.T) {
 
 func TestSimulated_Debug(t *testing.T) {
 	t.Skip("Debug.Snapshot / Debug.RevertTo use evm_snapshot / evm_revert over provider.Send, unavailable on simulated backend")
+}
+
+func mintERC1155(t *testing.T, contract *artifacts.ERC1155, w types.Wallet, contractHex string, transact namespace.ITransact, id, amount *big.Int) {
+	t.Helper()
+	data := contract.PackMint(common.HexToAddress(initAddress), id, amount)
+	txHash, err := w.SendTransaction(types.TransactionRequest{
+		From:     initAddress,
+		To:       contractHex,
+		Value:    "0x0",
+		GasLimit: 300000,
+		Data:     data,
+	})
+	assert.Nil(t, err)
+	_, err = transact.WaitMined(context.Background(), txHash.Hex())
+	assert.Nil(t, err)
 }

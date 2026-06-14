@@ -14,6 +14,24 @@ func Uint256(output []byte) (*big.Int, error) {
 	return new(big.Int).SetBytes(output), nil
 }
 
+// Uint256Array decodes an ABI-encoded dynamic uint256[] return value
+// (offset, length, items). The leading offset word points at the length field
+// and is assumed to be the standard 0x20 for a single dynamic return.
+func Uint256Array(output []byte) ([]*big.Int, error) {
+	if err := validate.ABIUint256Array(output); err != nil {
+		return nil, err
+	}
+	dataStart := constant.ABIWordSize * 2
+	// Safe: validate.ABIUint256Array guarantees length fits within output.
+	n := int(new(big.Int).SetBytes(output[constant.ABIWordSize:dataStart]).Int64())
+	result := make([]*big.Int, n)
+	for i := 0; i < n; i++ {
+		start := dataStart + i*constant.ABIWordSize
+		result[i] = new(big.Int).SetBytes(output[start : start+constant.ABIWordSize])
+	}
+	return result, nil
+}
+
 // Bool decodes an ABI bool (non-zero last byte is true).
 func Bool(output []byte) (bool, error) {
 	return len(output) > 0 && output[len(output)-1] == 1, nil
