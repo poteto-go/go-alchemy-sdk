@@ -18,19 +18,12 @@ func Uint256(output []byte) (*big.Int, error) {
 // (offset, length, items). The leading offset word points at the length field
 // and is assumed to be the standard 0x20 for a single dynamic return.
 func Uint256Array(output []byte) ([]*big.Int, error) {
-	// Need at least the offset and length words.
-	if len(output) < constant.ABIWordSize*2 {
-		return nil, fmt.Errorf("invalid ABI uint256[]: output too short, got %d bytes", len(output))
+	if err := validate.ABIUint256Array(output); err != nil {
+		return nil, err
 	}
 	dataStart := constant.ABIWordSize * 2
-	// Compare as *big.Int to avoid Int64() overflow: a length whose lower 64
-	// bits are >= 2^63 would become negative and slip past a naive bounds check.
-	length := new(big.Int).SetBytes(output[constant.ABIWordSize:dataStart])
-	maxLength := big.NewInt(int64((len(output) - dataStart) / constant.ABIWordSize))
-	if length.Cmp(maxLength) > 0 {
-		return nil, fmt.Errorf("invalid ABI uint256[]: declared length %s exceeds output", length)
-	}
-	n := int(length.Int64())
+	// Safe: validate.ABIUint256Array guarantees length fits within output.
+	n := int(new(big.Int).SetBytes(output[constant.ABIWordSize:dataStart]).Int64())
 	result := make([]*big.Int, n)
 	for i := 0; i < n; i++ {
 		start := dataStart + i*constant.ABIWordSize

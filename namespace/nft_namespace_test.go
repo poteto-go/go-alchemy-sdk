@@ -25,6 +25,62 @@ func TestNewNftNamespace(t *testing.T) {
 	assert.NotNil(t, nft)
 }
 
+func TestNft_BalanceOf(t *testing.T) {
+	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
+	owner := "0xabcdef1234567890abcdef1234567890abcdef12"
+
+	t.Run("can get balance", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		nft := namespace.NewNftNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return encode.ABIUint256(big.NewInt(5)), nil
+		})
+
+		balance, err := nft.BalanceOf(contractAddress, owner)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "5", balance.String())
+	})
+
+	t.Run("returns error if contract call fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		nft := namespace.NewNftNamespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			return nil, assert.AnError
+		})
+
+		_, err := nft.BalanceOf(contractAddress, owner)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error for invalid contractAddress", func(t *testing.T) {
+		eth := newEtherApi()
+		nft := namespace.NewNftNamespace(eth)
+
+		_, err := nft.BalanceOf("invalid", owner)
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+
+	t.Run("returns error for invalid owner", func(t *testing.T) {
+		eth := newEtherApi()
+		nft := namespace.NewNftNamespace(eth)
+
+		_, err := nft.BalanceOf(contractAddress, "invalid")
+
+		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
+	})
+}
+
 func TestNft_OwnerOf(t *testing.T) {
 	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
 	tokenId := big.NewInt(1)

@@ -54,6 +54,7 @@ var (
 	ErrUnSupportSimulatedMethod         = errors.New("unsupported method on simulated backend")
 	ErrUnexpectedNilSimulatedBackend    = errors.New("unexpected nil of simulated backend")
 	ErrMismatchedArrayLength            = errors.New("array arguments must have the same length")
+	ErrInvalidABIArray                  = errors.New("invalid ABI array")
 )
 
 var HttpClientErrorCodeList = []int{

@@ -25,7 +25,7 @@ func TestNewErc1155Namespace(t *testing.T) {
 	assert.NotNil(t, erc1155)
 }
 
-func TestErc1155_BalanceOf(t *testing.T) {
+func TestErc1155_BalanceOfToken(t *testing.T) {
 	contractAddress := "0x1234567890abcdef1234567890abcdef12345678"
 	account := "0xabcdef1234567890abcdef1234567890abcdef12"
 	tokenId := big.NewInt(1)
@@ -41,7 +41,7 @@ func TestErc1155_BalanceOf(t *testing.T) {
 			return encode.ABIUint256(big.NewInt(42)), nil
 		})
 
-		balance, err := erc1155.BalanceOf(contractAddress, account, tokenId)
+		balance, err := erc1155.BalanceOfToken(contractAddress, account, tokenId)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "42", balance.String())
@@ -58,7 +58,7 @@ func TestErc1155_BalanceOf(t *testing.T) {
 			return nil, assert.AnError
 		})
 
-		_, err := erc1155.BalanceOf(contractAddress, account, tokenId)
+		_, err := erc1155.BalanceOfToken(contractAddress, account, tokenId)
 
 		assert.Error(t, err)
 	})
@@ -67,7 +67,7 @@ func TestErc1155_BalanceOf(t *testing.T) {
 		eth := newEtherApi()
 		erc1155 := namespace.NewErc1155Namespace(eth)
 
-		_, err := erc1155.BalanceOf("invalid", account, tokenId)
+		_, err := erc1155.BalanceOfToken("invalid", account, tokenId)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -76,7 +76,7 @@ func TestErc1155_BalanceOf(t *testing.T) {
 		eth := newEtherApi()
 		erc1155 := namespace.NewErc1155Namespace(eth)
 
-		_, err := erc1155.BalanceOf(contractAddress, "invalid", tokenId)
+		_, err := erc1155.BalanceOfToken(contractAddress, "invalid", tokenId)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -85,7 +85,7 @@ func TestErc1155_BalanceOf(t *testing.T) {
 		eth := newEtherApi()
 		erc1155 := namespace.NewErc1155Namespace(eth)
 
-		_, err := erc1155.BalanceOf(contractAddress, account, nil)
+		_, err := erc1155.BalanceOfToken(contractAddress, account, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
@@ -94,7 +94,7 @@ func TestErc1155_BalanceOf(t *testing.T) {
 		eth := newEtherApi()
 		erc1155 := namespace.NewErc1155Namespace(eth)
 
-		_, err := erc1155.BalanceOf(contractAddress, account, big.NewInt(-1))
+		_, err := erc1155.BalanceOfToken(contractAddress, account, big.NewInt(-1))
 
 		assert.ErrorIs(t, err, constant.ErrNegativeAmount)
 	})

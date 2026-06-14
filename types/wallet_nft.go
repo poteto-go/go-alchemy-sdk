@@ -84,6 +84,11 @@ type WalletNft interface {
 	SetApprovalForAllNoWait(contractAddress, operator string, approved bool, gasLimit *uint64) (common.Hash, error)
 
 	/*
+		get the number of NFTs owned by the given address
+	*/
+	BalanceOf(contractAddress, owner string) (*big.Int, error)
+
+	/*
 		get owner of the NFT with the given tokenId
 	*/
 	OwnerOf(contractAddress string, tokenId *big.Int) (string, error)

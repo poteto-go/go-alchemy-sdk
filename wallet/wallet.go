@@ -321,8 +321,8 @@ func (w *wallet) Nft() types.WalletNft {
 	return &walletNft{w: w}
 }
 
-func (w *wallet) Erc1155() types.WalletErc1155 {
-	return &walletErc1155{w: w}
+func (w *wallet) ERC1155() types.WalletErc1155 {
+	return &walletErc1155{walletNft: &walletNft{w: w}}
 }
 
 func (w *wallet) buildAuth() (*bind.TransactOpts, error) {

@@ -48,9 +48,9 @@ var (
 	// approve(address,uint256), so it reuses ApproveFnSignature above.
 
 	// ERC-1155 function signatures
-	// NOTE: balanceOf(address,uint256) differs from ERC-20/721's
+	// NOTE: balanceOfToken(address,uint256) differs from ERC-20/721's
 	// balanceOf(address), so it has its own selector.
-	BalanceOf1155FnSignature  = []byte("balanceOf(address,uint256)")
+	BalanceOfTokenFnSignature = []byte("balanceOf(address,uint256)")
 	BalanceOfBatchFnSignature = []byte("balanceOfBatch(address[],uint256[])")
 	UriFnSignature            = []byte("uri(uint256)")
 	// NOTE: ERC-1155 setApprovalForAll(operator,bool) / isApprovedForAll(account,

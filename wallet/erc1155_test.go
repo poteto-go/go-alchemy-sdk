@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWallet_Erc1155ReadMethods(t *testing.T) {
+func TestWallet_ERC1155ReadMethods(t *testing.T) {
 	contractAddress := "0x1234567890123456789012345678901234567890"
 	account := "0xE25583099BA105D9ec0A67f5Ae86D90e50036425"
 	tokenId := big.NewInt(1)
@@ -25,12 +25,12 @@ func TestWallet_Erc1155ReadMethods(t *testing.T) {
 		expected := big.NewInt(42)
 
 		// Mock
-		patches.ApplyMethod(reflect.TypeOf(w.erc1155), "BalanceOf", func(_ *namespace.Erc1155, _, _ string, _ *big.Int) (*big.Int, error) {
+		patches.ApplyMethod(reflect.TypeOf(w.erc1155), "BalanceOfToken", func(_ *namespace.Erc1155, _, _ string, _ *big.Int) (*big.Int, error) {
 			return expected, nil
 		})
 
 		// Act
-		res, err := w.Erc1155().BalanceOf(contractAddress, account, tokenId)
+		res, err := w.ERC1155().BalanceOfToken(contractAddress, account, tokenId)
 
 		// Assert
 		assert.NoError(t, err)
@@ -51,7 +51,7 @@ func TestWallet_Erc1155ReadMethods(t *testing.T) {
 		})
 
 		// Act
-		res, err := w.Erc1155().BalanceOfBatch(contractAddress, []string{account}, []*big.Int{tokenId})
+		res, err := w.ERC1155().BalanceOfBatch(contractAddress, []string{account}, []*big.Int{tokenId})
 
 		// Assert
 		assert.NoError(t, err)
@@ -72,7 +72,7 @@ func TestWallet_Erc1155ReadMethods(t *testing.T) {
 		})
 
 		// Act
-		res, err := w.Erc1155().Uri(contractAddress, tokenId)
+		res, err := w.ERC1155().Uri(contractAddress, tokenId)
 
 		// Assert
 		assert.NoError(t, err)
@@ -82,7 +82,7 @@ func TestWallet_Erc1155ReadMethods(t *testing.T) {
 	t.Run("error w/o connect wallet on BalanceOf", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.Erc1155().BalanceOf(contractAddress, account, tokenId)
+		_, err := w.ERC1155().BalanceOfToken(contractAddress, account, tokenId)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -90,7 +90,7 @@ func TestWallet_Erc1155ReadMethods(t *testing.T) {
 	t.Run("error w/o connect wallet on BalanceOfBatch", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.Erc1155().BalanceOfBatch(contractAddress, []string{account}, []*big.Int{tokenId})
+		_, err := w.ERC1155().BalanceOfBatch(contractAddress, []string{account}, []*big.Int{tokenId})
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -98,7 +98,7 @@ func TestWallet_Erc1155ReadMethods(t *testing.T) {
 	t.Run("error w/o connect wallet on Uri", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.Erc1155().Uri(contractAddress, tokenId)
+		_, err := w.ERC1155().Uri(contractAddress, tokenId)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})

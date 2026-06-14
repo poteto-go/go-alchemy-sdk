@@ -11,7 +11,7 @@ type Alchemy struct {
 	Core       namespace.ICore
 	Transact   namespace.ITransact
 	Nft        namespace.INft
-	Erc1155    namespace.IErc1155
+	ERC1155    namespace.IErc1155
 	ERC20      namespace.IERC20
 	StableCoin namespace.IStableCoin
 	Debug      namespace.IDebug
@@ -43,7 +43,7 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 		Core:       coreNamespace,
 		Transact:   transactNamespace,
 		Nft:        nftNamespace,
-		Erc1155:    erc1155Namespace,
+		ERC1155:    erc1155Namespace,
 		ERC20:      erc20Namespace,
 		StableCoin: stableCoinNamespace,
 		Debug:      debugNamespace,

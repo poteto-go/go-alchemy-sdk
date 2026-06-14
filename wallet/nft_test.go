@@ -24,6 +24,27 @@ func TestWallet_NftReadMethods(t *testing.T) {
 	operatorAddress := "0xAbcdef1234567890abcdef1234567890AbCdEf12"
 	tokenId := big.NewInt(1)
 
+	t.Run("can get balance", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+		expected := big.NewInt(3)
+
+		// Mock
+		patches.ApplyMethod(reflect.TypeOf(w.nft), "BalanceOf", func(_ *namespace.Nft, _, _ string) (*big.Int, error) {
+			return expected, nil
+		})
+
+		// Act
+		res, err := w.Nft().BalanceOf(contractAddress, ownerAddress)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
+
 	t.Run("can get owner of token", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
@@ -147,6 +168,14 @@ func TestWallet_NftReadMethods(t *testing.T) {
 		// Assert
 		assert.NoError(t, err)
 		assert.True(t, res)
+	})
+
+	t.Run("error w/o connect wallet on BalanceOf", func(t *testing.T) {
+		w, _ := New(testPrivHex)
+
+		_, err := w.Nft().BalanceOf(contractAddress, ownerAddress)
+
+		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
 
 	t.Run("error w/o connect wallet on OwnerOf", func(t *testing.T) {

@@ -67,6 +67,24 @@ func Url(rawUrl string) error {
 	return nil
 }
 
+// ABIUint256Array validates an ABI-encoded uint256[] return value
+// (offset word + length word + element words) against the available output,
+// guarding callers against a slice out-of-range panic.
+func ABIUint256Array(output []byte) error {
+	if len(output) < constant.ABIWordSize*2 {
+		return constant.ErrInvalidABIArray
+	}
+	dataStart := constant.ABIWordSize * 2
+	// Compare as *big.Int to avoid Int64() overflow: a length whose lower 64
+	// bits are >= 2^63 would become negative and slip past a naive bounds check.
+	length := new(big.Int).SetBytes(output[constant.ABIWordSize:dataStart])
+	maxLength := big.NewInt(int64((len(output) - dataStart) / constant.ABIWordSize))
+	if length.Cmp(maxLength) > 0 {
+		return constant.ErrInvalidABIArray
+	}
+	return nil
+}
+
 // ABIString validates an ABI-encoded string's header and declared length
 // against the available output, guarding callers against a slice
 // out-of-range panic on malicious/corrupt contract or RPC data.

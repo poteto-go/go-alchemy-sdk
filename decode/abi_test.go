@@ -139,21 +139,21 @@ func TestBytes32(t *testing.T) {
 	})
 }
 
-func TestUint256Array(t *testing.T) {
-	// abiUint256Array builds the standard single dynamic return encoding:
-	// offset(0x20) + length + items.
-	abiUint256Array := func(vs ...int64) []byte {
-		out := make([]byte, 0)
-		out = append(out, append(make([]byte, 31), 0x20)...) // offset
-		out = append(out, append(make([]byte, 31), byte(len(vs)))...)
-		for _, v := range vs {
-			out = append(out, new(big.Int).SetInt64(v).FillBytes(make([]byte, 32))...)
-		}
-		return out
+// abiUint256ArrayBytes builds the standard single dynamic return encoding:
+// offset(0x20) + length + items.
+func abiUint256ArrayBytes(vs ...int64) []byte {
+	out := make([]byte, 0)
+	out = append(out, append(make([]byte, 31), 0x20)...) // offset
+	out = append(out, append(make([]byte, 31), byte(len(vs)))...)
+	for _, v := range vs {
+		out = append(out, new(big.Int).SetInt64(v).FillBytes(make([]byte, 32))...)
 	}
+	return out
+}
 
+func TestUint256Array(t *testing.T) {
 	t.Run("decodes elements", func(t *testing.T) {
-		out, err := decode.Uint256Array(abiUint256Array(1, 256, 0))
+		out, err := decode.Uint256Array(abiUint256ArrayBytes(1, 256, 0))
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(out))
 		assert.Equal(t, "1", out[0].String())
@@ -162,7 +162,7 @@ func TestUint256Array(t *testing.T) {
 	})
 
 	t.Run("empty array", func(t *testing.T) {
-		out, err := decode.Uint256Array(abiUint256Array())
+		out, err := decode.Uint256Array(abiUint256ArrayBytes())
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(out))
 	})

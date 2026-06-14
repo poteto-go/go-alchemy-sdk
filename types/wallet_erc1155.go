@@ -2,13 +2,15 @@ package types
 
 import "math/big"
 
-// Erc1155 (ERC1155 multi-token) read interface for wallet.
-// This is only defined for UX; it delegates to the Erc1155 namespace.
+// WalletErc1155 (ERC1155 multi-token) interface for wallet.
+// Embeds WalletNft to inherit ERC-721 compatible read/write methods.
 type WalletErc1155 interface {
+	WalletNft
+
 	/*
 		get the amount of tokens of the given tokenId owned by account
 	*/
-	BalanceOf(contractAddress, account string, tokenId *big.Int) (*big.Int, error)
+	BalanceOfToken(contractAddress, account string, tokenId *big.Int) (*big.Int, error)
 
 	/*
 		get the balances of multiple (account, tokenId) pairs in a single call.

@@ -11,9 +11,11 @@ import (
 )
 
 type IErc1155 interface {
-	// BalanceOf returns the amount of tokens of the given tokenId owned by
-	// account.
-	BalanceOf(contractAddress, account string, tokenId *big.Int) (*big.Int, error)
+	INft
+
+	// BalanceOfToken returns the amount of the given tokenId owned by account.
+	// This is distinct from INft.BalanceOf which counts all tokens owned.
+	BalanceOfToken(contractAddress, account string, tokenId *big.Int) (*big.Int, error)
 
 	// BalanceOfBatch returns the balances of multiple (account, tokenId) pairs
 	// in a single call. accounts and tokenIds must have the same length.
@@ -23,17 +25,19 @@ type IErc1155 interface {
 	Uri(contractAddress string, tokenId *big.Int) (string, error)
 }
 
+// Erc1155 embeds *Nft to inherit all ERC-721 read methods (which ERC-1155
+// contracts also expose via the same selectors for isApprovedForAll, etc.).
 type Erc1155 struct {
-	ether types.EtherApi
+	*Nft
 }
 
 func NewErc1155Namespace(ether types.EtherApi) IErc1155 {
 	return &Erc1155{
-		ether: ether,
+		Nft: &Nft{ether: ether},
 	}
 }
 
-func (e *Erc1155) BalanceOf(contractAddress, account string, tokenId *big.Int) (*big.Int, error) {
+func (e *Erc1155) BalanceOfToken(contractAddress, account string, tokenId *big.Int) (*big.Int, error) {
 	if err := validate.Addresses(contractAddress, account); err != nil {
 		return nil, err
 	}
@@ -41,7 +45,7 @@ func (e *Erc1155) BalanceOf(contractAddress, account string, tokenId *big.Int) (
 		return nil, err
 	}
 	output, err := e.ether.CallReadMethod(
-		constant.BalanceOf1155FnSignature,
+		constant.BalanceOfTokenFnSignature,
 		contractAddress,
 		encode.ABIAddress(account),
 		encode.ABIUint256(tokenId),
