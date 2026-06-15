@@ -12,4 +12,9 @@ const (
 	// ABIStringHeaderSize is the byte length of the offset + length header
 	// for an ABI-encoded dynamic string.
 	ABIStringHeaderSize = ABIWordSize * 2
+
+	// Erc1155SafeTransferFromHeadSize is the byte size of the 5-word head shared
+	// by safeTransferFrom(address,address,uint256,uint256,bytes) and
+	// safeBatchTransferFrom(address,address,uint256[],uint256[],bytes).
+	Erc1155SafeTransferFromHeadSize = 5 * ABIWordSize
 )

@@ -1,12 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Minimal ERC1155 fixture used by the e2e suite. It implements just enough of
-// the standard to exercise the SDK's Erc1155 read methods (balanceOf,
-// balanceOfBatch, uri) plus a mint helper for test setup.
+interface IERC1155Receiver {
+    function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata data)
+        external
+        returns (bytes4);
+
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external returns (bytes4);
+}
+
+// Minimal ERC1155 fixture used by the e2e suite. It implements enough of
+// the standard to exercise the SDK's ERC1155 read and write methods.
 contract ERC1155 {
-    // Shared metadata URI. ERC1155 uses a single URI template with an `{id}`
-    // placeholder rather than a per-token URI.
     string private _uri = "https://example.com/erc1155/{id}.json";
 
     mapping(uint256 => mapping(address => uint256)) private _balances;
@@ -14,6 +25,13 @@ contract ERC1155 {
 
     event TransferSingle(
         address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value
+    );
+    event TransferBatch(
+        address indexed operator,
+        address indexed from,
+        address indexed to,
+        uint256[] ids,
+        uint256[] values
     );
     event ApprovalForAll(address indexed account, address indexed operator, bool approved);
 
@@ -47,6 +65,65 @@ contract ERC1155 {
         require(operator != msg.sender, "ERC1155: setting approval status for self");
         _operatorApprovals[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) public {
+        require(
+            from == msg.sender || isApprovedForAll(from, msg.sender),
+            "ERC1155: caller is not token owner or approved"
+        );
+        require(to != address(0), "ERC1155: transfer to the zero address");
+        require(_balances[id][from] >= amount, "ERC1155: insufficient balance for transfer");
+
+        _balances[id][from] -= amount;
+        _balances[id][to] += amount;
+        emit TransferSingle(msg.sender, from, to, id, amount);
+
+        if (to.code.length > 0) {
+            try IERC1155Receiver(to).onERC1155Received(msg.sender, from, id, amount, data) returns (bytes4 retval) {
+                require(
+                    retval == IERC1155Receiver.onERC1155Received.selector,
+                    "ERC1155: transfer to non-ERC1155Receiver"
+                );
+            } catch {
+                revert("ERC1155: transfer to non-ERC1155Receiver");
+            }
+        }
+    }
+
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) public {
+        require(
+            from == msg.sender || isApprovedForAll(from, msg.sender),
+            "ERC1155: caller is not token owner or approved"
+        );
+        require(to != address(0), "ERC1155: transfer to the zero address");
+        require(ids.length == amounts.length, "ERC1155: ids and amounts length mismatch");
+
+        for (uint256 i = 0; i < ids.length; ++i) {
+            require(_balances[ids[i]][from] >= amounts[i], "ERC1155: insufficient balance for transfer");
+            _balances[ids[i]][from] -= amounts[i];
+            _balances[ids[i]][to] += amounts[i];
+        }
+        emit TransferBatch(msg.sender, from, to, ids, amounts);
+
+        if (to.code.length > 0) {
+            try IERC1155Receiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) returns (
+                bytes4 retval
+            ) {
+                require(
+                    retval == IERC1155Receiver.onERC1155BatchReceived.selector,
+                    "ERC1155: transfer to non-ERC1155Receiver"
+                );
+            } catch {
+                revert("ERC1155: transfer to non-ERC1155Receiver");
+            }
+        }
     }
 
     function mint(address to, uint256 id, uint256 amount) public {

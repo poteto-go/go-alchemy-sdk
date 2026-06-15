@@ -49,13 +49,17 @@ func (api *walletNft) sendNftTx(contractAddress string, gasLimit *uint64, sig []
 	})
 }
 
-// validateTransferArgs validates the from/to addresses and tokenId shared by
-// every ERC721 transfer variant.
-func validateTransferArgs(fromAddress, toAddress string, tokenId *big.Int) error {
+func validateAddressPair(fromAddress, toAddress string) error {
 	if err := validateAddress(fromAddress); err != nil {
 		return err
 	}
-	if err := validateAddress(toAddress); err != nil {
+	return validateAddress(toAddress)
+}
+
+// validateTransferArgs validates the from/to addresses and tokenId shared by
+// every ERC721 transfer variant.
+func validateTransferArgs(fromAddress, toAddress string, tokenId *big.Int) error {
+	if err := validateAddressPair(fromAddress, toAddress); err != nil {
 		return err
 	}
 	return validateUint256(tokenId)

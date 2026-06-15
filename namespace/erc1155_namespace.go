@@ -11,10 +11,9 @@ import (
 )
 
 type IErc1155 interface {
-	INft
+	iApprovedForAll
 
 	// BalanceOfToken returns the amount of the given tokenId owned by account.
-	// This is distinct from INft.BalanceOf which counts all tokens owned.
 	BalanceOfToken(contractAddress, account string, tokenId *big.Int) (*big.Int, error)
 
 	// BalanceOfBatch returns the balances of multiple (account, tokenId) pairs
@@ -25,8 +24,7 @@ type IErc1155 interface {
 	Uri(contractAddress string, tokenId *big.Int) (string, error)
 }
 
-// Erc1155 embeds *Nft to inherit all ERC-721 read methods (which ERC-1155
-// contracts also expose via the same selectors for isApprovedForAll, etc.).
+// Erc1155 embeds *Nft to reuse its IsApprovedForAll implementation.
 type Erc1155 struct {
 	*Nft
 }

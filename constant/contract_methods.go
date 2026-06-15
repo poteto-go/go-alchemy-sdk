@@ -53,6 +53,10 @@ var (
 	BalanceOfTokenFnSignature = []byte("balanceOf(address,uint256)")
 	BalanceOfBatchFnSignature = []byte("balanceOfBatch(address[],uint256[])")
 	UriFnSignature            = []byte("uri(uint256)")
+	// ERC-1155 safeTransferFrom takes (from,to,id,amount,data) — a distinct selector
+	// from ERC-721's safeTransferFrom(from,to,id) and safeTransferFrom(from,to,id,bytes).
+	Erc1155SafeTransferFromFnSignature = []byte("safeTransferFrom(address,address,uint256,uint256,bytes)")
+	SafeBatchTransferFromFnSignature   = []byte("safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)")
 	// NOTE: ERC-1155 setApprovalForAll(operator,bool) / isApprovedForAll(account,
 	// operator) share the ERC-721 selectors, so they reuse the signatures above.
 
