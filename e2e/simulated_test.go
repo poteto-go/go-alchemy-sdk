@@ -577,6 +577,83 @@ func TestSimulated_Erc1155(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, erc1155Uri, uri)
 	})
+
+	t.Run("can safeTransferFrom via wallet ERC1155 namespace", func(t *testing.T) {
+		otherWallet, err := wallet.New(otherPrivateKey)
+		assert.Nil(t, err)
+		otherWallet.Connect(alchemy.GetProvider())
+
+		// initAddress transfers 3 units of tokenId1 to otherAddress.
+		_, err = w.ERC1155().Erc1155SafeTransferFrom(
+			context.Background(), contractHex, initAddress, otherAddress, tokenId1, big.NewInt(3), []byte{}, nil,
+		)
+		assert.Nil(t, err)
+
+		balanceInit, err := w.ERC1155().BalanceOfToken(contractHex, initAddress, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, "7", balanceInit.String())
+
+		balanceOther, err := w.ERC1155().BalanceOfToken(contractHex, otherAddress, tokenId1)
+		assert.Nil(t, err)
+		assert.Equal(t, "3", balanceOther.String())
+	})
+
+	t.Run("can safeBatchTransferFrom via wallet ERC1155 namespace", func(t *testing.T) {
+		otherWallet, err := wallet.New(otherPrivateKey)
+		assert.Nil(t, err)
+		otherWallet.Connect(alchemy.GetProvider())
+
+		// initAddress batch-transfers 2 units of tokenId1 and 5 units of tokenId2 to otherAddress.
+		_, err = w.ERC1155().SafeBatchTransferFrom(
+			context.Background(),
+			contractHex,
+			initAddress, otherAddress,
+			[]*big.Int{tokenId1, tokenId2},
+			[]*big.Int{big.NewInt(2), big.NewInt(5)},
+			[]byte{},
+			nil,
+		)
+		assert.Nil(t, err)
+
+		balances, err := w.ERC1155().BalanceOfBatch(
+			contractHex,
+			[]string{initAddress, initAddress, otherAddress, otherAddress},
+			[]*big.Int{tokenId1, tokenId2, tokenId1, tokenId2},
+		)
+		assert.Nil(t, err)
+		assert.Equal(t, "5", balances[0].String())  // initAddress tokenId1: 7-2
+		assert.Equal(t, "15", balances[1].String()) // initAddress tokenId2: 20-5
+		assert.Equal(t, "5", balances[2].String())  // otherAddress tokenId1: 3+2
+		assert.Equal(t, "5", balances[3].String())  // otherAddress tokenId2: 0+5
+	})
+
+	t.Run("can setApprovalForAll & transfer as operator via wallet ERC1155 namespace", func(t *testing.T) {
+		otherWallet, err := wallet.New(otherPrivateKey)
+		assert.Nil(t, err)
+		otherWallet.Connect(alchemy.GetProvider())
+
+		// otherAddress grants initAddress operator approval.
+		_, err = otherWallet.ERC1155().SetApprovalForAll(context.Background(), contractHex, initAddress, true, nil)
+		assert.Nil(t, err)
+
+		isApproved, err := w.ERC1155().IsApprovedForAll(contractHex, otherAddress, initAddress)
+		assert.Nil(t, err)
+		assert.True(t, isApproved)
+
+		// initAddress (as operator) transfers 1 unit of tokenId1 from otherAddress back to initAddress.
+		_, err = w.ERC1155().Erc1155SafeTransferFrom(
+			context.Background(), contractHex, otherAddress, initAddress, tokenId1, big.NewInt(1), []byte{}, nil,
+		)
+		assert.Nil(t, err)
+
+		// Revoke approval.
+		_, err = otherWallet.ERC1155().SetApprovalForAll(context.Background(), contractHex, initAddress, false, nil)
+		assert.Nil(t, err)
+
+		isApproved, err = w.ERC1155().IsApprovedForAll(contractHex, otherAddress, initAddress)
+		assert.Nil(t, err)
+		assert.False(t, isApproved)
+	})
 }
 
 func TestSimulated_SendTransaction(t *testing.T) {
