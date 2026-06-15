@@ -14,10 +14,7 @@ type walletErc1155 struct {
 	*walletNft
 }
 
-// erc1155SafeTransferDataOffsetWord is the ABI offset pointing to the `bytes data`
-// tail in safeTransferFrom(address,address,uint256,uint256,bytes). The head holds
-// five words (from, to, id, amount, offset), so the tail starts at 5*32 bytes.
-var erc1155SafeTransferDataOffsetWord = encode.ABIUint256(big.NewInt(5 * constant.ABIWordSize))
+var erc1155SafeTransferDataOffsetWord = encode.ABIUint256(big.NewInt(constant.Erc1155SafeTransferFromHeadSize))
 
 func (api *walletErc1155) BalanceOfToken(contractAddress, account string, tokenId *big.Int) (*big.Int, error) {
 	erc1155 := api.w.snapshotErc1155()
@@ -76,10 +73,7 @@ func (api *walletErc1155) SafeBatchTransferFrom(ctx context.Context, contractAdd
 }
 
 func (api *walletErc1155) SafeBatchTransferFromNoWait(contractAddress, fromAddress, toAddress string, ids, amounts []*big.Int, data []byte, gasLimit *uint64) (common.Hash, error) {
-	if err := validateAddress(fromAddress); err != nil {
-		return common.Hash{}, err
-	}
-	if err := validateAddress(toAddress); err != nil {
+	if err := validateAddressPair(fromAddress, toAddress); err != nil {
 		return common.Hash{}, err
 	}
 	if len(ids) != len(amounts) {
@@ -100,7 +94,7 @@ func (api *walletErc1155) SafeBatchTransferFromNoWait(contractAddress, fromAddre
 	idsTail := encode.ABIUint256Array(ids)
 	amountsTail := encode.ABIUint256Array(amounts)
 	dataTail := encode.ABIBytes(data)
-	headSize := 5 * constant.ABIWordSize
+	headSize := constant.Erc1155SafeTransferFromHeadSize
 	args := make([]byte, 0, headSize+len(idsTail)+len(amountsTail)+len(dataTail))
 	args = append(args, encode.ABIAddress(fromAddress)...)
 	args = append(args, encode.ABIAddress(toAddress)...)

@@ -579,10 +579,6 @@ func TestSimulated_Erc1155(t *testing.T) {
 	})
 
 	t.Run("can safeTransferFrom via wallet ERC1155 namespace", func(t *testing.T) {
-		otherWallet, err := wallet.New(otherPrivateKey)
-		assert.Nil(t, err)
-		otherWallet.Connect(alchemy.GetProvider())
-
 		// initAddress transfers 3 units of tokenId1 to otherAddress.
 		_, err = w.ERC1155().SafeTransferFrom(
 			context.Background(), contractHex, initAddress, otherAddress, tokenId1, big.NewInt(3), []byte{}, nil,
@@ -599,10 +595,6 @@ func TestSimulated_Erc1155(t *testing.T) {
 	})
 
 	t.Run("can safeBatchTransferFrom via wallet ERC1155 namespace", func(t *testing.T) {
-		otherWallet, err := wallet.New(otherPrivateKey)
-		assert.Nil(t, err)
-		otherWallet.Connect(alchemy.GetProvider())
-
 		// initAddress batch-transfers 2 units of tokenId1 and 5 units of tokenId2 to otherAddress.
 		_, err = w.ERC1155().SafeBatchTransferFrom(
 			context.Background(),

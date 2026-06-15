@@ -203,8 +203,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, expectedHash, txHash)
 
-		// offset to bytes tail: 5 static words (from,to,id,amount,offset_ptr) * 32
-		offsetWord := encode.ABIUint256(big.NewInt(5 * int64(constant.ABIWordSize)))
+		offsetWord := encode.ABIUint256(big.NewInt(constant.Erc1155SafeTransferFromHeadSize))
 		expectedData := encode.ReadCalldata(
 			constant.Erc1155SafeTransferFromFnSignature,
 			encode.ABIAddress(fromAddress),
@@ -389,7 +388,7 @@ func TestWallet_ERC1155SafeBatchTransferFromNoWait(t *testing.T) {
 		// tails: idsTail, amountsTail, dataTail
 		idsTail := encode.ABIUint256Array(ids)
 		amountsTail := encode.ABIUint256Array(amounts)
-		headSize := 5 * constant.ABIWordSize
+		headSize := constant.Erc1155SafeTransferFromHeadSize
 		offsetIds := encode.ABIUint256(big.NewInt(int64(headSize)))
 		offsetAmounts := encode.ABIUint256(big.NewInt(int64(headSize + len(idsTail))))
 		offsetData := encode.ABIUint256(big.NewInt(int64(headSize + len(idsTail) + len(amountsTail))))
