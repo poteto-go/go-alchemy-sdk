@@ -11,7 +11,16 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
+// iApprovedForAll is the read-side approval query shared by ERC-721 and ERC-1155.
+type iApprovedForAll interface {
+	// IsApprovedForAll returns whether the operator is approved to manage all
+	// of the owner's tokens.
+	IsApprovedForAll(contractAddress, owner, operator string) (bool, error)
+}
+
 type INft interface {
+	iApprovedForAll
+
 	// BalanceOf returns the number of NFTs owned by the given address.
 	BalanceOf(contractAddress, owner string) (*big.Int, error)
 
@@ -29,10 +38,6 @@ type INft interface {
 
 	// GetApproved returns the approved address for the given tokenId.
 	GetApproved(contractAddress string, tokenId *big.Int) (string, error)
-
-	// IsApprovedForAll returns whether the operator is approved to manage all
-	// of the owner's NFTs.
-	IsApprovedForAll(contractAddress, owner, operator string) (bool, error)
 }
 
 type Nft struct {

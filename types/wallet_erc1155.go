@@ -9,9 +9,8 @@ import (
 )
 
 // WalletERC1155 (ERC1155 multi-token) interface for wallet.
-// Embeds WalletNft to inherit ERC-721 compatible read/write methods.
 type WalletERC1155 interface {
-	WalletNft
+	walletNftApproval
 
 	/*
 		get the amount of tokens of the given tokenId owned by account
@@ -36,13 +35,13 @@ type WalletERC1155 interface {
 			- gas limit is 300000 for default
 			- stops waiting when ctx is canceled
 	*/
-	Erc1155SafeTransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, id, amount *big.Int, data []byte, gasLimit *uint64) (*gethTypes.Receipt, error)
+	SafeTransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, id, amount *big.Int, data []byte, gasLimit *uint64) (*gethTypes.Receipt, error)
 
 	/*
 		ERC-1155 safeTransferFrom(from,to,id,amount,data) — no-wait variant.
 			- gas limit is 300000 for default
 	*/
-	Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, toAddress string, id, amount *big.Int, data []byte, gasLimit *uint64) (common.Hash, error)
+	SafeTransferFromNoWait(contractAddress, fromAddress, toAddress string, id, amount *big.Int, data []byte, gasLimit *uint64) (common.Hash, error)
 
 	/*
 		ERC-1155 safeBatchTransferFrom(from,to,ids,amounts,data) — transfers multiple

@@ -46,13 +46,13 @@ func (api *walletErc1155) Uri(contractAddress string, tokenId *big.Int) (string,
 	return erc1155.Uri(contractAddress, tokenId)
 }
 
-func (api *walletErc1155) Erc1155SafeTransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, id, amount *big.Int, data []byte, gasLimit *uint64) (*gethTypes.Receipt, error) {
+func (api *walletErc1155) SafeTransferFrom(ctx context.Context, contractAddress, fromAddress, toAddress string, id, amount *big.Int, data []byte, gasLimit *uint64) (*gethTypes.Receipt, error) {
 	return api.waitMined(ctx, func() (common.Hash, error) {
-		return api.Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, amount, data, gasLimit)
+		return api.SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, amount, data, gasLimit)
 	})
 }
 
-func (api *walletErc1155) Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, toAddress string, id, amount *big.Int, data []byte, gasLimit *uint64) (common.Hash, error) {
+func (api *walletErc1155) SafeTransferFromNoWait(contractAddress, fromAddress, toAddress string, id, amount *big.Int, data []byte, gasLimit *uint64) (common.Hash, error) {
 	if err := validateTransferArgs(fromAddress, toAddress, id); err != nil {
 		return common.Hash{}, err
 	}

@@ -140,7 +140,7 @@ func TestWallet_ERC1155SafeTransferFrom(t *testing.T) {
 			},
 		)
 
-		_, err := w.ERC1155().Erc1155SafeTransferFrom(context.Background(), contractAddress, fromAddress, toAddress, id, amount, data, nil)
+		_, err := w.ERC1155().SafeTransferFrom(context.Background(), contractAddress, fromAddress, toAddress, id, amount, data, nil)
 
 		assert.Nil(t, err)
 	})
@@ -159,7 +159,7 @@ func TestWallet_ERC1155SafeTransferFrom(t *testing.T) {
 			},
 		)
 
-		_, err := w.ERC1155().Erc1155SafeTransferFrom(context.Background(), contractAddress, fromAddress, toAddress, id, amount, data, nil)
+		_, err := w.ERC1155().SafeTransferFrom(context.Background(), contractAddress, fromAddress, toAddress, id, amount, data, nil)
 
 		assert.Error(t, err)
 	})
@@ -167,7 +167,7 @@ func TestWallet_ERC1155SafeTransferFrom(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.ERC1155().Erc1155SafeTransferFrom(context.Background(), contractAddress, fromAddress, toAddress, id, amount, data, nil)
+		_, err := w.ERC1155().SafeTransferFrom(context.Background(), contractAddress, fromAddress, toAddress, id, amount, data, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})
@@ -198,7 +198,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 			},
 		)
 
-		txHash, err := w.ERC1155().Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, amount, data, nil)
+		txHash, err := w.ERC1155().SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, amount, data, nil)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expectedHash, txHash)
@@ -236,7 +236,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 		)
 
 		gasLimit := uint64(500000)
-		_, err := w.ERC1155().Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, amount, data, &gasLimit)
+		_, err := w.ERC1155().SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, amount, data, &gasLimit)
 
 		assert.Nil(t, err)
 		assert.Equal(t, uint64(500000), captured.GasLimit)
@@ -245,7 +245,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 	t.Run("invalid from-address returns ErrInvalidAddress", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.ERC1155().Erc1155SafeTransferFromNoWait(contractAddress, "invalid", toAddress, id, amount, data, nil)
+		_, err := w.ERC1155().SafeTransferFromNoWait(contractAddress, "invalid", toAddress, id, amount, data, nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -253,7 +253,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 	t.Run("invalid to-address returns ErrInvalidAddress", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.ERC1155().Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, "invalid", id, amount, data, nil)
+		_, err := w.ERC1155().SafeTransferFromNoWait(contractAddress, fromAddress, "invalid", id, amount, data, nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -261,7 +261,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 	t.Run("nil id returns ErrNilAmount", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.ERC1155().Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, nil, amount, data, nil)
+		_, err := w.ERC1155().SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, nil, amount, data, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
@@ -269,7 +269,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 	t.Run("nil amount returns ErrNilAmount", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.ERC1155().Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, nil, data, nil)
+		_, err := w.ERC1155().SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, nil, data, nil)
 
 		assert.ErrorIs(t, err, constant.ErrNilAmount)
 	})
@@ -277,7 +277,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 	t.Run("invalid contractAddress returns ErrInvalidAddress", func(t *testing.T) {
 		w := createConnectedWallet()
 
-		_, err := w.ERC1155().Erc1155SafeTransferFromNoWait("invalid", fromAddress, toAddress, id, amount, data, nil)
+		_, err := w.ERC1155().SafeTransferFromNoWait("invalid", fromAddress, toAddress, id, amount, data, nil)
 
 		assert.ErrorIs(t, err, constant.ErrInvalidAddress)
 	})
@@ -285,7 +285,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 	t.Run("error w/o connect wallet", func(t *testing.T) {
 		w, _ := New(testPrivHex)
 
-		_, err := w.ERC1155().Erc1155SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, amount, data, nil)
+		_, err := w.ERC1155().SafeTransferFromNoWait(contractAddress, fromAddress, toAddress, id, amount, data, nil)
 
 		assert.ErrorIs(t, err, constant.ErrWalletIsNotConnected)
 	})

@@ -584,7 +584,7 @@ func TestSimulated_Erc1155(t *testing.T) {
 		otherWallet.Connect(alchemy.GetProvider())
 
 		// initAddress transfers 3 units of tokenId1 to otherAddress.
-		_, err = w.ERC1155().Erc1155SafeTransferFrom(
+		_, err = w.ERC1155().SafeTransferFrom(
 			context.Background(), contractHex, initAddress, otherAddress, tokenId1, big.NewInt(3), []byte{}, nil,
 		)
 		assert.Nil(t, err)
@@ -641,7 +641,7 @@ func TestSimulated_Erc1155(t *testing.T) {
 		assert.True(t, isApproved)
 
 		// initAddress (as operator) transfers 1 unit of tokenId1 from otherAddress back to initAddress.
-		_, err = w.ERC1155().Erc1155SafeTransferFrom(
+		_, err = w.ERC1155().SafeTransferFrom(
 			context.Background(), contractHex, otherAddress, initAddress, tokenId1, big.NewInt(1), []byte{}, nil,
 		)
 		assert.Nil(t, err)

@@ -8,9 +8,32 @@ import (
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
+// walletNftApproval is the write-side approval interface shared by ERC-721 and ERC-1155.
+type walletNftApproval interface {
+	/*
+		grant or revoke an operator's approval to manage all of the caller's tokens
+			- wait for mined
+			- gas limit is 300000 for default
+			- stops waiting when ctx is canceled
+	*/
+	SetApprovalForAll(ctx context.Context, contractAddress, operator string, approved bool, gasLimit *uint64) (*gethTypes.Receipt, error)
+
+	/*
+		grant or revoke an operator's approval to manage all of the caller's tokens
+			- gas limit is 300000 for default
+	*/
+	SetApprovalForAllNoWait(contractAddress, operator string, approved bool, gasLimit *uint64) (common.Hash, error)
+
+	/*
+		get whether the operator is approved to manage all of the owner's tokens
+	*/
+	IsApprovedForAll(contractAddress, owner, operator string) (bool, error)
+}
+
 // Nft (ERC721) interface for wallet.
 // This is only defined for UX.
 type WalletNft interface {
+	walletNftApproval
 	/*
 		transfer the NFT with the given tokenId from one address to another
 			- wait for mined
@@ -70,20 +93,6 @@ type WalletNft interface {
 	ApproveNoWait(contractAddress, toAddress string, tokenId *big.Int, gasLimit *uint64) (common.Hash, error)
 
 	/*
-		grant or revoke an operator's approval to manage all of the caller's NFTs
-			- wait for mined
-			- gas limit is 300000 for default
-			- stops waiting when ctx is canceled
-	*/
-	SetApprovalForAll(ctx context.Context, contractAddress, operator string, approved bool, gasLimit *uint64) (*gethTypes.Receipt, error)
-
-	/*
-		grant or revoke an operator's approval to manage all of the caller's NFTs
-			- gas limit is 300000 for default
-	*/
-	SetApprovalForAllNoWait(contractAddress, operator string, approved bool, gasLimit *uint64) (common.Hash, error)
-
-	/*
 		get the number of NFTs owned by the given address
 	*/
 	BalanceOf(contractAddress, owner string) (*big.Int, error)
@@ -112,9 +121,4 @@ type WalletNft interface {
 		get approved address for the given tokenId
 	*/
 	GetApproved(contractAddress string, tokenId *big.Int) (string, error)
-
-	/*
-		get whether the operator is approved to manage all of the owner's NFTs
-	*/
-	IsApprovedForAll(contractAddress, owner, operator string) (bool, error)
 }
