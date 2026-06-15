@@ -152,6 +152,15 @@ func (api *walletNft) SetApprovalForAllNoWait(contractAddress, operator string, 
 	)
 }
 
+func (api *walletNft) BalanceOf(contractAddress, owner string) (*big.Int, error) {
+	nft := api.w.snapshotNft()
+	if nft == nil {
+		return nil, constant.ErrWalletIsNotConnected
+	}
+
+	return nft.BalanceOf(contractAddress, owner)
+}
+
 func (api *walletNft) OwnerOf(contractAddress string, tokenId *big.Int) (string, error) {
 	nft := api.w.snapshotNft()
 	if nft == nil {

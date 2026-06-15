@@ -12,6 +12,9 @@ import (
 )
 
 type INft interface {
+	// BalanceOf returns the number of NFTs owned by the given address.
+	BalanceOf(contractAddress, owner string) (*big.Int, error)
+
 	// OwnerOf returns the owner of the NFT with the given tokenId.
 	OwnerOf(contractAddress string, tokenId *big.Int) (string, error)
 
@@ -61,6 +64,21 @@ func (n *Nft) callAddressTokenMethod(fnSig []byte, contractAddress string, token
 		return "", err
 	}
 	return strings.ToLower(addr.Hex()), nil
+}
+
+func (n *Nft) BalanceOf(contractAddress, owner string) (*big.Int, error) {
+	if err := validate.Addresses(contractAddress, owner); err != nil {
+		return nil, err
+	}
+	output, err := n.ether.CallReadMethod(
+		constant.BalanceOfFnSignature,
+		contractAddress,
+		encode.ABIAddress(owner),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return decode.Uint256(output)
 }
 
 func (n *Nft) OwnerOf(contractAddress string, tokenId *big.Int) (string, error) {

@@ -47,6 +47,15 @@ var (
 	// NOTE: ERC-721 approve(to, tokenId) has the same selector as ERC-20's
 	// approve(address,uint256), so it reuses ApproveFnSignature above.
 
+	// ERC-1155 function signatures
+	// NOTE: balanceOfToken(address,uint256) differs from ERC-20/721's
+	// balanceOf(address), so it has its own selector.
+	BalanceOfTokenFnSignature = []byte("balanceOf(address,uint256)")
+	BalanceOfBatchFnSignature = []byte("balanceOfBatch(address[],uint256[])")
+	UriFnSignature            = []byte("uri(uint256)")
+	// NOTE: ERC-1155 setApprovalForAll(operator,bool) / isApprovedForAll(account,
+	// operator) share the ERC-721 selectors, so they reuse the signatures above.
+
 	// EIP-2612
 	PermitFnSignature          = []byte("permit(address,address,uint256,uint256,uint8,bytes32,bytes32)")
 	NoncesFnSignature          = []byte("nonces(address)")
