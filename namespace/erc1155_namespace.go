@@ -86,7 +86,14 @@ func (e *Erc1155) BalanceOfBatch(contractAddress string, accounts []string, toke
 		return nil, err
 	}
 
-	return decode.Uint256Array(output)
+	balances, err := decode.Uint256Array(output)
+	if err != nil {
+		return nil, err
+	}
+	if len(balances) != len(accounts) {
+		return nil, constant.ErrUnexpectedBalanceCount
+	}
+	return balances, nil
 }
 
 func (e *Erc1155) Uri(contractAddress string, tokenId *big.Int) (string, error) {

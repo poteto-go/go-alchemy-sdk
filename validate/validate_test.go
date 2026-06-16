@@ -130,12 +130,14 @@ func TestUrl(t *testing.T) {
 func TestABIUint256Array(t *testing.T) {
 	t.Run("valid: empty array", func(t *testing.T) {
 		out := make([]byte, constant.ABIWordSize*2)
+		out[constant.ABIWordSize-1] = 0x20 // standard offset
 		assert.NoError(t, validate.ABIUint256Array(out))
 	})
 
 	t.Run("valid: length fits within output", func(t *testing.T) {
 		// offset(32) + length=2(32) + 2 item words(64) = 128 bytes
 		out := make([]byte, constant.ABIWordSize*4)
+		out[constant.ABIWordSize-1] = 0x20 // standard offset
 		out[constant.ABIWordSize*2-1] = 2
 		assert.NoError(t, validate.ABIUint256Array(out))
 	})
@@ -144,14 +146,22 @@ func TestABIUint256Array(t *testing.T) {
 		assert.ErrorIs(t, validate.ABIUint256Array(make([]byte, 31)), constant.ErrInvalidABIArray)
 	})
 
+	t.Run("non-standard offset word", func(t *testing.T) {
+		// offset=0x40 instead of the standard 0x20.
+		out := make([]byte, constant.ABIWordSize*2)
+		out[constant.ABIWordSize-1] = 0x40
+		assert.ErrorIs(t, validate.ABIUint256Array(out), constant.ErrInvalidABIArray)
+	})
+
 	t.Run("declared length exceeds output", func(t *testing.T) {
-		// offset + length=5 but no element words follow
-		out := append(make([]byte, constant.ABIWordSize), append(make([]byte, constant.ABIWordSize-1), 0x05)...)
+		// offset=0x20 + length=5 but no element words follow
+		out := append(append(make([]byte, constant.ABIWordSize-1), 0x20), append(make([]byte, constant.ABIWordSize-1), 0x05)...)
 		assert.ErrorIs(t, validate.ABIUint256Array(out), constant.ErrInvalidABIArray)
 	})
 
 	t.Run("malicious length does not panic", func(t *testing.T) {
 		out := make([]byte, constant.ABIWordSize*2)
+		out[constant.ABIWordSize-1] = 0x20 // standard offset
 		for i := constant.ABIWordSize; i < constant.ABIWordSize*2; i++ {
 			out[i] = 0xFF
 		}
@@ -165,6 +175,7 @@ func TestABIString(t *testing.T) {
 	t.Run("normal case: valid header and length", func(t *testing.T) {
 		// header declares length 3 with a full data word following.
 		output := make([]byte, constant.ABIStringHeaderSize+constant.ABIWordSize)
+		output[constant.ABIWordSize-1] = 0x20 // standard offset
 		output[constant.ABIStringHeaderSize-1] = 3
 
 		assert.NoError(t, validate.ABIString(output))
@@ -175,8 +186,17 @@ func TestABIString(t *testing.T) {
 			assert.ErrorIs(t, validate.ABIString([]byte("too-short")), constant.ErrInvalidABIString)
 		})
 
+		t.Run("non-standard offset word", func(t *testing.T) {
+			// offset=0x40 instead of the standard 0x20.
+			output := make([]byte, constant.ABIStringHeaderSize)
+			output[constant.ABIWordSize-1] = 0x40
+
+			assert.ErrorIs(t, validate.ABIString(output), constant.ErrInvalidABIString)
+		})
+
 		t.Run("declared length exceeds output", func(t *testing.T) {
 			output := make([]byte, constant.ABIStringHeaderSize)
+			output[constant.ABIWordSize-1] = 0x20 // standard offset
 			output[constant.ABIStringHeaderSize-1] = 100
 
 			assert.ErrorIs(t, validate.ABIString(output), constant.ErrInvalidABIString)
@@ -186,6 +206,7 @@ func TestABIString(t *testing.T) {
 			// lower 8 bytes of the length word set to 0xFF...FF, which would
 			// make Int64() negative and slip past a naive bounds check.
 			output := make([]byte, constant.ABIStringHeaderSize)
+			output[constant.ABIWordSize-1] = 0x20 // standard offset
 			for i := constant.ABIWordSize; i < constant.ABIStringHeaderSize; i++ {
 				output[i] = 0xFF
 			}

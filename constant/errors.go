@@ -55,6 +55,7 @@ var (
 	ErrUnexpectedNilSimulatedBackend    = errors.New("unexpected nil of simulated backend")
 	ErrMismatchedArrayLength            = errors.New("array arguments must have the same length")
 	ErrInvalidABIArray                  = errors.New("invalid ABI array")
+	ErrUnexpectedBalanceCount           = errors.New("unexpected number of balances returned")
 )
 
 var HttpClientErrorCodeList = []int{

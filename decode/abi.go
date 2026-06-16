@@ -15,8 +15,9 @@ func Uint256(output []byte) (*big.Int, error) {
 }
 
 // Uint256Array decodes an ABI-encoded dynamic uint256[] return value
-// (offset, length, items). The leading offset word points at the length field
-// and is assumed to be the standard 0x20 for a single dynamic return.
+// (offset, length, items). validate.ABIUint256Array checks that the leading
+// offset word is the standard 0x20 for a single dynamic return, so the length
+// field is read from the expected position.
 func Uint256Array(output []byte) ([]*big.Int, error) {
 	if err := validate.ABIUint256Array(output); err != nil {
 		return nil, err
