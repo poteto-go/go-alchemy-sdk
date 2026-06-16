@@ -178,4 +178,11 @@ func TestUint256Array(t *testing.T) {
 		_, err := decode.Uint256Array(in)
 		assert.Error(t, err)
 	})
+
+	t.Run("non-standard offset word -> error", func(t *testing.T) {
+		// offset=0x40 instead of the standard 0x20.
+		in := append(append(make([]byte, 31), 0x40), make([]byte, 32)...)
+		_, err := decode.Uint256Array(in)
+		assert.Error(t, err)
+	})
 }

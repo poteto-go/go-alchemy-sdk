@@ -130,6 +130,25 @@ func TestErc1155_BalanceOfBatch(t *testing.T) {
 		assert.Equal(t, "20", balances[1].String())
 	})
 
+	t.Run("returns error if returned balance count differs from requested", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		eth := newEtherApi()
+		erc1155 := namespace.NewErc1155Namespace(eth)
+
+		patches.ApplyMethod(reflect.TypeOf(eth), "CallContract", func(_ *ether.Ether, _ ethereum.CallMsg, _ string) ([]byte, error) {
+			// requests 2 balances but the response only carries 1 element.
+			out := encode.ABIUint256(big.NewInt(constant.ABIWordSize))
+			out = append(out, encode.ABIUint256Array([]*big.Int{big.NewInt(10)})...)
+			return out, nil
+		})
+
+		_, err := erc1155.BalanceOfBatch(contractAddress, accounts, tokenIds)
+
+		assert.ErrorIs(t, err, constant.ErrUnexpectedBalanceCount)
+	})
+
 	t.Run("returns error if contract call fails", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
