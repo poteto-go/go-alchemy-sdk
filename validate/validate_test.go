@@ -127,6 +127,28 @@ func TestUrl(t *testing.T) {
 	}
 }
 
+func TestABIOffsetIsStandard(t *testing.T) {
+	t.Run("standard 0x20 offset", func(t *testing.T) {
+		out := make([]byte, constant.ABIWordSize)
+		out[constant.ABIWordSize-1] = 0x20
+		assert.True(t, validate.ABIOffsetIsStandard(out))
+	})
+
+	t.Run("non-standard offset value", func(t *testing.T) {
+		out := make([]byte, constant.ABIWordSize)
+		out[constant.ABIWordSize-1] = 0x40
+		assert.False(t, validate.ABIOffsetIsStandard(out))
+	})
+
+	t.Run("non-zero high byte", func(t *testing.T) {
+		// a huge offset whose low byte happens to be 0x20 must not pass.
+		out := make([]byte, constant.ABIWordSize)
+		out[0] = 0x01
+		out[constant.ABIWordSize-1] = 0x20
+		assert.False(t, validate.ABIOffsetIsStandard(out))
+	})
+}
+
 func TestABIUint256Array(t *testing.T) {
 	t.Run("valid: empty array", func(t *testing.T) {
 		out := make([]byte, constant.ABIWordSize*2)
