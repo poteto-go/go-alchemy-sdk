@@ -291,6 +291,36 @@ func TestScenario_Famous_StableCoin(t *testing.T) {
 	})
 }
 
+func TestScenario_Famous_Nft(t *testing.T) {
+	t.Run("NftSupportedNetworks returns non-empty list including EthMainnet", func(t *testing.T) {
+		networks := famous.NftSupportedNetworks()
+
+		assert.NotEmpty(t, networks)
+		assert.True(t, slices.Contains(networks, types.EthMainnet))
+	})
+
+	t.Run("NftSupportedSymbols returns famous collections for EthMainnet", func(t *testing.T) {
+		symbols := famous.NftSupportedSymbols(types.EthMainnet)
+
+		assert.True(t, slices.Contains(symbols, famous.BAYC))
+		assert.True(t, slices.Contains(symbols, famous.CryptoPunks))
+		assert.True(t, slices.Contains(symbols, famous.Azuki))
+	})
+
+	t.Run("NftSupportedSymbols returns empty for unsupported network", func(t *testing.T) {
+		symbols := famous.NftSupportedSymbols(types.SolanaMainnet)
+
+		assert.Empty(t, symbols)
+	})
+
+	t.Run("NftContractAddress resolves typed symbol on EthMainnet", func(t *testing.T) {
+		addr, err := famous.NftContractAddress(types.EthMainnet, famous.BAYC)
+
+		assert.NoError(t, err)
+		assert.Equal(t, common.HexToAddress("0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"), addr)
+	})
+}
+
 func TestScenario_StableCoin(t *testing.T) {
 	t.Run("1. can create wallet 2. connect wallet 3. can deploy erc20 contract as stablecoin", func(t *testing.T) {
 		w, err := wallet.New(initPrivateKey)
