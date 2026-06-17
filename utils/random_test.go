@@ -44,6 +44,45 @@ func TestNewAuthorizationNonce(t *testing.T) {
 	})
 }
 
+func TestRandomBigInt(t *testing.T) {
+	t.Run("returns value in [0, max)", func(t *testing.T) {
+		max := big.NewInt(1000)
+		val := utils.RandomBigInt(max)
+
+		assert.True(t, val.Sign() >= 0, "expected non-negative")
+		assert.True(t, val.Cmp(max) < 0, "expected less than max")
+	})
+
+	t.Run("returns distributed values", func(t *testing.T) {
+		const iterations = 1000
+		max := big.NewInt(1000)
+		seen := make(map[int64]bool)
+
+		for i := 0; i < iterations; i++ {
+			val := utils.RandomBigInt(max)
+			seen[val.Int64()] = true
+		}
+
+		assert.Greater(t, len(seen), 10, "expected diverse values")
+	})
+
+	t.Run("panics when rand.Int fails", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		patches.ApplyFunc(
+			rand.Int,
+			func(_ io.Reader, _ *big.Int) (*big.Int, error) {
+				return nil, errors.New("error")
+			},
+		)
+
+		assert.Panics(t, func() {
+			utils.RandomBigInt(big.NewInt(100))
+		})
+	})
+}
+
 func TestRandomF64(t *testing.T) {
 	t.Run("normal case:", func(t *testing.T) {
 		// Act

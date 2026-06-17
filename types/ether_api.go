@@ -56,6 +56,20 @@ type EtherApi interface {
 	Client() EthClient
 
 	/*
+		Commit backend;
+		mined transaction
+		! this only works on simulated backend
+	*/
+	Commit() (common.Hash, error)
+
+	/*
+		Fork backend;
+		you can revert to the commit hash point
+		! this only works on simulated backend
+	*/
+	Fork(snapShotHash common.Hash) error
+
+	/*
 		BatchCall sends multiple JSON-RPC requests in a single HTTP round-trip
 		using geth's underlying rpc.Client.
 
