@@ -13,6 +13,14 @@ func NewAuthorizationNonce() [32]byte {
 	return nonce
 }
 
+func RandomBigInt(max *big.Int) *big.Int {
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
+
 func RandomF64(max float64) float64 {
 	const denom = 1 << 53
 	nBig, err := rand.Int(rand.Reader, big.NewInt(denom))
