@@ -150,7 +150,9 @@ func (w *wallet) SignTx(txRequest types.TransactionRequest) (*gethTypes.Transact
 	if err != nil {
 		return nil, err
 	}
-	if txRequest.GasLimit < estimatedGas.Uint64() {
+	if txRequest.GasLimit == 0 { // 0 = auto sentinel from resolveGasLimit(nil)
+		txRequest.GasLimit = estimatedGas.Uint64()
+	} else if txRequest.GasLimit < estimatedGas.Uint64() {
 		return nil, fmt.Errorf(
 			"gasLimit(%d) is less than estimated gas %d",
 			txRequest.GasLimit,

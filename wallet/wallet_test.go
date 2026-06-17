@@ -421,13 +421,65 @@ func TestWallet_SignTx(t *testing.T) {
 			},
 		)
 
-		// Act
+		// Act — explicit gasLimit smaller than estimate
 		_, err := w.SignTx(types.TransactionRequest{
-			GasLimit: 0,
+			GasLimit: 50,
 		})
 
 		// Assert
 		assert.Error(t, err)
+	})
+
+	t.Run("if gasLimit == 0, auto-apply estimatedGas", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		// Arrange
+		w := createConnectedWallet()
+
+		// Mock
+		patches.ApplyMethod(
+			reflect.TypeOf(w),
+			"PendingNonceAt",
+			func(_ *wallet) (uint64, error) {
+				return uint64(0), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"EstimateGas",
+			func(_ *ether.Ether, _ types.TransactionRequest) (*big.Int, error) {
+				return big.NewInt(100), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"SuggestGasPrice",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1_000_000_000), nil
+			},
+		)
+
+		patches.ApplyMethod(
+			reflect.TypeOf(w.provider.Eth()),
+			"ChainID",
+			func(_ *ether.Ether) (*big.Int, error) {
+				return big.NewInt(1), nil
+			},
+		)
+
+		// Act — GasLimit=0 means "auto"
+		signedTx, err := w.SignTx(types.TransactionRequest{
+			GasLimit: 0,
+			To:       "0x" + testAddrHexTo,
+			Value:    "0x0",
+		})
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(100), signedTx.Gas())
 	})
 
 	t.Run("if error occur on transform, return error", func(t *testing.T) {
