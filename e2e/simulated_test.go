@@ -29,10 +29,12 @@ import (
 // reach for the raw *rpc.Client are NOT available on a simulated backend and
 // are skipped in the scenarios below:
 //   - Core.GetBalance / wallet.GetBalance (eth_getBalance via Send)
-//   - Debug.Snapshot / Debug.RevertTo (evm_snapshot / evm_revert via Send)
 //   - batch.Batcher (BatchCall via raw rpc.Client)
 //   - Core.GetCode by block hash (CodeAtHash)
 //   - custom http.RoundTripper transport (no HTTP layer in simulated)
+//
+// Debug.Snapshot / Debug.RevertTo are available via SimulatedDebug, which uses
+// Commit/Fork on the simulated backend instead of evm_snapshot / evm_revert.
 func newSimulatedAlchemy(t *testing.T) (gas.SimulatedAlchemy, func()) {
 	t.Helper()
 
@@ -1120,5 +1122,45 @@ func TestSimulated_StableCoin_FiatToken(t *testing.T) {
 }
 
 func TestSimulated_Debug(t *testing.T) {
-	t.Skip("Debug.Snapshot / Debug.RevertTo use evm_snapshot / evm_revert over provider.Send, unavailable on simulated backend")
+	alchemy, cleanup := newSimulatedAlchemy(t)
+	defer cleanup()
+
+	t.Run("Snapshot returns a snapshot id", func(t *testing.T) {
+		snapshotId, err := alchemy.Debug.Snapshot()
+
+		assert.Nil(t, err)
+		assert.NotNil(t, snapshotId)
+	})
+
+	t.Run("RevertTo with unknown id returns ErrUnexpectedSnapshotId", func(t *testing.T) {
+		// big.NewInt(9999) is a new pointer — never stored in the registry.
+		_, err := alchemy.Debug.RevertTo(big.NewInt(9999))
+
+		assert.ErrorIs(t, err, constant.ErrUnexpectedSnapshotId)
+	})
+
+	t.Run("Snapshot then RevertTo reverts blockchain state", func(t *testing.T) {
+		w, err := wallet.New(initPrivateKey)
+		assert.Nil(t, err)
+		w.Connect(alchemy.GetProvider())
+
+		// 1. snapshot — commits current pending state and records the block hash
+		snapshotId, err := alchemy.Debug.Snapshot()
+		assert.Nil(t, err)
+
+		// 2. deploy a contract to advance chain state
+		contractAddress, err := w.DeployContract(context.Background(), &artifacts.PotetoStorageMetaData)
+		assert.Nil(t, err)
+
+		// 3. verify contract exists
+		assert.True(t, alchemy.Core.IsContractAddress(contractAddress.Hex()))
+
+		// 4. revert to snapshot
+		reverted, err := alchemy.Debug.RevertTo(snapshotId)
+		assert.Nil(t, err)
+		assert.True(t, reverted)
+
+		// 5. verify contract is gone
+		assert.False(t, alchemy.Core.IsContractAddress(contractAddress.Hex()))
+	})
 }

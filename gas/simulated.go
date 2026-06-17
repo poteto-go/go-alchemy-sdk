@@ -48,7 +48,7 @@ func NewSimulatedAlchemy(backend *simulated.Backend) (SimulatedAlchemy, error) {
 	erc1155Namespace := namespace.NewErc1155Namespace(eth)
 	erc20Namespace := namespace.NewERC20Namespace(eth)
 	stableCoinNamespace := namespace.NewStableCoinNamespace(eth)
-	debugNamespace := namespace.NewDebugNamespace(eth)
+	debugNamespace := namespace.NewSimulatedDebugNamespace(eth)
 	return SimulatedAlchemy{
 		Core:       coreNamespace,
 		Transact:   transactNamespace,

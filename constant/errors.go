@@ -53,6 +53,7 @@ var (
 	ErrUnexpectedNoContractAddress      = errors.New("unexpected no contract address")
 	ErrUnSupportSimulatedMethod         = errors.New("unsupported method on simulated backend")
 	ErrUnexpectedNilSimulatedBackend    = errors.New("unexpected nil of simulated backend")
+	ErrUnexpectedSnapshotId             = errors.New("unexpected snapshot id")
 	ErrMismatchedArrayLength            = errors.New("array arguments must have the same length")
 	ErrInvalidABIArray                  = errors.New("invalid ABI array")
 	ErrUnexpectedBalanceCount           = errors.New("unexpected number of balances returned")

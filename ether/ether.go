@@ -851,6 +851,22 @@ func (ether *Ether) ContractTransact(auth *bind.TransactOpts, contractAddress st
 	return tx, nil
 }
 
+func (ether *Ether) Commit() (common.Hash, error) {
+	if ether.simBackend == nil {
+		return common.Hash{}, constant.ErrUnexpectedNilSimulatedBackend
+	}
+
+	return ether.simBackend.Commit(), nil
+}
+
+func (ether *Ether) Fork(snapShotHash common.Hash) error {
+	if ether.simBackend == nil {
+		return constant.ErrUnexpectedNilSimulatedBackend
+	}
+
+	return ether.simBackend.Fork(snapShotHash)
+}
+
 func (ether *Ether) simulatedMined(txHash common.Hash) (*gethTypes.Receipt, error) {
 	if ether.simBackend == nil {
 		return nil, constant.ErrUnexpectedNilSimulatedBackend
