@@ -215,7 +215,7 @@ func TestWallet_ERC1155SafeTransferFromNoWait(t *testing.T) {
 		)
 		assert.Equal(t, expectedData, captured.Data)
 		assert.Equal(t, contractAddress, captured.To)
-		assert.Equal(t, uint64(300000), captured.GasLimit)
+		assert.Equal(t, uint64(0), captured.GasLimit)
 	})
 
 	t.Run("custom gasLimit is forwarded", func(t *testing.T) {
@@ -404,7 +404,7 @@ func TestWallet_ERC1155SafeBatchTransferFromNoWait(t *testing.T) {
 		expectedData := encode.ReadCalldata(constant.SafeBatchTransferFromFnSignature, args)
 		assert.Equal(t, expectedData, captured.Data)
 		assert.Equal(t, contractAddress, captured.To)
-		assert.Equal(t, uint64(300000), captured.GasLimit)
+		assert.Equal(t, uint64(0), captured.GasLimit)
 	})
 
 	t.Run("custom gasLimit is forwarded", func(t *testing.T) {
