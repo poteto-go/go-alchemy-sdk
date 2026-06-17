@@ -324,7 +324,7 @@ func TestWallet_NftTransferFromNoWait(t *testing.T) {
 		)
 		assert.Equal(t, expectedData, captured.Data)
 		assert.Equal(t, contractAddress, captured.To)
-		assert.Equal(t, uint64(300000), captured.GasLimit)
+		assert.Equal(t, uint64(0), captured.GasLimit)
 	})
 
 	t.Run("can transfer from no wait w/ custom gasLimit", func(t *testing.T) {
@@ -734,7 +734,7 @@ func TestWallet_NftApproveNoWait(t *testing.T) {
 		)
 		assert.Equal(t, expectedData, captured.Data)
 		assert.Equal(t, contractAddress, captured.To)
-		assert.Equal(t, uint64(300000), captured.GasLimit)
+		assert.Equal(t, uint64(0), captured.GasLimit)
 	})
 
 	t.Run("can approve no wait w/ custom gasLimit", func(t *testing.T) {
@@ -885,7 +885,7 @@ func TestWallet_NftSetApprovalForAllNoWait(t *testing.T) {
 		)
 		assert.Equal(t, expectedData, captured.Data)
 		assert.Equal(t, contractAddress, captured.To)
-		assert.Equal(t, uint64(300000), captured.GasLimit)
+		assert.Equal(t, uint64(0), captured.GasLimit)
 	})
 
 	t.Run("encodes setApprovalForAll calldata (approved=false)", func(t *testing.T) {

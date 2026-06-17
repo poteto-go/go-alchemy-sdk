@@ -35,7 +35,7 @@ func (api *walletERC20) Transfer(ctx context.Context, contractAddress, toAddress
 
 func resolveGasLimit(gasLimit *uint64) uint64 {
 	if gasLimit == nil {
-		return 300000
+		return 0 // 0 is the sentinel for "auto": SignTx fills it from eth_estimateGas
 	}
 	return *gasLimit
 }
