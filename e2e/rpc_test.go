@@ -70,6 +70,22 @@ func TestSenario_BaseMethod(t *testing.T) {
 		assert.Equal(t, gasPrice.Cmp(big.NewInt(0)), 1)
 	})
 
+	t.Run("SuggestGasTipCap", func(t *testing.T) {
+		tip, err := alchemy.Core.SuggestGasTipCap()
+
+		assert.Nil(t, err)
+		assert.NotNil(t, tip)
+	})
+
+	t.Run("SuggestEIP1559Fees", func(t *testing.T) {
+		tip, maxFee, err := alchemy.Core.SuggestEIP1559Fees()
+
+		assert.Nil(t, err)
+		assert.NotNil(t, tip)
+		assert.NotNil(t, maxFee)
+		assert.True(t, maxFee.Cmp(tip) >= 0)
+	})
+
 	t.Run("estimate gas", func(t *testing.T) {
 		gas, err := alchemy.Core.EstimateGas(types.TransactionRequest{
 			From:  initAddress,

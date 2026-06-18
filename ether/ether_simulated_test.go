@@ -79,6 +79,32 @@ func simSendDeployTx(t *testing.T, e *eth.Ether) common.Hash {
 	return simSign(t, e, nil, common.FromHex(artifacts.PotetoStorageMetaData.Bin))
 }
 
+func TestEther_SuggestGasTipCap_Simulated(t *testing.T) {
+	t.Run("returns tip on simulated EIP-1559 backend", func(t *testing.T) {
+		e, cleanup := newSimulatedEtherForTest(t)
+		defer cleanup()
+
+		tip, err := e.SuggestGasTipCap()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, tip)
+	})
+}
+
+func TestEther_SuggestEIP1559Fees_Simulated(t *testing.T) {
+	t.Run("returns tip and maxFee on simulated EIP-1559 backend", func(t *testing.T) {
+		e, cleanup := newSimulatedEtherForTest(t)
+		defer cleanup()
+
+		tip, maxFee, err := e.SuggestEIP1559Fees()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, tip)
+		assert.NotNil(t, maxFee)
+		assert.True(t, maxFee.Cmp(tip) >= 0)
+	})
+}
+
 func TestEther_NewSimulatedApi(t *testing.T) {
 	t.Run("Client returns a usable simulated client", func(t *testing.T) {
 		e, cleanup := newSimulatedEtherForTest(t)

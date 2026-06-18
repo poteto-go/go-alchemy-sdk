@@ -558,6 +558,58 @@ func (ether *Ether) SuggestGasPrice() (*big.Int, error) {
 	return res, nil
 }
 
+func (ether *Ether) SuggestGasTipCap() (*big.Int, error) {
+	if err := ether.SetEthClient(); err != nil {
+		return nil, err
+	}
+	defer ether.Close()
+
+	c := ether.Client()
+	tip, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		c.SuggestGasTipCap,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return tip, nil
+}
+
+func (ether *Ether) SuggestEIP1559Fees() (*big.Int, *big.Int, error) {
+	if err := ether.SetEthClient(); err != nil {
+		return nil, nil, err
+	}
+	defer ether.Close()
+
+	c := ether.Client()
+
+	tip, err := internal.GethRequestWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		c.SuggestGasTipCap,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	header, err := internal.GethRequestArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		c.HeaderByNumber,
+		(*big.Int)(nil),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	if header.BaseFee == nil {
+		return nil, nil, constant.ErrChainNotSupportEIP1559
+	}
+
+	maxFee := new(big.Int).Add(new(big.Int).Lsh(header.BaseFee, 1), tip)
+	return tip, maxFee, nil
+}
+
 func (ether *Ether) Call(tx types.TransactionRequest, blockTag string) (string, error) {
 	if err := validate.BlockTag(blockTag); err != nil {
 		return "", err

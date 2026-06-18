@@ -60,6 +60,7 @@ var (
 	ErrENSResolverNotFound              = errors.New("ENS resolver not found for name")
 	ErrENSNameNotFound                  = errors.New("ENS name not found for address")
 	ErrENSNotSupportedOnNetwork         = errors.New("ENS not available on this network")
+	ErrChainNotSupportEIP1559           = errors.New("chain does not support EIP-1559")
 )
 
 var HttpClientErrorCodeList = []int{

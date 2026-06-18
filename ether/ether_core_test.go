@@ -1926,6 +1926,159 @@ func TestEther_SuggestGasPrice(t *testing.T) {
 	})
 }
 
+func TestEther_SuggestGasTipCap(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success request", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock
+			alchemyMock.RegisterResponderOnce("eth_maxPriorityFeePerGas", `{"jsonrpc":"2.0","id":1,"result":"0x3B9ACA00"}`)
+
+			// Act
+			result, err := ether.SuggestGasTipCap()
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, big.NewInt(1_000_000_000), result)
+		})
+	})
+
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, err := ether.SuggestGasTipCap()
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed to get tip cap, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Act
+			_, err := ether.SuggestGasTipCap()
+
+			// Assert
+			assert.Error(t, err)
+		})
+	})
+}
+
+func TestEther_SuggestEIP1559Fees(t *testing.T) {
+	t.Run("normal case", func(t *testing.T) {
+		t.Run("success on EIP-1559 chain", func(t *testing.T) {
+			// Arrange
+			ether, cleanup := newSimulatedEtherForTest(t)
+			defer cleanup()
+
+			// Act
+			tip, maxFee, err := ether.SuggestEIP1559Fees()
+
+			// Assert
+			assert.NoError(t, err)
+			assert.NotNil(t, tip)
+			assert.NotNil(t, maxFee)
+			assert.True(t, maxFee.Cmp(tip) >= 0)
+		})
+	})
+
+	t.Run("error case", func(t *testing.T) {
+		t.Run("if cannot create ethClient, return err", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(ether),
+				"SetEthClient",
+				func(_ *eth.Ether) error {
+					return errors.New("error")
+				},
+			)
+
+			// Act
+			_, _, err := ether.SuggestEIP1559Fees()
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed to get tip cap, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+
+			// Act
+			_, _, err := ether.SuggestEIP1559Fees()
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("if failed to get header, return error", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock: tip succeeds, but no block mock
+			alchemyMock.RegisterResponderOnce("eth_maxPriorityFeePerGas", `{"jsonrpc":"2.0","id":1,"result":"0x3B9ACA00"}`)
+
+			// Act
+			_, _, err := ether.SuggestEIP1559Fees()
+
+			// Assert
+			assert.Error(t, err)
+		})
+
+		t.Run("on non-EIP-1559 chain (nil baseFee), return ErrChainNotSupportEIP1559", func(t *testing.T) {
+			// Arrange
+			ether := newEtherApiForTest()
+			alchemyMock := newAlchemyMockOnEtherTest(t)
+			defer alchemyMock.DeactivateAndReset()
+
+			// Mock: tip succeeds; legacy block header without baseFeePerGas
+			alchemyMock.RegisterResponderOnce("eth_maxPriorityFeePerGas", `{"jsonrpc":"2.0","id":1,"result":"0x3B9ACA00"}`)
+			alchemyMock.RegisterResponderOnce("eth_getBlockByNumber", `{"jsonrpc":"2.0","id":1,"result":{`+
+				`"parentHash":"0x0000000000000000000000000000000000000000000000000000000000000000",`+
+				`"sha3Uncles":"0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",`+
+				`"stateRoot":"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",`+
+				`"transactionsRoot":"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",`+
+				`"receiptsRoot":"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",`+
+				`"logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",`+
+				`"difficulty":"0x0","number":"0x1","gasLimit":"0x1c9c380","gasUsed":"0x0",`+
+				`"timestamp":"0x5e9fe3a2","extraData":"0x"}}`)
+
+			// Act
+			_, _, err := ether.SuggestEIP1559Fees()
+
+			// Assert
+			assert.ErrorIs(t, err, constant.ErrChainNotSupportEIP1559)
+		})
+	})
+}
+
 func TestEther_SendRawTransaction(t *testing.T) {
 	t.Run("error case", func(t *testing.T) {
 		// Arrange
