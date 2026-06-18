@@ -198,6 +198,13 @@ func (ether *Ether) Client() types.EthClient {
 	return ether.client
 }
 
+func (ether *Ether) Network() types.Network {
+	if ether.provider == nil {
+		return ""
+	}
+	return ether.provider.Network()
+}
+
 /*
 BatchCall sends multiple JSON-RPC requests in a single HTTP round-trip using
 geth's underlying rpc.Client.

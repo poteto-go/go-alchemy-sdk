@@ -269,17 +269,24 @@ type EtherApi interface {
 	RevertTo(snapshotId *big.Int) (bool, error)
 
 	/*
-		ResolveName resolves an ENS name to a lowercase hex address.
-		If name is already a valid hex address it is returned as-is (lowercased).
+		Network returns the Alchemy network this client is connected to.
+		Returns an empty string for simulated backends.
 	*/
-	ResolveName(name string) (string, error)
+	Network() Network
 
 	/*
-		LookupAddress performs a reverse ENS lookup (address → name).
-		Returns an error when no reverse record is registered or ENS is not
-		available on the current chain.
+		ResolveNameBy resolves an ENS name to a lowercase hex address using the
+		provided ENS registry contract address.
+		If name is already a valid hex address it is returned as-is (lowercased).
 	*/
-	LookupAddress(address string) (string, error)
+	ResolveNameBy(registryAddress string, name string) (string, error)
+
+	/*
+		LookupAddressBy performs a reverse ENS lookup (address → name) using the
+		provided ENS registry contract address.
+		Returns an error when no reverse record is registered.
+	*/
+	LookupAddressBy(registryAddress string, address string) (string, error)
 
 	/*
 		ContractCall calls a contract.

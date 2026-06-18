@@ -4,36 +4,15 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/decode"
 	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
-// ensRegistryAddress is the canonical ENS registry deployed at the same
-// address on Mainnet, Goerli, and Sepolia.
-const ensRegistryAddress = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
-
-// ensNamehash implements EIP-137: recursively hashes name labels with keccak256.
-func ensNamehash(name string) [32]byte {
-	node := [32]byte{}
-	if name == "" {
-		return node
-	}
-	var buf [64]byte
-	labels := strings.Split(name, ".")
-	for i := len(labels) - 1; i >= 0; i-- {
-		copy(buf[:32], node[:])
-		copy(buf[32:], crypto.Keccak256([]byte(labels[i])))
-		node = crypto.Keccak256Hash(buf[:])
-	}
-	return node
-}
-
-// ensResolverFor calls the ENS registry to get the resolver address for node.
+// ensResolverFor calls registryAddr to get the resolver address for node.
 // Returns ErrENSResolverNotFound if the registry returns the zero address.
-func (ether *Ether) ensResolverFor(node [32]byte) (common.Address, error) {
-	out, err := ether.CallReadMethod(constant.ENSResolverFnSignature, ensRegistryAddress, node[:])
+func (ether *Ether) ensResolverFor(registryAddr common.Address, node [32]byte) (common.Address, error) {
+	out, err := ether.CallReadMethod(constant.ENSResolverFnSignature, registryAddr.Hex(), node[:])
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -47,16 +26,21 @@ func (ether *Ether) ensResolverFor(node [32]byte) (common.Address, error) {
 	return resolver, nil
 }
 
-// ResolveName resolves an ENS name to a lowercase hex address.
+// ResolveNameBy resolves an ENS name to a lowercase hex address using the
+// provided ENS registry contract address.
 // If name is already a valid hex address it is returned as-is (lowercased).
-func (ether *Ether) ResolveName(name string) (string, error) {
+func (ether *Ether) ResolveNameBy(registryAddress string, name string) (string, error) {
+	if err := validate.Address(registryAddress); err != nil {
+		return "", err
+	}
 	if common.IsHexAddress(name) {
 		return strings.ToLower(name), nil
 	}
 
-	node := ensNamehash(name)
+	node := decode.ENSNamehash(name)
+	registry := common.HexToAddress(registryAddress)
 
-	resolver, err := ether.ensResolverFor(node)
+	resolver, err := ether.ensResolverFor(registry, node)
 	if err != nil {
 		return "", err
 	}
@@ -72,18 +56,22 @@ func (ether *Ether) ResolveName(name string) (string, error) {
 	return strings.ToLower(addr.Hex()), nil
 }
 
-// LookupAddress performs a reverse ENS lookup (address → name).
+// LookupAddressBy performs a reverse ENS lookup (address → name) using the
+// provided ENS registry contract address.
 // Returns ErrENSNameNotFound when no reverse record is registered.
-func (ether *Ether) LookupAddress(address string) (string, error) {
+func (ether *Ether) LookupAddressBy(registryAddress string, address string) (string, error) {
+	if err := validate.Address(registryAddress); err != nil {
+		return "", err
+	}
 	if err := validate.Address(address); err != nil {
 		return "", err
 	}
 
-	// Reverse node: namehash("<lowercase_addr_without_0x>.addr.reverse")
 	lowered := strings.TrimPrefix(strings.ToLower(address), "0x")
-	reverseNode := ensNamehash(lowered + ".addr.reverse")
+	reverseNode := decode.ENSNamehash(lowered + ".addr.reverse")
+	registry := common.HexToAddress(registryAddress)
 
-	resolver, err := ether.ensResolverFor(reverseNode)
+	resolver, err := ether.ensResolverFor(registry, reverseNode)
 	if err != nil {
 		return "", err
 	}

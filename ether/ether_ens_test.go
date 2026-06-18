@@ -10,10 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEther_ResolveName(t *testing.T) {
+func TestEther_ResolveNameBy(t *testing.T) {
+	const registry = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+
 	t.Run("returns lowercase address as-is when input is already a valid hex address", func(t *testing.T) {
 		e := newEtherApiForTest()
-		result, err := e.ResolveName("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+		result, err := e.ResolveNameBy(registry, "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
 		assert.NoError(t, err)
 		assert.Equal(t, "0xd8da6bf26964af9d7eed9e03e53415d37aa96045", result)
 	})
@@ -34,7 +36,7 @@ func TestEther_ResolveName(t *testing.T) {
 			`{"jsonrpc":"2.0","id":1,"result":"0x000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045"}`,
 		)
 
-		result, err := e.ResolveName("vitalik.eth")
+		result, err := e.ResolveNameBy(registry, "vitalik.eth")
 		assert.NoError(t, err)
 		assert.Equal(t, "0xd8da6bf26964af9d7eed9e03e53415d37aa96045", result)
 	})
@@ -44,13 +46,18 @@ func TestEther_ResolveName(t *testing.T) {
 		alchemyMock := newAlchemyMockOnEtherTest(t)
 		defer alchemyMock.DeactivateAndReset()
 
-		// resolver returns zero address
 		alchemyMock.RegisterResponderOnce(
 			"eth_call",
 			`{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000000"}`,
 		)
 
-		_, err := e.ResolveName("vitalik.eth")
+		_, err := e.ResolveNameBy(registry, "vitalik.eth")
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error for invalid registry address", func(t *testing.T) {
+		e := newEtherApiForTest()
+		_, err := e.ResolveNameBy("not-an-address", "vitalik.eth")
 		assert.Error(t, err)
 	})
 
@@ -65,12 +72,14 @@ func TestEther_ResolveName(t *testing.T) {
 			func(_ *eth.Ether) error { return errors.New("connection failed") },
 		)
 
-		_, err := e.ResolveName("vitalik.eth")
+		_, err := e.ResolveNameBy(registry, "vitalik.eth")
 		assert.Error(t, err)
 	})
 }
 
-func TestEther_LookupAddress(t *testing.T) {
+func TestEther_LookupAddressBy(t *testing.T) {
+	const registry = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+
 	t.Run("returns ENS name for a valid address", func(t *testing.T) {
 		e := newEtherApiForTest()
 		alchemyMock := newAlchemyMockOnEtherTest(t)
@@ -88,14 +97,20 @@ func TestEther_LookupAddress(t *testing.T) {
 			`{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b766974616c696b2e657468000000000000000000000000000000000000000000"}`,
 		)
 
-		result, err := e.LookupAddress("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+		result, err := e.LookupAddressBy(registry, "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
 		assert.NoError(t, err)
 		assert.Equal(t, "vitalik.eth", result)
 	})
 
+	t.Run("returns error for invalid registry address", func(t *testing.T) {
+		e := newEtherApiForTest()
+		_, err := e.LookupAddressBy("not-an-address", "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+		assert.Error(t, err)
+	})
+
 	t.Run("returns error for invalid hex address", func(t *testing.T) {
 		e := newEtherApiForTest()
-		_, err := e.LookupAddress("not-an-address")
+		_, err := e.LookupAddressBy(registry, "not-an-address")
 		assert.Error(t, err)
 	})
 
@@ -109,7 +124,7 @@ func TestEther_LookupAddress(t *testing.T) {
 			`{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000000"}`,
 		)
 
-		_, err := e.LookupAddress("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+		_, err := e.LookupAddressBy(registry, "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
 		assert.Error(t, err)
 	})
 
@@ -124,7 +139,7 @@ func TestEther_LookupAddress(t *testing.T) {
 			func(_ *eth.Ether) error { return errors.New("connection failed") },
 		)
 
-		_, err := e.LookupAddress("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+		_, err := e.LookupAddressBy(registry, "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
 		assert.Error(t, err)
 	})
 }

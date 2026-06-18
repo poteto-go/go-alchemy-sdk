@@ -59,6 +59,7 @@ var (
 	ErrUnexpectedBalanceCount           = errors.New("unexpected number of balances returned")
 	ErrENSResolverNotFound              = errors.New("ENS resolver not found for name")
 	ErrENSNameNotFound                  = errors.New("ENS name not found for address")
+	ErrENSNotSupportedOnNetwork         = errors.New("ENS not available on this network")
 )
 
 var HttpClientErrorCodeList = []int{

@@ -8,6 +8,14 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
+func ensRegistryForNetwork(network types.Network) (string, error) {
+	addr, ok := constant.ENSRegistryByNetwork[string(network)]
+	if !ok {
+		return "", constant.ErrENSNotSupportedOnNetwork
+	}
+	return addr, nil
+}
+
 type ICore interface {
 	/* get  the number of the most recent block. */
 	GetBlockNumber() (uint64, error)
@@ -105,18 +113,33 @@ type ICore interface {
 	GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error)
 
 	/*
-		ResolveName resolves an ENS name to a lowercase hex address.
+		ResolveName resolves an ENS name to a lowercase hex address using the
+		default ENS registry for the current network.
 		If name is already a valid hex address it is returned as-is (lowercased).
-		Returns an error on chains without an ENS deployment.
+		Returns ErrENSNotSupportedOnNetwork on chains without a known ENS deployment.
 	*/
 	ResolveName(name string) (string, error)
 
 	/*
-		LookupAddress performs a reverse ENS lookup (address → name).
-		Returns an error when no reverse record is registered or ENS is not
-		available on the current chain.
+		ResolveNameBy resolves an ENS name to a lowercase hex address using the
+		provided ENS registry contract address.
+		If name is already a valid hex address it is returned as-is (lowercased).
+	*/
+	ResolveNameBy(registryAddress string, name string) (string, error)
+
+	/*
+		LookupAddress performs a reverse ENS lookup (address → name) using the
+		default ENS registry for the current network.
+		Returns ErrENSNotSupportedOnNetwork on chains without a known ENS deployment.
 	*/
 	LookupAddress(address string) (string, error)
+
+	/*
+		LookupAddressBy performs a reverse ENS lookup (address → name) using the
+		provided ENS registry contract address.
+		Returns an error when no reverse record is registered.
+	*/
+	LookupAddressBy(registryAddress string, address string) (string, error)
 }
 
 type Core struct {
@@ -281,11 +304,27 @@ func (c *Core) GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes
 }
 
 func (c *Core) ResolveName(name string) (string, error) {
-	return c.ether.ResolveName(name)
+	registry, err := ensRegistryForNetwork(c.ether.Network())
+	if err != nil {
+		return "", err
+	}
+	return c.ether.ResolveNameBy(registry, name)
+}
+
+func (c *Core) ResolveNameBy(registryAddress string, name string) (string, error) {
+	return c.ether.ResolveNameBy(registryAddress, name)
 }
 
 func (c *Core) LookupAddress(address string) (string, error) {
-	return c.ether.LookupAddress(address)
+	registry, err := ensRegistryForNetwork(c.ether.Network())
+	if err != nil {
+		return "", err
+	}
+	return c.ether.LookupAddressBy(registry, address)
+}
+
+func (c *Core) LookupAddressBy(registryAddress string, address string) (string, error) {
+	return c.ether.LookupAddressBy(registryAddress, address)
 }
 
 func (c *Core) GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error) {
