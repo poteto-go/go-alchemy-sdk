@@ -9,7 +9,7 @@ import (
 )
 
 func ensRegistryForNetwork(network types.Network) (string, error) {
-	addr, ok := constant.ENSRegistryByNetwork[string(network)]
+	addr, ok := constant.ENSRegistryByNetwork[network]
 	if !ok {
 		return "", constant.ErrENSNotSupportedOnNetwork
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/agiledragon/gomonkey"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	eth "github.com/poteto-go/go-alchemy-sdk/ether"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -77,5 +78,19 @@ func TestEther_PeerCount(t *testing.T) {
 			// Assert
 			assert.ErrorIs(t, constant.ErrUnSupportSimulatedMethod, err)
 		})
+	})
+}
+
+func TestEther_Network(t *testing.T) {
+	t.Run("returns network from provider", func(t *testing.T) {
+		e := newEtherApiForTest()
+		// utAlchemySetting.Network is "fuga"
+		assert.Equal(t, types.Network("fuga"), e.Network())
+	})
+
+	t.Run("returns empty string on simulated backend (no provider)", func(t *testing.T) {
+		e, cleanup := newSimulatedEtherForTest(t)
+		defer cleanup()
+		assert.Equal(t, types.Network(""), e.Network())
 	})
 }

@@ -66,6 +66,13 @@ func newProviderForTest() *AlchemyProvider {
 	return NewAlchemyProvider(config).(*AlchemyProvider)
 }
 
+func TestAlchemyProvider_Network(t *testing.T) {
+	t.Run("returns the network from config", func(t *testing.T) {
+		provider := newProviderForTest()
+		assert.Equal(t, types.Network("fuga"), provider.Network())
+	})
+}
+
 func TestAlchemyProvider_Send(t *testing.T) {
 	// Arrange
 	provider := newProviderForTest()
