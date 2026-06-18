@@ -5,8 +5,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/decode"
 	"github.com/poteto-go/go-alchemy-sdk/encode"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/validate"
 )
 
 /*
@@ -74,6 +76,8 @@ type Batcher struct {
 	Core       *CoreBatch
 	ERC20      *ERC20Batch
 	StableCoin *StableCoinBatch
+	Nft        *NftBatch
+	ERC1155    *ERC1155Batch
 }
 
 // NewBatcher creates a Batcher bound to the given EtherApi (e.g.
@@ -83,6 +87,8 @@ func NewBatcher(ether types.EtherApi) *Batcher {
 	b.Core = &CoreBatch{b: b}
 	b.ERC20 = &ERC20Batch{b: b}
 	b.StableCoin = &StableCoinBatch{ERC20Batch: b.ERC20}
+	b.Nft = &NftBatch{b: b}
+	b.ERC1155 = &ERC1155Batch{b: b}
 	return b
 }
 
@@ -185,4 +191,13 @@ func AddCall[T any](
 
 	return addConv(b, constant.Eth_Call, []any{call, "latest"}, target,
 		func(t *hexutil.Bytes) (T, error) { return decode([]byte(*t)) })
+}
+
+// addStringCall validates a single contract address and queues an eth_call
+// that decodes its result as an ABI string. Used by ERC20Batch and NftBatch.
+func addStringCall(b *Batcher, contractAddress string, fnSig []byte) *Result[string] {
+	if err := validate.Address(contractAddress); err != nil {
+		return failed[string](err)
+	}
+	return AddCall(b, contractAddress, fnSig, decode.ABIString)
 }
