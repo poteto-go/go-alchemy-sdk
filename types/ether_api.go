@@ -147,6 +147,19 @@ type EtherApi interface {
 	SuggestGasPrice() (*big.Int, error)
 
 	/*
+		SuggestGasTipCap returns the suggested maxPriorityFeePerGas (eth_maxPriorityFeePerGas)
+		for EIP-1559 transactions.
+	*/
+	SuggestGasTipCap() (*big.Int, error)
+
+	/*
+		SuggestEIP1559Fees returns (maxPriorityFeePerGas, maxFeePerGas) ready to use in a
+		TransactionRequest. maxFeePerGas is derived as baseFee*2 + maxPriorityFeePerGas.
+		Returns an error on chains that do not support EIP-1559.
+	*/
+	SuggestEIP1559Fees() (maxPriorityFeePerGas *big.Int, maxFeePerGas *big.Int, err error)
+
+	/*
 		Read method call for Any Smart Contract
 	*/
 	CallReadMethod(

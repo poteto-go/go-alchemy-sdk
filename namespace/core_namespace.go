@@ -23,6 +23,19 @@ type ICore interface {
 	/* Returns the best guess of the current gas price to use in a transaction. */
 	GetGasPrice() (*big.Int, error)
 
+	/*
+		SuggestGasTipCap returns the suggested maxPriorityFeePerGas (EIP-1559 tip)
+		via eth_maxPriorityFeePerGas.
+	*/
+	SuggestGasTipCap() (*big.Int, error)
+
+	/*
+		SuggestEIP1559Fees returns (maxPriorityFeePerGas, maxFeePerGas) ready to use in a
+		TransactionRequest. maxFeePerGas is derived as baseFee*2 + maxPriorityFeePerGas.
+		Returns an error on chains that do not support EIP-1559.
+	*/
+	SuggestEIP1559Fees() (maxPriorityFeePerGas *big.Int, maxFeePerGas *big.Int, err error)
+
 	/* Returns the number of p2p peers as reported by the net_peerCount method. */
 	PeerCount() (uint64, error)
 
@@ -325,6 +338,14 @@ func (c *Core) LookupAddress(address string) (string, error) {
 
 func (c *Core) LookupAddressBy(registryAddress string, address string) (string, error) {
 	return c.ether.LookupAddressBy(registryAddress, address)
+}
+
+func (c *Core) SuggestGasTipCap() (*big.Int, error) {
+	return c.ether.SuggestGasTipCap()
+}
+
+func (c *Core) SuggestEIP1559Fees() (*big.Int, *big.Int, error) {
+	return c.ether.SuggestEIP1559Fees()
 }
 
 func (c *Core) GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error) {

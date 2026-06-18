@@ -172,6 +172,122 @@ func TestCore_GetGasPrice(t *testing.T) {
 	})
 }
 
+func TestCore_SuggestGasTipCap(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("return tip cap", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expected := big.NewInt(1_000_000_000)
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"SuggestGasTipCap",
+				func(_ *ether.Ether) (*big.Int, error) {
+					return expected, nil
+				},
+			)
+
+			// Act
+			tip, err := core.SuggestGasTipCap()
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, expected, tip)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("propagates error from ether", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			errExpected := errors.New("error")
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"SuggestGasTipCap",
+				func(_ *ether.Ether) (*big.Int, error) {
+					return nil, errExpected
+				},
+			)
+
+			// Act
+			tip, err := core.SuggestGasTipCap()
+
+			// Assert
+			assert.ErrorIs(t, errExpected, err)
+			assert.Nil(t, tip)
+		})
+	})
+}
+
+func TestCore_SuggestEIP1559Fees(t *testing.T) {
+	// Arrange
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("return tip and maxFee", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Arrange
+			expectedTip := big.NewInt(1_000_000_000)
+			expectedMaxFee := big.NewInt(3_000_000_000)
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"SuggestEIP1559Fees",
+				func(_ *ether.Ether) (*big.Int, *big.Int, error) {
+					return expectedTip, expectedMaxFee, nil
+				},
+			)
+
+			// Act
+			tip, maxFee, err := core.SuggestEIP1559Fees()
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTip, tip)
+			assert.Equal(t, expectedMaxFee, maxFee)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("propagates ErrChainNotSupportEIP1559", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			// Mock
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"SuggestEIP1559Fees",
+				func(_ *ether.Ether) (*big.Int, *big.Int, error) {
+					return nil, nil, constant.ErrChainNotSupportEIP1559
+				},
+			)
+
+			// Act
+			tip, maxFee, err := core.SuggestEIP1559Fees()
+
+			// Assert
+			assert.ErrorIs(t, err, constant.ErrChainNotSupportEIP1559)
+			assert.Nil(t, tip)
+			assert.Nil(t, maxFee)
+		})
+	})
+}
+
 func TestCore_PeerCount(t *testing.T) {
 	// Arrange
 	api := newEtherApi()
