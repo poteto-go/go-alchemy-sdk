@@ -25,13 +25,13 @@ func NewSimulatedDebugNamespace(ether types.EtherApi) IDebug {
 }
 
 func (sd *SimulatedDebug) Snapshot() (*big.Int, error) {
-	snapShotHash, err := sd.ether.Commit()
+	block, err := sd.ether.GetBlockByNumber("latest")
 	if err != nil {
 		return nil, err
 	}
 
 	snapShotId := sd.snapShotCount
-	sd.snapShotRegistry[snapShotId] = snapShotHash
+	sd.snapShotRegistry[snapShotId] = block.Hash()
 
 	newCount := new(big.Int)
 	newCount.Add(sd.snapShotCount, big.NewInt(1))

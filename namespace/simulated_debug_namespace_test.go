@@ -8,11 +8,16 @@ import (
 
 	"github.com/agiledragon/gomonkey"
 	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/stretchr/testify/assert"
 )
+
+func newTestBlock() *gethTypes.Block {
+	return gethTypes.NewBlockWithHeader(&gethTypes.Header{Number: big.NewInt(1)})
+}
 
 func TestNewSimulatedDebugNamespace(t *testing.T) {
 	api := newEtherApi()
@@ -28,11 +33,12 @@ func TestSimulatedDebug_Snapshot(t *testing.T) {
 		api := newEtherApi()
 		simDebug := namespace.NewSimulatedDebugNamespace(api).(*namespace.SimulatedDebug)
 
+		block := newTestBlock()
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
-			"Commit",
-			func(_ *ether.Ether) (common.Hash, error) {
-				return common.HexToHash("0xabc"), nil
+			"GetBlockByNumber",
+			func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
+				return block, nil
 			},
 		)
 
@@ -49,11 +55,12 @@ func TestSimulatedDebug_Snapshot(t *testing.T) {
 		api := newEtherApi()
 		simDebug := namespace.NewSimulatedDebugNamespace(api).(*namespace.SimulatedDebug)
 
+		block := newTestBlock()
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
-			"Commit",
-			func(_ *ether.Ether) (common.Hash, error) {
-				return common.HexToHash("0xabc"), nil
+			"GetBlockByNumber",
+			func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
+				return block, nil
 			},
 		)
 
@@ -64,19 +71,41 @@ func TestSimulatedDebug_Snapshot(t *testing.T) {
 		assert.Equal(t, int64(1), id1.Int64())
 	})
 
-	t.Run("if Commit fails, return error", func(t *testing.T) {
+	t.Run("does not call Commit (block number stays the same)", func(t *testing.T) {
 		patches := gomonkey.NewPatches()
 		defer patches.Reset()
 
 		api := newEtherApi()
 		simDebug := namespace.NewSimulatedDebugNamespace(api).(*namespace.SimulatedDebug)
 
-		expectedErr := errors.New("commit error")
+		block := newTestBlock()
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
-			"Commit",
-			func(_ *ether.Ether) (common.Hash, error) {
-				return common.Hash{}, expectedErr
+			"GetBlockByNumber",
+			func(_ *ether.Ether, blockNumber string) (*gethTypes.Block, error) {
+				assert.Equal(t, "latest", blockNumber)
+				return block, nil
+			},
+		)
+
+		_, err := simDebug.Snapshot()
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("if GetBlockByNumber fails, return error", func(t *testing.T) {
+		patches := gomonkey.NewPatches()
+		defer patches.Reset()
+
+		api := newEtherApi()
+		simDebug := namespace.NewSimulatedDebugNamespace(api).(*namespace.SimulatedDebug)
+
+		expectedErr := errors.New("get block error")
+		patches.ApplyMethod(
+			reflect.TypeOf(api),
+			"GetBlockByNumber",
+			func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
+				return nil, expectedErr
 			},
 		)
 
@@ -94,12 +123,14 @@ func TestSimulatedDebug_RevertTo(t *testing.T) {
 		api := newEtherApi()
 		simDebug := namespace.NewSimulatedDebugNamespace(api).(*namespace.SimulatedDebug)
 
-		expectedHash := common.HexToHash("0x1234")
+		expectedBlock := newTestBlock()
+		expectedHash := expectedBlock.Hash()
+
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
-			"Commit",
-			func(_ *ether.Ether) (common.Hash, error) {
-				return expectedHash, nil
+			"GetBlockByNumber",
+			func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
+				return expectedBlock, nil
 			},
 		)
 
@@ -138,11 +169,12 @@ func TestSimulatedDebug_RevertTo(t *testing.T) {
 		api := newEtherApi()
 		simDebug := namespace.NewSimulatedDebugNamespace(api).(*namespace.SimulatedDebug)
 
+		block := newTestBlock()
 		patches.ApplyMethod(
 			reflect.TypeOf(api),
-			"Commit",
-			func(_ *ether.Ether) (common.Hash, error) {
-				return common.HexToHash("0xabc"), nil
+			"GetBlockByNumber",
+			func(_ *ether.Ether, _ string) (*gethTypes.Block, error) {
+				return block, nil
 			},
 		)
 
