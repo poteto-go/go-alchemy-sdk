@@ -1236,3 +1236,40 @@ func TestScenario_DebugSnapshotRevertTo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 0, balanceReverted.Cmp(balanceBefore))
 }
+
+func TestScenario_ENS(t *testing.T) {
+	const ensRegistry = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+
+	t.Run("ResolveName returns ErrENSNotSupportedOnNetwork on private network", func(t *testing.T) {
+		// The local Anvil chain has no network name, so ENS registry lookup fails gracefully.
+		_, err := alchemy.Core.ResolveName("vitalik.eth")
+		assert.Error(t, err)
+	})
+
+	t.Run("LookupAddress returns ErrENSNotSupportedOnNetwork on private network", func(t *testing.T) {
+		_, err := alchemy.Core.LookupAddress(initAddress)
+		assert.Error(t, err)
+	})
+
+	t.Run("ResolveNameBy returns error when registry has no ENS on local chain", func(t *testing.T) {
+		// ENS registry contract does not exist on Anvil, so resolver lookup fails.
+		_, err := alchemy.Core.ResolveNameBy(ensRegistry, "vitalik.eth")
+		assert.Error(t, err)
+	})
+
+	t.Run("ResolveNameBy returns address as-is for a valid hex address", func(t *testing.T) {
+		addr, err := alchemy.Core.ResolveNameBy(ensRegistry, initAddress)
+		assert.NoError(t, err)
+		assert.Equal(t, strings.ToLower(initAddress), addr)
+	})
+
+	t.Run("ResolveNameBy returns error for invalid registry address", func(t *testing.T) {
+		_, err := alchemy.Core.ResolveNameBy("not-an-address", "vitalik.eth")
+		assert.Error(t, err)
+	})
+
+	t.Run("LookupAddressBy returns error when registry has no ENS on local chain", func(t *testing.T) {
+		_, err := alchemy.Core.LookupAddressBy(ensRegistry, initAddress)
+		assert.Error(t, err)
+	})
+}

@@ -34,6 +34,7 @@ type IAlchemyProvider interface {
 	SetEth(eth EtherApi)
 	Eth() EtherApi
 	CustomHeaders() []http.Header
+	Network() Network
 
 	/* Send raw transaction */
 	Send(method string, params RequestArgs) (any, error)

@@ -54,6 +54,10 @@ func (provider *AlchemyProvider) CustomHeaders() []http.Header {
 	return provider.config.customHeaders
 }
 
+func (provider *AlchemyProvider) Network() types.Network {
+	return provider.config.network
+}
+
 /* Send raw transaction */
 func (provider *AlchemyProvider) Send(method string, params types.RequestArgs) (any, error) {
 	// fetch-and-add: take the current id for this request, then advance the counter atomically.
