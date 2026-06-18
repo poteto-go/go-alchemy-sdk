@@ -1423,3 +1423,68 @@ func TestCore_GetBlock(t *testing.T) {
 		})
 	})
 }
+
+func TestCore_GetAssetTransfers(t *testing.T) {
+	api := newEtherApi()
+	core := namespace.NewCore(api).(*namespace.Core)
+
+	val := float64(1.5)
+	expected := types.AssetTransfersResponse{
+		Transfers: []types.AssetTransfer{
+			{
+				BlockNum: "0xf1d1c6",
+				Hash:     "0xabc",
+				From:     "0x123",
+				To:       "0x456",
+				Value:    &val,
+				Asset:    "ETH",
+				Category: "external",
+			},
+		},
+		PageKey: "",
+	}
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("delegates to ether.GetAssetTransfers and returns response", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetAssetTransfers",
+				func(_ *ether.Ether, _ types.AssetTransfersParams) (types.AssetTransfersResponse, error) {
+					return expected, nil
+				},
+			)
+
+			actual, err := core.GetAssetTransfers(types.AssetTransfersParams{
+				Category: []string{"external"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expected, actual)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("propagates error from ether.GetAssetTransfers", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			expectedErr := errors.New("provider error")
+			patches.ApplyMethod(
+				reflect.TypeOf(api),
+				"GetAssetTransfers",
+				func(_ *ether.Ether, _ types.AssetTransfersParams) (types.AssetTransfersResponse, error) {
+					return types.AssetTransfersResponse{}, expectedErr
+				},
+			)
+
+			_, err := core.GetAssetTransfers(types.AssetTransfersParams{
+				Category: []string{"external"},
+			})
+
+			assert.ErrorIs(t, err, expectedErr)
+		})
+	})
+}

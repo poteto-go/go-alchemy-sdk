@@ -153,6 +153,16 @@ type ICore interface {
 		Returns an error when no reverse record is registered.
 	*/
 	LookupAddressBy(registryAddress string, address string) (string, error)
+
+	/*
+		GetAssetTransfers fetches asset transfer history matching the given params
+		using the alchemy_getAssetTransfers endpoint. Pagination is supported via
+		AssetTransfersParams.PageKey / AssetTransfersResponse.PageKey.
+
+		NOTE: This is an Alchemy-specific API and is not available on non-Alchemy
+		endpoints such as simulated backends.
+	*/
+	GetAssetTransfers(params types.AssetTransfersParams) (types.AssetTransfersResponse, error)
 }
 
 type Core struct {
@@ -342,6 +352,10 @@ func (c *Core) LookupAddressBy(registryAddress string, address string) (string, 
 
 func (c *Core) SuggestGasTipCap() (*big.Int, error) {
 	return c.ether.SuggestGasTipCap()
+}
+
+func (c *Core) GetAssetTransfers(params types.AssetTransfersParams) (types.AssetTransfersResponse, error) {
+	return c.ether.GetAssetTransfers(params)
 }
 
 func (c *Core) SuggestEIP1559Fees() (*big.Int, *big.Int, error) {

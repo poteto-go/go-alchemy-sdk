@@ -2166,3 +2166,147 @@ func TestEther_ChainID(t *testing.T) {
 		})
 	})
 }
+
+func TestEther_GetAssetTransfers(t *testing.T) {
+	provider := newProviderForTest()
+	etherApi := newNilEtherApiForTest(provider)
+
+	val := float64(1.5)
+	expectedResponse := map[string]any{
+		"transfers": []any{
+			map[string]any{
+				"blockNum":        "0xf1d1c6",
+				"uniqueId":        "0xabc:external",
+				"hash":            "0xabc",
+				"from":            "0x123",
+				"to":              "0x456",
+				"value":           val,
+				"erc721TokenId":   nil,
+				"erc1155Metadata": nil,
+				"tokenId":         nil,
+				"asset":           "ETH",
+				"category":        "external",
+				"rawContract": map[string]any{
+					"value":   "0x16345785d8a0000",
+					"address": nil,
+					"decimal": nil,
+				},
+				"metadata": nil,
+			},
+		},
+		"pageKey": "nextpage",
+	}
+	expected := types.AssetTransfersResponse{
+		Transfers: []types.AssetTransfer{
+			{
+				BlockNum:        "0xf1d1c6",
+				UniqueId:        "0xabc:external",
+				Hash:            "0xabc",
+				From:            "0x123",
+				To:              "0x456",
+				Value:           &val,
+				Erc721TokenId:   "",
+				Erc1155Metadata: nil,
+				TokenId:         "",
+				Asset:           "ETH",
+				Category:        "external",
+				RawContract: types.RawContract{
+					Value:   "0x16345785d8a0000",
+					Address: "",
+					Decimal: "",
+				},
+				Metadata: nil,
+			},
+		},
+		PageKey: "nextpage",
+	}
+
+	t.Run("normal case:", func(t *testing.T) {
+		t.Run("calls alchemy_getAssetTransfers and returns decoded response", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, method string, _ types.RequestArgs) (any, error) {
+					assert.Equal(t, constant.Alchemy_GetAssetTransfers, method)
+					return expectedResponse, nil
+				},
+			)
+
+			actual, err := etherApi.GetAssetTransfers(types.AssetTransfersParams{
+				Category: []string{"external"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expected, actual)
+		})
+	})
+
+	t.Run("error case:", func(t *testing.T) {
+		t.Run("if provider.Send fails, return error", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			expectedErr := errors.New("provider error")
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return nil, expectedErr
+				},
+			)
+
+			_, err := etherApi.GetAssetTransfers(types.AssetTransfersParams{
+				Category: []string{"external"},
+			})
+
+			assert.ErrorIs(t, err, expectedErr)
+		})
+
+		t.Run("if result is not map[string]any -> ErrUnexpectedResponseType", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return "unexpected", nil
+				},
+			)
+
+			_, err := etherApi.GetAssetTransfers(types.AssetTransfersParams{
+				Category: []string{"external"},
+			})
+
+			assert.ErrorIs(t, err, constant.ErrUnexpectedResponseType)
+		})
+
+		t.Run("if mapstructure decode fails -> ErrFailedToMapAssetTransfers", func(t *testing.T) {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			patches.ApplyMethod(
+				reflect.TypeOf(provider),
+				"Send",
+				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
+					return expectedResponse, nil
+				},
+			)
+			patches.ApplyFunc(
+				mapstructure.WeakDecode,
+				func(_ any, _ any) error {
+					return errors.New("decode error")
+				},
+			)
+
+			_, err := etherApi.GetAssetTransfers(types.AssetTransfersParams{
+				Category: []string{"external"},
+			})
+
+			assert.ErrorIs(t, err, constant.ErrFailedToMapAssetTransfers)
+		})
+	})
+}
