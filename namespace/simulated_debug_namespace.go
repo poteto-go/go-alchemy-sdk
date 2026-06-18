@@ -8,6 +8,8 @@ import (
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
 
+var bigOne = big.NewInt(1)
+
 type SimulatedDebug struct {
 	ether types.EtherApi
 
@@ -25,16 +27,16 @@ func NewSimulatedDebugNamespace(ether types.EtherApi) IDebug {
 }
 
 func (sd *SimulatedDebug) Snapshot() (*big.Int, error) {
-	snapShotHash, err := sd.ether.Commit()
+	block, err := sd.ether.GetBlockByNumber("latest")
 	if err != nil {
 		return nil, err
 	}
 
 	snapShotId := sd.snapShotCount
-	sd.snapShotRegistry[snapShotId] = snapShotHash
+	sd.snapShotRegistry[snapShotId] = block.Hash()
 
 	newCount := new(big.Int)
-	newCount.Add(sd.snapShotCount, big.NewInt(1))
+	newCount.Add(sd.snapShotCount, bigOne)
 	sd.snapShotCount = newCount
 	return snapShotId, nil
 }
@@ -50,7 +52,7 @@ func (sd *SimulatedDebug) RevertTo(snapShotId *big.Int) (bool, error) {
 	}
 
 	newCount := new(big.Int)
-	newCount.Sub(sd.snapShotCount, big.NewInt(1))
+	newCount.Sub(sd.snapShotCount, bigOne)
 	sd.snapShotCount = newCount
 	return true, nil
 }
