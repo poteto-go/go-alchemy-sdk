@@ -38,17 +38,11 @@ func (e *ERC20Batch) Allowance(contractAddress, owner, spender string) *Result[*
 }
 
 func (e *ERC20Batch) Name(contractAddress string) *Result[string] {
-	if err := validate.Address(contractAddress); err != nil {
-		return failed[string](err)
-	}
-	return AddCall(e.b, contractAddress, constant.NameFnSignature, decode.ABIString)
+	return addStringCall(e.b, contractAddress, constant.NameFnSignature)
 }
 
 func (e *ERC20Batch) Symbol(contractAddress string) *Result[string] {
-	if err := validate.Address(contractAddress); err != nil {
-		return failed[string](err)
-	}
-	return AddCall(e.b, contractAddress, constant.SymbolFnSignature, decode.ABIString)
+	return addStringCall(e.b, contractAddress, constant.SymbolFnSignature)
 }
 
 func (e *ERC20Batch) Decimals(contractAddress string) *Result[uint8] {
