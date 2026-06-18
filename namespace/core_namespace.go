@@ -103,6 +103,20 @@ type ICore interface {
 		To get the full transaction details on the block, use {@link getBlockWithTransactions} instead.
 	*/
 	GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error)
+
+	/*
+		ResolveName resolves an ENS name to a lowercase hex address.
+		If name is already a valid hex address it is returned as-is (lowercased).
+		Returns an error on chains without an ENS deployment.
+	*/
+	ResolveName(name string) (string, error)
+
+	/*
+		LookupAddress performs a reverse ENS lookup (address → name).
+		Returns an error when no reverse record is registered or ENS is not
+		available on the current chain.
+	*/
+	LookupAddress(address string) (string, error)
 }
 
 type Core struct {
@@ -264,6 +278,14 @@ func (c *Core) GetTransactionReceipts(arg types.BlockNumberOrHash) ([]*gethTypes
 	}
 
 	return receipts, nil
+}
+
+func (c *Core) ResolveName(name string) (string, error) {
+	return c.ether.ResolveName(name)
+}
+
+func (c *Core) LookupAddress(address string) (string, error) {
+	return c.ether.LookupAddress(address)
 }
 
 func (c *Core) GetBlock(blockHashOrBlockTag types.BlockTagOrHash) (*gethTypes.Block, error) {

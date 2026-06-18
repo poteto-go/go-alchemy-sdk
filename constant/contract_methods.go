@@ -70,4 +70,9 @@ var (
 	TransferWithAuthorizationFnSignature = []byte("transferWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
 	ReceiveWithAuthorizationFnSignature  = []byte("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
 	CancelAuthorizationFnSignature       = []byte("cancelAuthorization(address,bytes32,uint8,bytes32,bytes32)")
+
+	// ENS
+	ENSResolverFnSignature = []byte("resolver(bytes32)")
+	ENSAddrFnSignature     = []byte("addr(bytes32)")
+	ENSNameFnSignature     = []byte("name(bytes32)")
 )

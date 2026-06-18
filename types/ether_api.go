@@ -269,6 +269,19 @@ type EtherApi interface {
 	RevertTo(snapshotId *big.Int) (bool, error)
 
 	/*
+		ResolveName resolves an ENS name to a lowercase hex address.
+		If name is already a valid hex address it is returned as-is (lowercased).
+	*/
+	ResolveName(name string) (string, error)
+
+	/*
+		LookupAddress performs a reverse ENS lookup (address → name).
+		Returns an error when no reverse record is registered or ENS is not
+		available on the current chain.
+	*/
+	LookupAddress(address string) (string, error)
+
+	/*
 		ContractCall calls a contract.
 
 		internal call geth
