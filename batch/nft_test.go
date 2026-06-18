@@ -43,6 +43,22 @@ func TestNftBatch_AllMethods(t *testing.T) {
 	assertUnwrap(t, getApproved, strings.ToLower(common.HexToAddress(spenderAddr).Hex()))
 }
 
+func TestNftBatch_DecodeError(t *testing.T) {
+	mock := alchemymock.NewAlchemyHttpMock(batchSetting, t)
+	defer mock.DeactivateAndReset()
+
+	b := batch.NewBatcher(newBatchEther())
+	ownerOf := b.Nft.OwnerOf(contractAddr, big.NewInt(1))
+
+	// Too-short response (2 bytes): decode.ABIAddress errors on < 32 bytes.
+	mock.RegisterBatchResponderOnce(resp("1234"))
+
+	assert.NoError(t, b.Send())
+
+	_, err := ownerOf.Unwrap()
+	assert.Error(t, err)
+}
+
 func TestNftBatch_InvalidInputs(t *testing.T) {
 	b := batch.NewBatcher(newBatchEther())
 	bad := "not-an-address"
