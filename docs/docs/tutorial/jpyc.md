@@ -181,18 +181,103 @@ receipt, _ := w.StableCoin().TransferWithAuthorization(
 
 ### Trying it without real funds (SimulatedBackend)
 
-To run the full flow offline, deploy a `FiatToken` to the in-process `SimulatedBackend` — JPYC is
-a `FiatToken`, so the behavior matches. See the [Simulated Backend](./simulatedBackend.md)
-tutorial and `e2e/simulated_test.go` for the backend setup; the token needs the usual FiatToken
-bootstrapping before a gasless transfer works:
+You can run the whole flow offline against the in-process `SimulatedBackend`. JPYC is a
+`FiatToken`, so deploying the `FiatToken` fixture reproduces the exact gasless behavior. The
+example below deploys the token, mints to a **holder**, then has the holder sign off-chain while a
+separate **relayer** submits the transaction and pays the gas:
 
-1. `w.DeployContract(ctx, &artifacts.FiatTokenMetaData)` — deploy the fixture contract
-2. `initialize(...)` → `configureMinter(...)` → `mint(from, amount)` — set up roles and fund `from`
-3. run the `DomainSeparator → SignEIP712Str → TransferWithAuthorization` flow above against the
-   deployed address
+```go
+import (
+	"context"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient/simulated"
+	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
+	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/deployer"
+	"github.com/poteto-go/go-alchemy-sdk/gas"
+	"github.com/poteto-go/go-alchemy-sdk/typeddata"
+	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/utils"
+	"github.com/poteto-go/go-alchemy-sdk/wallet"
+)
+
+// anvil dev accounts: relayer pays gas, holder only signs
+const (
+	relayerPK   = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+	relayerAddr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+	holderPK    = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+	holderAddr  = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+)
+
+oneEth := big.NewInt(1_000_000_000_000_000_000)
+backend := simulated.NewBackend(gethTypes.GenesisAlloc{
+	common.HexToAddress(relayerAddr): {Balance: new(big.Int).Mul(big.NewInt(1000), oneEth)},
+	common.HexToAddress(holderAddr):  {Balance: new(big.Int).Mul(big.NewInt(1000), oneEth)},
+})
+defer backend.Close()
+
+alchemy, _ := gas.NewSimulatedAlchemy(backend)
+
+w, _ := wallet.New(relayerPK) // relayer wallet (pays gas)
+w.Connect(alchemy.GetProvider())
+
+// deploy the FiatToken fixture (JPYC is a FiatToken)
+owner := common.HexToAddress(relayerAddr)
+meta := &artifacts.FiatTokenMetaData
+deployer.BindDeploymentMetadata(meta,
+	"JPY Coin", "JPYC", "JPY", uint8(18),
+	owner, owner, owner, owner, // masterMinter, pauser, blacklister, owner
+)
+contractAddr, _ := w.DeployContract(context.Background(), meta)
+jpyc := contractAddr.Hex()
+
+// configure the relayer as a minter, then mint to the holder
+fiatToken := artifacts.NewFiatToken()
+txHash, _ := w.SendTransaction(types.TransactionRequest{
+	From: relayerAddr, To: jpyc, Value: "0x0", GasLimit: 300000,
+	Data: fiatToken.PackConfigureMinter(owner, big.NewInt(1_000_000_000)),
+})
+alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+w.StableCoin().Mint(context.Background(), jpyc, holderAddr, big.NewInt(1000), nil)
+
+// --- gasless flow ---
+value := big.NewInt(100)
+validAfter := big.NewInt(0)
+validBefore := big.NewInt(9999999999)
+nonce := utils.NewAuthorizationNonce()
+
+domainSeparator, _ := alchemy.StableCoin.DomainSeparator(jpyc)
+
+// the holder signs off-chain (no gas, no tx)
+sig, _ := typeddata.SignEIP712Str(
+	holderPK,
+	domainSeparator,
+	typeddata.EncodeWords(
+		constant.TransferWithAuthorizationTypeHash,
+		holderAddr,  // from
+		relayerAddr, // to
+		value, validAfter, validBefore, nonce,
+	),
+)
+
+// the relayer broadcasts it and pays the gas
+receipt, _ := w.StableCoin().TransferWithAuthorization(
+	context.Background(), jpyc,
+	holderAddr, relayerAddr, value, validAfter, validBefore, nonce, sig, nil,
+)
+_ = receipt
+
+// holder balance: 1000 → 900, recipient: 0 → 100; the nonce is now spent
+used, _ := alchemy.StableCoin.AuthorizationState(jpyc, holderAddr, nonce)
+_ = used // true
+```
 
 `Nonces` and `AuthorizationState` let you check whether a given authorization has already been
-used before submitting.
+used before submitting. For a real network, swap `simulated.NewBackend` for `gas.NewAlchemy` with
+your Alchemy key and use the existing on-chain JPYC address instead of deploying the fixture.
 
 ## Notes
 
