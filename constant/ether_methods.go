@@ -29,4 +29,5 @@ var (
 	Alchemy_GetTokenBalances    = "alchemy_getTokenBalances"
 	Alchemy_GetTokenMetadata    = "alchemy_getTokenMetadata"
 	Alchemy_TransactionReceipts = "alchemy_getTransactionReceipts"
+	Alchemy_GetAssetTransfers   = "alchemy_getAssetTransfers"
 )

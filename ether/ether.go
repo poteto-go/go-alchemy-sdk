@@ -1032,3 +1032,55 @@ func (ether *Ether) CallReadMethod(
 	}
 	return output, nil
 }
+
+// assetTransfersReq is the JSON-serializable form sent to alchemy_getAssetTransfers.
+type assetTransfersReq struct {
+	FromBlock         string   `json:"fromBlock,omitempty"`
+	ToBlock           string   `json:"toBlock,omitempty"`
+	FromAddress       string   `json:"fromAddress,omitempty"`
+	ToAddress         string   `json:"toAddress,omitempty"`
+	ContractAddresses []string `json:"contractAddresses,omitempty"`
+	Category          []string `json:"category"`
+	WithMetadata      bool     `json:"withMetadata"`
+	ExcludeZeroValue  bool     `json:"excludeZeroValue"`
+	MaxCount          string   `json:"maxCount,omitempty"`
+	PageKey           string   `json:"pageKey,omitempty"`
+}
+
+func (ether *Ether) GetAssetTransfers(params types.AssetTransfersParams) (types.AssetTransfersResponse, error) {
+	req := assetTransfersReq{
+		FromBlock:         params.FromBlock,
+		ToBlock:           params.ToBlock,
+		FromAddress:       strings.ToLower(params.FromAddress),
+		ToAddress:         strings.ToLower(params.ToAddress),
+		ContractAddresses: params.ContractAddresses,
+		Category:          params.Category,
+		WithMetadata:      params.WithMetadata,
+		ExcludeZeroValue:  params.ExcludeZeroValue,
+		PageKey:           params.PageKey,
+	}
+	if params.MaxCount > 0 {
+		req.MaxCount = hexutil.EncodeUint64(uint64(params.MaxCount))
+	}
+
+	result, err := ether.provider.Send(
+		constant.Alchemy_GetAssetTransfers,
+		types.RequestArgs{req},
+	)
+	if err != nil {
+		return types.AssetTransfersResponse{}, err
+	}
+
+	resultMap, ok := result.(map[string]any)
+	if !ok {
+		return types.AssetTransfersResponse{}, constant.ErrUnexpectedResponseType
+	}
+
+	var response types.AssetTransfersResponse
+	// WeakDecode is required: the Alchemy API returns null for some string fields
+	// (e.g. erc721TokenId, rawContract.address) which strict Decode cannot coerce to "".
+	if err := mapstructure.WeakDecode(resultMap, &response); err != nil {
+		return types.AssetTransfersResponse{}, constant.ErrFailedToMapAssetTransfers
+	}
+	return response, nil
+}

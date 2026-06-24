@@ -312,4 +312,12 @@ type EtherApi interface {
 		callData []byte,
 		unpack func([]byte) (any, error),
 	) (any, error)
+
+	/*
+		GetAssetTransfers fetches asset transfer history matching the given params.
+
+		NOTE: This is an Alchemy-specific API (alchemy_getAssetTransfers).
+		It is not available on non-Alchemy endpoints such as simulated backends.
+	*/
+	GetAssetTransfers(params AssetTransfersParams) (AssetTransfersResponse, error)
 }
