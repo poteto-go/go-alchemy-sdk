@@ -25,8 +25,10 @@ type AlchemySetting struct {
 	IsRequestBatch bool `yaml:"is_request_batch"`
 
 	// config for backoff retry
-	BackoffConfig  *types.BackoffConfig `yaml:"backoff_config"`
-	RequestTimeout time.Duration        `yaml:"request_timeout"`
+	BackoffConfig *types.BackoffConfig `yaml:"backoff_config"`
+
+	// on ws means handshake timeout
+	RequestTimeout time.Duration `yaml:"request_timeout"`
 
 	// You should set if you want to use p8 network
 	PrivateNetworkConfig PrivateNetworkConfig `yaml:"private_network_config"`
@@ -35,6 +37,7 @@ type AlchemySetting struct {
 
 	// Maximum bytes to read from an RPC response body (default: 32 MiB).
 	// Set to 0 to use the default.
+	// on ws means message size limit.
 	MaxResponseBytes int64 `yaml:"max_response_bytes"`
 
 	// Transport is a caller-supplied http.RoundTripper used for the actual HTTP
@@ -43,6 +46,10 @@ type AlchemySetting struct {
 	// benchmark different (private) RPC providers. If nil, requests delegate to
 	// http.DefaultTransport. The SDK always applies its response-size cap on top of it.
 	Transport http.RoundTripper `yaml:"-"`
+
+	// UseWebsocket enables the Ws subscription namespace. Regular calls stay on
+	// HTTP in v1; this only turns on eth_subscribe push subscriptions.
+	UseWebsocket bool `yaml:"use_websocket"`
 
 	/*
 		return true => p8net is selected

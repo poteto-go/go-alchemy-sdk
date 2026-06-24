@@ -53,6 +53,58 @@ func main() {
 }
 ```
 
+### WebSocket
+
+Set `UseWebsocket: true` to make the geth client dial a **persistent WebSocket** connection instead of issuing per-call HTTP requests. This is the transport used for push subscriptions (`eth_subscribe`), and it also serves regular geth-client calls (`GetBlockNumber`, `GetGasPrice`, `EstimateGas`, …) over the same socket.
+
+```go
+func main() {
+	setting := gas.AlchemySetting{
+		ApiKey:       "<alchemy-api-key>",
+		Network:      types.EthSepolia,
+		UseWebsocket: true,
+	}
+
+	alchemy := gas.NewAlchemy(setting)
+	// The WebSocket socket is persistent; close it when you are done.
+	defer alchemy.GetProvider().Eth().Shutdown()
+
+	alchemy.Core.GetBlockNumber()
+}
+```
+
+For a **public network**, `UseWebsocket` selects the `wss://<network>.ws.alchemyapi.io/v2/<api-key>` endpoint. For a **private / custom** node, just pass a `ws://` or `wss://` url — the scheme decides, so the flag is not needed:
+
+```go
+func main() {
+	setting := gas.AlchemySetting{
+		PrivateNetworkConfig: gas.PrivateNetworkConfig{
+			Url: "ws://127.0.0.1:8545",
+		},
+	}
+
+	alchemy := gas.NewAlchemy(setting)
+}
+```
+
+#### Lifecycle
+
+The WebSocket connection is **long-lived**: a per-call `Close()` is a no-op, so the socket survives across calls. Call `Shutdown()` (via `alchemy.GetProvider().Eth().Shutdown()`) to close it explicitly when you are finished.
+
+#### HTTP-only methods
+
+Alchemy JSON-RPC methods that go through `provider.Send` — e.g. `GetBalance`, `GetLogs`, `GetTokenBalances`, `GetAssetTransfers`, `Call` — are **HTTP-only** and are not served over the WebSocket. A WebSocket `Alchemy` is for geth-client methods (and subscriptions). If you need both at once, create two `Alchemy` instances: one default (HTTP) and one with `UseWebsocket: true`.
+
+#### Reused settings on WebSocket
+
+Some HTTP settings change meaning when the connection is a WebSocket:
+
+| Setting | Meaning on WebSocket |
+| --- | --- |
+| `RequestTimeout` | handshake (dial) timeout |
+| `MaxResponseBytes` | inbound message size limit (default 32 MiB) |
+| `JwtSecret` (private network) | sent as `Authorization: Bearer <token>` during the handshake |
+
 ### Custom Header
 
 ```go

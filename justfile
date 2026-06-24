@@ -14,9 +14,9 @@ alias ut-cov := unit-test-coverage
 unit-test-coverage path="./..." *args="":
     @go test $(go list {{path}} | grep -v /e2e) {{args}} -cover -gcflags=all=-l -coverprofile=coverage.out
 
-alias ci-e2e := ci-e2e-test
+alias e2e := e2e-test
 [group("ci")]
-ci-e2e-test rpcPort="8545" *args="":
+e2e-test rpcPort="8545" *args="":
     @RPC_PORT={{rpcPort}} go test ./e2e/ {{args}}
 
 [group("ci")]

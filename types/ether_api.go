@@ -41,14 +41,23 @@ type EtherApi interface {
 	/*
 		set ether client if client is nil,
 		if client exists add connCount to re-use.
+
+		In WS, we persist the client.
 	*/
 	SetEthClient() error
 
 	/*
 		decrement connCount.
 		if connCount <= 0, close client & set nil
+
+		The design of WS prevents it from being closed using `defer Close`.
 	*/
 	Close()
+
+	/*
+		shutdown ws client or kill http client
+	*/
+	Shutdown()
 
 	/*
 		get raw ethclient

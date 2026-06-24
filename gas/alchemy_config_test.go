@@ -43,6 +43,21 @@ func TestNewAlchemyConfig(t *testing.T) {
 		assert.Equal(t, config.url, "http://127.0.0.1:8080")
 	})
 
+	t.Run("ws mode", func(t *testing.T) {
+		// Act
+		config, err := NewAlchemyConfig(
+			AlchemySetting{
+				ApiKey:       "api-key",
+				Network:      types.MaticMainnet,
+				UseWebsocket: true,
+			},
+		)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, config.url, "wss://matic-mainnet.ws.alchemyapi.io/v2/api-key")
+	})
+
 	t.Run("use private network func", func(t *testing.T) {
 		// Arrange
 		env := "prod"

@@ -115,10 +115,13 @@ func TestUrl(t *testing.T) {
 		{"empty is allowed", "", nil},
 		{"valid http", "http://localhost:8545", nil},
 		{"valid https", "https://my-rpc.example.com", nil},
+		{"valid ws", "ws://localhost:8546", nil},
+		{"valid wss", "wss://my-rpc.example.com/v2/key", nil},
 		{"invalid scheme", "ftp://bad-scheme.com", constant.ErrInvalidPrivateNetworkUrl},
 		{"missing scheme", "localhost:8545", constant.ErrInvalidPrivateNetworkUrl},
 		{"empty host", "http://", constant.ErrInvalidPrivateNetworkUrl},
 		{"empty hostname with port", "http://:8545", constant.ErrInvalidPrivateNetworkUrl},
+		{"empty ws host", "wss://", constant.ErrInvalidPrivateNetworkUrl},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

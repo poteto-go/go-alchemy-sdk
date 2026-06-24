@@ -69,6 +69,10 @@ func NewSimulatedApi(backend *simulated.Backend) types.EtherApi {
 	}
 }
 
+func (ether *Ether) isWebSocket() bool {
+	return strings.HasPrefix(ether.config.url, "ws") // ws:// and wss://
+}
+
 // it will return nil on simulated alchemy
 func (ether *Ether) HttpClient() *http.Client {
 	return ether.httpClient
@@ -84,6 +88,10 @@ func (ether *Ether) SetEthClient() error {
 		return nil
 	}
 
+	if ether.isWebSocket() {
+		return ether.setWsEthClient()
+	}
+
 	ether.connCount++
 	if ether.isClientJwsAlive() {
 		return nil
@@ -94,6 +102,22 @@ func (ether *Ether) SetEthClient() error {
 	rpcClient, err := ether.createRpcClient()
 	if err != nil {
 		ether.connCount--
+		return err
+	}
+
+	ether.client = ethclient.NewClient(rpcClient)
+	ether.clientCreatedAt = time.Now().Unix()
+	return nil
+}
+
+func (ether *Ether) setWsEthClient() error {
+	// ws is long life
+	if ether.client != nil {
+		return nil
+	}
+
+	rpcClient, err := ether.createWsRpcClient()
+	if err != nil {
 		return err
 	}
 
@@ -159,6 +183,47 @@ func (ether *Ether) createRpcClient() (*rpc.Client, error) {
 	return rpcClient, nil
 }
 
+func (ether *Ether) createWsRpcClient() (*rpc.Client, error) {
+	opts := []rpc.ClientOption{
+		rpc.WithHeader("Alchemy-Ethers-Sdk-Method", "send"),
+	}
+
+	// geth miss-lead 0 to no-limit
+	if ether.config.maxResponseBytes > 0 {
+		opts = append(opts, rpc.WithWebsocketMessageSizeLimit(
+			ether.config.maxResponseBytes,
+		))
+	}
+
+	for _, header := range ether.provider.CustomHeaders() {
+		for key, values := range header {
+			for _, value := range values {
+				opts = append(opts, rpc.WithHeader(key, value))
+			}
+		}
+	}
+
+	if len(ether.config.JwtSecret()) > 0 {
+		jws, err := internal.GenerateJws(ether.config.jwtSecret)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, rpc.WithHeader("Authorization", "Bearer "+jws))
+	}
+
+	ctx := context.Background()
+	if ether.config.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, ether.config.requestTimeout)
+		defer cancel()
+	}
+	return rpc.DialOptions(
+		ctx,
+		ether.config.url,
+		opts...,
+	)
+}
+
 func (ether *Ether) generateAndSetAuthorization(rpcClient *rpc.Client) error {
 	if len(ether.config.JwtSecret()) == 0 {
 		return nil
@@ -176,6 +241,10 @@ func (ether *Ether) generateAndSetAuthorization(rpcClient *rpc.Client) error {
 func (ether *Ether) Close() {
 	ether.mu.Lock()
 	defer ether.mu.Unlock()
+	// The design of WS prevents it from being closed using `defer Close`.
+	if ether.isWebSocket() {
+		return
+	}
 
 	if ether.client == nil {
 		return
@@ -183,6 +252,17 @@ func (ether *Ether) Close() {
 
 	ether.connCount--
 	if ether.connCount > 0 {
+		return
+	}
+
+	ether.kill()
+}
+
+func (ether *Ether) Shutdown() {
+	ether.mu.Lock()
+	defer ether.mu.Unlock()
+
+	if ether.client == nil {
 		return
 	}
 

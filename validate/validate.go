@@ -61,10 +61,19 @@ func Url(rawUrl string) error {
 		return nil
 	}
 	u, _ := url.Parse(rawUrl)
-	if u == nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
+	if u == nil || !isAllowedScheme(u.Scheme) || u.Hostname() == "" {
 		return constant.ErrInvalidPrivateNetworkUrl
 	}
 	return nil
+}
+
+func isAllowedScheme(scheme string) bool {
+	switch scheme {
+	case "http", "https", "ws", "wss":
+		return true
+	default:
+		return false
+	}
 }
 
 // declaredLengthExceedsAvailable returns true when a declared length (items or
