@@ -83,7 +83,7 @@ jobs:
           anvil --port 8545 &
 
       - name: Run E2E Tests
-        run: just ci-e2e 8545 -timeout 20m
+        run: just e2e 8545 -timeout 20m
 
   coverage-report:
     name: Coverage Report
