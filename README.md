@@ -58,5 +58,6 @@ func main() {
 - [x] Private Geth Support & `ERC20.Transfer`: `v0.3.0`
 - [x] `ERC20` method fully support: `v0.4.0`
 - [x] `SC(Stable Coin)` method fully support: `v0.6.0`
-- [ ] `NFT(ERC721)` method fully support: `rc0.8.0`
+- [x] `NFT(ERC721)` method fully support: `v0.8.0`
+- [ ] websocket support: `rc0.10.0`
 - [ ] stable release: `rc1.0.0`
