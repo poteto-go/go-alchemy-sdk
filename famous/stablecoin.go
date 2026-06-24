@@ -29,16 +29,16 @@ var stablecoinAddresses = map[types.Network]map[StableCoinSymbol]common.Address{
 		USDC: common.HexToAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
 		// https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7
 		USDT: common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
-		// https://etherscan.io/token/0x431d5dff03120afa4bdf332c61a6e1766ef37bf9
-		JPYC: common.HexToAddress("0x431D5dfF03120AFA4bDf332c61A6e1766eF37BF9"),
+		// https://etherscan.io/token/0xe7c3d8c9a439fede00d2600032d5db0be71c3c29
+		JPYC: common.HexToAddress("0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29"),
 	},
 	types.PolygonMainnet: {
 		// https://polygonscan.com/token/0x3c499c542cef5e3811e1192ce70d8cc03d5c3359 (native USDC)
 		USDC: common.HexToAddress("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"),
 		// https://polygonscan.com/token/0xc2132d05d31c914a87c6611c10748aeb04b58e8f
 		USDT: common.HexToAddress("0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
-		// https://polygonscan.com/token/0x6ae7dfc73e0dde2aa99ac063dcf7e8a63265108c
-		JPYC: common.HexToAddress("0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c"),
+		// https://polygonscan.com/token/0xe7c3d8c9a439fede00d2600032d5db0be71c3c29
+		JPYC: common.HexToAddress("0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29"),
 	},
 	types.PolygonAmoy: {
 		// https://amoy.polygonscan.com/token/0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582 (testnet USDC)

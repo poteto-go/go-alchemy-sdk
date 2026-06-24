@@ -32,7 +32,7 @@ func TestContractAddress(t *testing.T) {
 			{
 				"JPYC on Ethereum mainnet",
 				types.EthMainnet, famous.JPYC,
-				common.HexToAddress("0x431D5dfF03120AFA4bDf332c61A6e1766eF37BF9"),
+				common.HexToAddress("0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29"),
 			},
 			{
 				"USDC on Polygon mainnet",
@@ -47,7 +47,7 @@ func TestContractAddress(t *testing.T) {
 			{
 				"JPYC on Polygon mainnet",
 				types.PolygonMainnet, famous.JPYC,
-				common.HexToAddress("0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c"),
+				common.HexToAddress("0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29"),
 			},
 			{
 				"USDC on Polygon Amoy",
