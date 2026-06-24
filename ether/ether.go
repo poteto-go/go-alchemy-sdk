@@ -210,8 +210,15 @@ func (ether *Ether) createWsRpcClient() (*rpc.Client, error) {
 		}
 		opts = append(opts, rpc.WithHeader("Authorization", "Bearer "+jws))
 	}
+
+	ctx := context.Background()
+	if ether.config.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, ether.config.requestTimeout)
+		defer cancel()
+	}
 	return rpc.DialOptions(
-		context.Background(),
+		ctx,
 		ether.config.url,
 		opts...,
 	)

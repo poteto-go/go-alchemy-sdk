@@ -77,7 +77,7 @@ func settingToUrl(setting AlchemySetting) string {
 		return resolvePrivateNetUrl(setting)
 	}
 	if setting.UseWebsocket {
-		return "wss://" + string(setting.Network) + "ws.alchemyapi.io/v2/" + setting.ApiKey
+		return "wss://" + string(setting.Network) + ".ws.alchemyapi.io/v2/" + setting.ApiKey
 	}
 	return "https://" + string(setting.Network) + ".g.alchemy.com/v2/" + setting.ApiKey
 }
