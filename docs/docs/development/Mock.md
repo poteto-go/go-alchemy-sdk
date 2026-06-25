@@ -31,6 +31,40 @@ func TestSomething(t *testing.T) {
 }
 ```
 
+## WebSocket subscriptions
+
+`NewAlchemyHttpMock` mocks one request → one response over HTTP, which cannot model
+a subscription (one `eth_subscribe` request followed by a server-pushed stream).
+For subscription-based code, use `NewAlchemyWsMock`: it stands up a real in-process
+WebSocket JSON-RPC server and lets you push canned notifications with the `Emit*`
+helpers.
+
+```go
+func TestSubscription(t *testing.T) {
+	mock := alchemymock.NewAlchemyWsMock(t)
+	defer mock.Close()
+
+	// A ws-scheme url selects the WebSocket provider.
+	alchemy, _ := gas.NewAlchemy(gas.AlchemySetting{
+		PrivateNetworkConfig: gas.PrivateNetworkConfig{Url: mock.URL()},
+	})
+	defer alchemy.GetProvider().Eth().Shutdown()
+
+	sub := alchemy.GetProvider().(types.ISubscribeProvider)
+	ch := make(chan *gethTypes.Header, 4)
+	subscription, _ := sub.Subscribe(context.Background(), ch, "newHeads")
+	defer subscription.Unsubscribe()
+
+	// Push canned heads after the subscription is established.
+	mock.EmitNewHeads(
+		&gethTypes.Header{Number: big.NewInt(0x10), Difficulty: big.NewInt(0)},
+	)
+
+	head := <-ch
+	assert.Equal(t, int64(0x10), head.Number.Int64())
+}
+```
+
 ## Detail
 
 If you want to test your code without making changes to a public chain, you can easily do so with mocks.
