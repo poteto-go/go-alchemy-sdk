@@ -91,9 +91,9 @@ func main() {
 
 The WebSocket connection is **long-lived**: a per-call `Close()` is a no-op, so the socket survives across calls. Call `Shutdown()` (via `alchemy.GetProvider().Eth().Shutdown()`) to close it explicitly when you are finished.
 
-#### HTTP-only methods
+#### Unified transport
 
-Alchemy JSON-RPC methods that go through `provider.Send` — e.g. `GetBalance`, `GetLogs`, `GetTokenBalances`, `GetAssetTransfers`, `Call` — are **HTTP-only** and are not served over the WebSocket. A WebSocket `Alchemy` is for geth-client methods (and subscriptions). If you need both at once, create two `Alchemy` instances: one default (HTTP) and one with `UseWebsocket: true`.
+A WebSocket `Alchemy` routes **everything over the same socket**. Alchemy JSON-RPC methods that go through `provider.Send` — e.g. `GetBalance`, `GetLogs`, `GetTokenBalances`, `GetAssetTransfers`, `Call` — are dispatched over the persistent WebSocket connection (via the ws provider), alongside the geth-client methods and `eth_subscribe` subscriptions. A single `Alchemy` instance therefore covers calls and subscriptions; you no longer need a separate HTTP instance for `Send`-based methods.
 
 #### Reused settings on WebSocket
 

@@ -32,11 +32,9 @@ func newWsAlchemy(t *testing.T) gas.Alchemy {
 	return a
 }
 
-// TestScenario_Ws_BaseMethod verifies geth-client-backed RPC calls round-trip
-// over a persistent WebSocket connection to anvil.
-//
-// NOTE: provider.Send-based methods (GetBalance, GetLogs, ...) are HTTP-only, so
-// they are intentionally not exercised here — a ws Alchemy is for the geth client.
+// TestScenario_Ws_BaseMethod verifies that both geth-client-backed RPC calls and
+// provider.Send-based methods round-trip over a single persistent WebSocket
+// connection to anvil — a ws Alchemy serves the whole surface over one socket.
 func TestScenario_Ws_BaseMethod(t *testing.T) {
 	wsAlchemy := newWsAlchemy(t)
 	// Close() is a no-op on ws, so the socket is persistent; shut it down explicitly.
@@ -81,6 +79,13 @@ func TestScenario_Ws_BaseMethod(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, gasLimit.Cmp(big.NewInt(0)))
+	})
+
+	t.Run("GetBalance over ws (provider.Send routed over the socket)", func(t *testing.T) {
+		balance, err := wsAlchemy.Core.GetBalance(initAddress, "latest")
+
+		assert.Nil(t, err)
+		assert.Equal(t, 1, balance.Cmp(big.NewInt(0)))
 	})
 
 	t.Run("persistent ws client survives a per-call Close", func(t *testing.T) {

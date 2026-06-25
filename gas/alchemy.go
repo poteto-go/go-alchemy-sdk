@@ -24,7 +24,7 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 		return Alchemy{}, err
 	}
 
-	alchemyProvider := NewAlchemyProvider(alchemyConfig)
+	alchemyProvider := newProvider(alchemyConfig)
 	eth := ether.NewEtherApi(
 		alchemyProvider,
 		alchemyConfig.toEtherApiConfig(),
@@ -53,4 +53,13 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 
 func (gas *Alchemy) GetProvider() types.IAlchemyProvider {
 	return gas.provider
+}
+
+// newProvider picks the transport-appropriate provider: ws/wss endpoints route
+// over the persistent websocket socket, everything else over HTTP.
+func newProvider(config AlchemyConfig) types.IAlchemyProvider {
+	if config.isWebSocket() {
+		return NewWsAlchemyProvider(config)
+	}
+	return NewAlchemyProvider(config)
 }

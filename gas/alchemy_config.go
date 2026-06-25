@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/ether"
@@ -105,6 +106,12 @@ func defaultIsPrivateNetwork(setting AlchemySetting) bool {
 
 func (config *AlchemyConfig) GetUrl() string {
 	return config.url
+}
+
+// isWebSocket reports whether the resolved url is a ws/wss endpoint, mirroring
+// Ether.isWebSocket so provider selection and transport selection agree.
+func (config *AlchemyConfig) isWebSocket() bool {
+	return strings.HasPrefix(config.url, "ws") // ws:// and wss://
 }
 
 // To avoid circle import

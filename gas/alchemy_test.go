@@ -28,6 +28,20 @@ func TestNewAlchemy(t *testing.T) {
 	assert.NotNil(t, alchemy.Debug)
 }
 
+func TestNewAlchemy_SelectsProviderByScheme(t *testing.T) {
+	t.Run("http setting -> AlchemyProvider", func(t *testing.T) {
+		alchemy, err := NewAlchemy(AlchemySetting{ApiKey: "hoge", Network: "fuga"})
+		assert.NoError(t, err)
+		assert.IsType(t, &AlchemyProvider{}, alchemy.GetProvider())
+	})
+
+	t.Run("ws setting -> WsAlchemyProvider", func(t *testing.T) {
+		alchemy, err := NewAlchemy(AlchemySetting{ApiKey: "hoge", Network: "fuga", UseWebsocket: true})
+		assert.NoError(t, err)
+		assert.IsType(t, &WsAlchemyProvider{}, alchemy.GetProvider())
+	})
+}
+
 func TestAlchemy_GetProvider(t *testing.T) {
 	// Arrange
 	setting := AlchemySetting{
