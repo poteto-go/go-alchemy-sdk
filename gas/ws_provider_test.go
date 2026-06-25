@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	gethCoreTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient/simulated"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/ether"
@@ -23,6 +25,9 @@ import (
 type wsTestAPI struct{}
 
 func (wsTestAPI) BlockNumber() hexutil.Uint64 { return hexutil.Uint64(0x42) }
+
+// Null answers eth_null with a JSON null result, to exercise the ErrResultIsNil path.
+func (wsTestAPI) Null() *hexutil.Uint64 { return nil }
 
 func (wsTestAPI) Ticks(ctx context.Context) (*rpc.Subscription, error) {
 	notifier, supported := rpc.NotifierFromContext(ctx)
@@ -89,6 +94,11 @@ func TestNewWsAlchemyProvider(t *testing.T) {
 	assert.Equal(t, customHeaders, provider.CustomHeaders())
 }
 
+func TestWsAlchemyProvider_Eth(t *testing.T) {
+	provider := newWsProviderForTest(t)
+	assert.NotNil(t, provider.Eth())
+}
+
 func TestWsAlchemyProvider_Send(t *testing.T) {
 	t.Run("routes the call over the ws socket", func(t *testing.T) {
 		provider := newWsProviderForTest(t)
@@ -99,6 +109,32 @@ func TestWsAlchemyProvider_Send(t *testing.T) {
 		assert.Equal(t, "0x42", result)
 	})
 
+	t.Run("works without a request timeout (no deadline branch)", func(t *testing.T) {
+		provider := newWsProviderForTest(t)
+		// drive the requestContext WithCancel branch: a 0 timeout means no deadline.
+		provider.config.requestTimeout = 0
+
+		result, err := provider.Send("eth_blockNumber", types.RequestArgs{})
+
+		require.NoError(t, err)
+		assert.Equal(t, "0x42", result)
+	})
+
+	t.Run("returns ErrResultIsNil when the node answers null", func(t *testing.T) {
+		provider := newWsProviderForTest(t)
+
+		_, err := provider.Send("eth_null", types.RequestArgs{})
+		assert.ErrorIs(t, err, constant.ErrResultIsNil)
+	})
+
+	t.Run("propagates a CallContext error", func(t *testing.T) {
+		provider := newWsProviderForTest(t)
+
+		// the in-process server does not expose eth_doesNotExist -> rpc error.
+		_, err := provider.Send("eth_doesNotExist", types.RequestArgs{})
+		assert.Error(t, err)
+	})
+
 	t.Run("returns error if eth client is not set", func(t *testing.T) {
 		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
 		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
@@ -106,9 +142,41 @@ func TestWsAlchemyProvider_Send(t *testing.T) {
 		_, err := provider.Send("eth_blockNumber", types.RequestArgs{})
 		assert.ErrorIs(t, err, constant.ErrProviderEthNotSet)
 	})
+
+	t.Run("returns ErrUnSupportSimulatedMethod over a simulated backend", func(t *testing.T) {
+		backend := simulated.NewBackend(gethCoreTypes.GenesisAlloc{})
+		defer backend.Close()
+
+		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
+		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
+		provider.SetEth(ether.NewSimulatedApi(backend))
+
+		_, err := provider.Send("eth_blockNumber", types.RequestArgs{})
+		assert.ErrorIs(t, err, constant.ErrUnSupportSimulatedMethod)
+	})
+
+	t.Run("propagates a SetEthClient dial error", func(t *testing.T) {
+		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
+		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
+		// nothing listens on port 1 -> the ws dial inside SetEthClient fails.
+		provider.SetEth(ether.NewEtherApi(provider, ether.NewEtherApiConfig(
+			"ws://127.0.0.1:1", 0, 500*time.Millisecond, &types.DefaultBackoffConfig, []http.Header{}, nil, 5<<20, nil,
+		)))
+
+		_, err := provider.Send("eth_blockNumber", types.RequestArgs{})
+		assert.Error(t, err)
+	})
 }
 
 func TestWsAlchemyProvider_Subscribe(t *testing.T) {
+	t.Run("returns error if eth client is not set", func(t *testing.T) {
+		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
+		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
+
+		_, err := provider.Subscribe(context.Background(), make(chan string), "ticks")
+		assert.ErrorIs(t, err, constant.ErrProviderEthNotSet)
+	})
+
 	provider := newWsProviderForTest(t)
 
 	ch := make(chan string, 1)
