@@ -123,6 +123,8 @@ func (api *wsEthAPI) emit(data any) {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 	for id, notifier := range api.subs {
-		notifier.Notify(id, data)
+		// Notify errors only when the ws connection is already gone; the
+		// blocked NewHeads goroutine will remove the dead sub via rpcSub.Err().
+		_ = notifier.Notify(id, data)
 	}
 }
