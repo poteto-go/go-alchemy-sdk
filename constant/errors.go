@@ -52,6 +52,7 @@ var (
 	ErrNilSnapshotId                    = errors.New("snapshot id must not be nil")
 	ErrUnexpectedNoContractAddress      = errors.New("unexpected no contract address")
 	ErrUnSupportSimulatedMethod         = errors.New("unsupported method on simulated backend")
+	ErrProviderEthNotSet                = errors.New("provider eth client is not set")
 	ErrUnexpectedNilSimulatedBackend    = errors.New("unexpected nil of simulated backend")
 	ErrUnexpectedSnapshotId             = errors.New("unexpected snapshot id")
 	ErrMismatchedArrayLength            = errors.New("array arguments must have the same length")
