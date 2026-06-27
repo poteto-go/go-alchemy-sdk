@@ -18,8 +18,8 @@ Two things to know before you start:
   formatting balances.
 - **Use the new (資金移動業) JPYC contract.** The current token deploys to the **same address on
   every chain**: `0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29` (Ethereum, Polygon, Avalanche).
-  This differs from the older JPYC v1 (prepaid) token. See [Notes](#notes) about the `famous`
-  registry.
+  This differs from the older JPYC v1 (prepaid) token. The SDK's `famous` registry returns it via
+  `famous.ContractAddress(network, famous.JPYC)` — see [Notes](#notes).
 
 This tutorial uses **Polygon mainnet via Alchemy** (read paths need no private key). A gasless
 `transferWithAuthorization` example using the `SimulatedBackend` is sketched at the end.
@@ -34,22 +34,31 @@ import (
 	"log"
 	"math/big"
 
+	"github.com/poteto-go/go-alchemy-sdk/famous"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
-
-// New (資金移動業) JPYC. Same address on Ethereum / Polygon / Avalanche.
-const jpyc = "0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29"
 
 func main() {
 	setting := gas.AlchemySetting{
 		ApiKey:  "<alchemy-api-key>",
 		Network: types.PolygonMainnet,
 	}
-	alchemy := gas.NewAlchemy(setting)
+	alchemy, err := gas.NewAlchemy(setting)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Resolve the JPYC address from the famous registry (新 資金移動業 JPYC).
+	jpycAddr, err := famous.ContractAddress(types.PolygonMainnet, famous.JPYC)
+	if err != nil {
+		log.Fatal(err)
+	}
+	jpyc := jpycAddr.Hex()
 
 	// ... see sections below
 	_ = alchemy
+	_ = jpyc
 }
 ```
 
@@ -139,44 +148,59 @@ signature** and let a relayer pay the gas. This is the primitive x402 / agentic 
 The SDK ships helpers for the whole flow:
 
 ```go
+package main
+
 import (
 	"context"
 	"math/big"
 	"time"
 
 	"github.com/poteto-go/go-alchemy-sdk/constant"
+	"github.com/poteto-go/go-alchemy-sdk/famous"
+	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/typeddata"
+	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
 	"github.com/poteto-go/go-alchemy-sdk/wallet"
 )
 
-// the relayer wallet submits the tx and pays gas; `from` only signs
-w, _ := wallet.New("<relayerPrivateKey>")
-w.Connect(alchemy.GetProvider())
+func main() {
+	alchemy, _ := gas.NewAlchemy(gas.AlchemySetting{
+		ApiKey:  "<alchemy-api-key>",
+		Network: types.PolygonMainnet,
+	})
+	jpycAddr, _ := famous.ContractAddress(types.PolygonMainnet, famous.JPYC)
+	jpyc := jpycAddr.Hex()
 
-now := time.Now().Unix()
-validAfter := big.NewInt(0)
-validBefore := big.NewInt(now + int64(10*time.Minute/time.Second))
-value := big.NewInt(100) // base units — JPYC has 18 decimals
-nonce := utils.NewAuthorizationNonce() // cryptographically random [32]byte
+	// the relayer wallet submits the tx and pays gas; `from` only signs
+	w, _ := wallet.New("<relayerPrivateKey>")
+	w.Connect(alchemy.GetProvider())
 
-domainSeparator, _ := alchemy.StableCoin.DomainSeparator(jpyc)
+	now := time.Now().Unix()
+	validAfter := big.NewInt(0)
+	validBefore := big.NewInt(now + int64(10*time.Minute/time.Second))
+	value := big.NewInt(100)               // base units — JPYC has 18 decimals
+	nonce := utils.NewAuthorizationNonce() // cryptographically random [32]byte
 
-// the holder signs the authorization off-chain (no gas, no tx)
-sig, _ := typeddata.SignEIP712Str(
-	"<fromPrivateKey>",
-	domainSeparator,
-	typeddata.EncodeWords(
-		constant.TransferWithAuthorizationTypeHash,
-		"<fromAddress>", "<toAddress>", value, validAfter, validBefore, nonce,
-	),
-)
+	domainSeparator, _ := alchemy.StableCoin.DomainSeparator(jpyc)
 
-// the relayer broadcasts it and pays the gas
-receipt, _ := w.StableCoin().TransferWithAuthorization(
-	context.Background(), jpyc,
-	"<fromAddress>", "<toAddress>", value, validAfter, validBefore, nonce, sig, nil,
-)
+	// the holder signs the authorization off-chain (no gas, no tx)
+	sig, _ := typeddata.SignEIP712Str(
+		"<fromPrivateKey>",
+		domainSeparator,
+		typeddata.EncodeWords(
+			constant.TransferWithAuthorizationTypeHash,
+			"<fromAddress>", "<toAddress>", value, validAfter, validBefore, nonce,
+		),
+	)
+
+	// the relayer broadcasts it and pays the gas
+	receipt, _ := w.StableCoin().TransferWithAuthorization(
+		context.Background(), jpyc,
+		"<fromAddress>", "<toAddress>", value, validAfter, validBefore, nonce, sig, nil,
+	)
+	_ = receipt
+}
 ```
 
 ### Trying it without real funds (SimulatedBackend)
@@ -187,6 +211,8 @@ example below deploys the token, mints to a **holder**, then has the holder sign
 separate **relayer** submits the transaction and pays the gas:
 
 ```go
+package main
+
 import (
 	"context"
 	"math/big"
@@ -212,67 +238,69 @@ const (
 	holderAddr  = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 )
 
-oneEth := big.NewInt(1_000_000_000_000_000_000)
-backend := simulated.NewBackend(gethTypes.GenesisAlloc{
-	common.HexToAddress(relayerAddr): {Balance: new(big.Int).Mul(big.NewInt(1000), oneEth)},
-	common.HexToAddress(holderAddr):  {Balance: new(big.Int).Mul(big.NewInt(1000), oneEth)},
-})
-defer backend.Close()
+func main() {
+	oneEth := big.NewInt(1_000_000_000_000_000_000)
+	backend := simulated.NewBackend(gethTypes.GenesisAlloc{
+		common.HexToAddress(relayerAddr): {Balance: new(big.Int).Mul(big.NewInt(1000), oneEth)},
+		common.HexToAddress(holderAddr):  {Balance: new(big.Int).Mul(big.NewInt(1000), oneEth)},
+	})
+	defer backend.Close()
 
-alchemy, _ := gas.NewSimulatedAlchemy(backend)
+	alchemy, _ := gas.NewSimulatedAlchemy(backend)
 
-w, _ := wallet.New(relayerPK) // relayer wallet (pays gas)
-w.Connect(alchemy.GetProvider())
+	w, _ := wallet.New(relayerPK) // relayer wallet (pays gas)
+	w.Connect(alchemy.GetProvider())
 
-// deploy the FiatToken fixture (JPYC is a FiatToken)
-owner := common.HexToAddress(relayerAddr)
-meta := &artifacts.FiatTokenMetaData
-deployer.BindDeploymentMetadata(meta,
-	"JPY Coin", "JPYC", "JPY", uint8(18),
-	owner, owner, owner, owner, // masterMinter, pauser, blacklister, owner
-)
-contractAddr, _ := w.DeployContract(context.Background(), meta)
-jpyc := contractAddr.Hex()
+	// deploy the FiatToken fixture (JPYC is a FiatToken)
+	owner := common.HexToAddress(relayerAddr)
+	meta := &artifacts.FiatTokenMetaData
+	deployer.BindDeploymentMetadata(meta,
+		"JPY Coin", "JPYC", "JPY", uint8(18),
+		owner, owner, owner, owner, // masterMinter, pauser, blacklister, owner
+	)
+	contractAddr, _ := w.DeployContract(context.Background(), meta)
+	jpyc := contractAddr.Hex()
 
-// configure the relayer as a minter, then mint to the holder
-fiatToken := artifacts.NewFiatToken()
-txHash, _ := w.SendTransaction(types.TransactionRequest{
-	From: relayerAddr, To: jpyc, Value: "0x0", GasLimit: 300000,
-	Data: fiatToken.PackConfigureMinter(owner, big.NewInt(1_000_000_000)),
-})
-alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
-w.StableCoin().Mint(context.Background(), jpyc, holderAddr, big.NewInt(1000), nil)
+	// configure the relayer as a minter, then mint to the holder
+	fiatToken := artifacts.NewFiatToken()
+	txHash, _ := w.SendTransaction(types.TransactionRequest{
+		From: relayerAddr, To: jpyc, Value: "0x0", GasLimit: 300000,
+		Data: fiatToken.PackConfigureMinter(owner, big.NewInt(1_000_000_000)),
+	})
+	alchemy.Transact.WaitMined(context.Background(), txHash.Hex())
+	w.StableCoin().Mint(context.Background(), jpyc, holderAddr, big.NewInt(1000), nil)
 
-// --- gasless flow ---
-value := big.NewInt(100)
-validAfter := big.NewInt(0)
-validBefore := big.NewInt(9999999999)
-nonce := utils.NewAuthorizationNonce()
+	// --- gasless flow ---
+	value := big.NewInt(100)
+	validAfter := big.NewInt(0)
+	validBefore := big.NewInt(9999999999)
+	nonce := utils.NewAuthorizationNonce()
 
-domainSeparator, _ := alchemy.StableCoin.DomainSeparator(jpyc)
+	domainSeparator, _ := alchemy.StableCoin.DomainSeparator(jpyc)
 
-// the holder signs off-chain (no gas, no tx)
-sig, _ := typeddata.SignEIP712Str(
-	holderPK,
-	domainSeparator,
-	typeddata.EncodeWords(
-		constant.TransferWithAuthorizationTypeHash,
-		holderAddr,  // from
-		relayerAddr, // to
-		value, validAfter, validBefore, nonce,
-	),
-)
+	// the holder signs off-chain (no gas, no tx)
+	sig, _ := typeddata.SignEIP712Str(
+		holderPK,
+		domainSeparator,
+		typeddata.EncodeWords(
+			constant.TransferWithAuthorizationTypeHash,
+			holderAddr,  // from
+			relayerAddr, // to
+			value, validAfter, validBefore, nonce,
+		),
+	)
 
-// the relayer broadcasts it and pays the gas
-receipt, _ := w.StableCoin().TransferWithAuthorization(
-	context.Background(), jpyc,
-	holderAddr, relayerAddr, value, validAfter, validBefore, nonce, sig, nil,
-)
-_ = receipt
+	// the relayer broadcasts it and pays the gas
+	receipt, _ := w.StableCoin().TransferWithAuthorization(
+		context.Background(), jpyc,
+		holderAddr, relayerAddr, value, validAfter, validBefore, nonce, sig, nil,
+	)
+	_ = receipt
 
-// holder balance: 1000 → 900, recipient: 0 → 100; the nonce is now spent
-used, _ := alchemy.StableCoin.AuthorizationState(jpyc, holderAddr, nonce)
-_ = used // true
+	// holder balance: 1000 → 900, recipient: 0 → 100; the nonce is now spent
+	used, _ := alchemy.StableCoin.AuthorizationState(jpyc, holderAddr, nonce)
+	_ = used // true
+}
 ```
 
 `Nonces` and `AuthorizationState` let you check whether a given authorization has already been
@@ -285,7 +313,6 @@ your Alchemy key and use the existing on-chain JPYC address instead of deploying
 - **Contract version.** The new 資金移動業 JPYC is `0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29`
   (same on Ethereum / Polygon / Avalanche). The older JPYC v1 (prepaid) token uses different
   addresses and is a separate product.
-- **`famous` registry.** `famous.ContractAddress(types.PolygonMainnet, famous.JPYC)` currently
-  returns the **old v1** address (`0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c` on Polygon,
-  `0x431D5dfF03120AFA4bDf332c61A6e1766eF37BF9` on Ethereum). Until the registry is updated to the
-  new 資金移動業 token, pass the new address explicitly as shown above.
+- **`famous` registry.** `famous.ContractAddress(network, famous.JPYC)` returns the current
+  資金移動業 JPYC address (`0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29`) on Ethereum and Polygon —
+  which is why the examples above resolve the address from the registry instead of hard-coding it.
