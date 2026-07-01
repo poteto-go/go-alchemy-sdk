@@ -63,6 +63,7 @@ var (
 	ErrENSNotSupportedOnNetwork         = errors.New("ENS not available on this network")
 	ErrChainNotSupportEIP1559           = errors.New("chain does not support EIP-1559")
 	ErrFailedToMapAssetTransfers        = errors.New("failed to map asset transfers response")
+	ErrUnsupportedNotWebsocketProvider  = errors.New("unsupported provider, not a websocket provider")
 )
 
 var HttpClientErrorCodeList = []int{

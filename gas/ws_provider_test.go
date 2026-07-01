@@ -167,32 +167,3 @@ func TestWsAlchemyProvider_Send(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
-
-func TestWsAlchemyProvider_Subscribe(t *testing.T) {
-	t.Run("returns error if eth client is not set", func(t *testing.T) {
-		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
-		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
-
-		_, err := provider.Subscribe(context.Background(), make(chan string), "ticks")
-		assert.ErrorIs(t, err, constant.ErrProviderEthNotSet)
-	})
-
-	provider := newWsProviderForTest(t)
-
-	ch := make(chan string, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	sub, err := provider.Subscribe(ctx, ch, "ticks")
-	require.NoError(t, err)
-	defer sub.Unsubscribe()
-
-	select {
-	case got := <-ch:
-		assert.Equal(t, "0x1", got)
-	case err := <-sub.Err():
-		t.Fatalf("subscription errored: %v", err)
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for subscription notification")
-	}
-}

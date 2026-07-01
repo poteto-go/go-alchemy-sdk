@@ -15,6 +15,7 @@ type Alchemy struct {
 	ERC20      namespace.IERC20
 	StableCoin namespace.IStableCoin
 	Debug      namespace.IDebug
+	WS         namespace.IWS
 	provider   types.IAlchemyProvider
 }
 
@@ -37,6 +38,7 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 	erc20Namespace := namespace.NewERC20Namespace(eth)
 	stableCoinNamespace := namespace.NewStableCoinNamespace(eth)
 	debugNamespace := namespace.NewDebugNamespace(eth)
+	wsNamespace := namespace.NewWSNamespace(eth)
 
 	return Alchemy{
 		config:     alchemyConfig,
@@ -47,6 +49,7 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 		ERC20:      erc20Namespace,
 		StableCoin: stableCoinNamespace,
 		Debug:      debugNamespace,
+		WS:         wsNamespace,
 		provider:   alchemyProvider,
 	}, nil
 }

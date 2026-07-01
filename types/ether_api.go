@@ -329,4 +329,21 @@ type EtherApi interface {
 		It is not available on non-Alchemy endpoints such as simulated backends.
 	*/
 	GetAssetTransfers(params AssetTransfersParams) (AssetTransfersResponse, error)
+
+	// ! WsEtherApi is the interface for Ether's websocket provider.
+	// to use this, you need set UseWebsocket: true
+	//
+	//  setting := gas.AlchemySetting{
+	//    ApiKey:       "<alchemy-api-key>",
+	//    Network:      types.EthSepolia,
+	//    UseWebsocket: true,
+	//  }
+	WsEtherApi
+}
+
+type WsEtherApi interface {
+	Subscribe(ctx context.Context, channel any, params ...any) (ethereum.Subscription, error)
+	SubscribeNewHead(ctx context.Context, headerChan chan<- *gethTypes.Header) (ethereum.Subscription, error)
+	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, logChan chan<- gethTypes.Log) (ethereum.Subscription, error)
+	SubscribeTxReceipts(ctx context.Context, q *ethereum.TransactionReceiptsQuery, receiptsChan chan<- []*gethTypes.Receipt) (ethereum.Subscription, error)
 }
