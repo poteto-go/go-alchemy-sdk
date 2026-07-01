@@ -11,6 +11,7 @@ import (
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/websocket"
+	"github.com/poteto-go/go-alchemy-sdk/gas"
 )
 
 // wsRPCRequest is a single JSON-RPC 2.0 request frame.
@@ -73,14 +74,14 @@ var wsUpgrader = websocket.Upgrader{
 //
 // Usage:
 //
-//	mock := alchemymock.NewAlchemyWsMock(t)
-//	a, _ := gas.NewAlchemy(gas.AlchemySetting{
-//	    PrivateNetworkConfig: gas.PrivateNetworkConfig{Url: mock.URL()},
-//	})
+//	setting := gas.AlchemySetting{BackoffConfig: &types.BackoffConfig{MaxRetries: 0}}
+//	mock := alchemymock.NewAlchemyWsMock(setting, t)
+//	a, _ := mock.NewAlchemy()
 //	mock.RegisterResponderOnce("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x42"}`)
 //	bn, _ := a.Core.GetBlockNumber() // -> 66
 type AlchemyWsMock struct {
 	t          testing.TB
+	setting    gas.AlchemySetting
 	ts         *httptest.Server
 	mu         sync.Mutex
 	responders map[string][]json.RawMessage // method -> queued "result" values
@@ -91,9 +92,10 @@ type AlchemyWsMock struct {
 
 // NewAlchemyWsMock creates a new in-process WebSocket JSON-RPC mock server and
 // registers a cleanup that shuts it down when the test ends.
-func NewAlchemyWsMock(t testing.TB) *AlchemyWsMock {
+func NewAlchemyWsMock(setting gas.AlchemySetting, t testing.TB) *AlchemyWsMock {
 	m := &AlchemyWsMock{
 		t:          t,
+		setting:    setting,
 		responders: make(map[string][]json.RawMessage),
 	}
 	mux := http.NewServeMux()
@@ -101,6 +103,15 @@ func NewAlchemyWsMock(t testing.TB) *AlchemyWsMock {
 	m.ts = httptest.NewServer(mux)
 	t.Cleanup(m.Close)
 	return m
+}
+
+// NewAlchemy returns a gas.Alchemy wired to the mock's WebSocket endpoint,
+// using the setting passed to NewAlchemyWsMock with the URL overridden.
+// This mirrors how AlchemyHttpMock callers do gas.NewAlchemy(setting).
+func (m *AlchemyWsMock) NewAlchemy() (gas.Alchemy, error) {
+	s := m.setting
+	s.PrivateNetworkConfig = gas.PrivateNetworkConfig{Url: m.URL()}
+	return gas.NewAlchemy(s)
 }
 
 // URL returns the ws:// endpoint of the mock server.

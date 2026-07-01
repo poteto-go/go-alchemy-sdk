@@ -27,25 +27,20 @@ func newMinimalHeader(number int64) *gethTypes.Header {
 	}
 }
 
-func newWsAlchemyOnMock(t *testing.T, url string) gas.Alchemy {
-	t.Helper()
-	a, err := gas.NewAlchemy(gas.AlchemySetting{
-		PrivateNetworkConfig: gas.PrivateNetworkConfig{Url: url},
-		BackoffConfig:        &types.BackoffConfig{MaxRetries: 0},
-	})
-	require.NoError(t, err)
-	return a
+var wsMockSetting = gas.AlchemySetting{
+	BackoffConfig: &types.BackoffConfig{MaxRetries: 0},
 }
 
 func TestNewAlchemyWsMock(t *testing.T) {
-	mock := alchemymock.NewAlchemyWsMock(t)
+	mock := alchemymock.NewAlchemyWsMock(wsMockSetting, t)
 	assert.NotEmpty(t, mock.URL())
 }
 
 func TestAlchemyWsMock_RegisterResponderOnce(t *testing.T) {
 	t.Run("serves a regular call over the ws socket", func(t *testing.T) {
-		mock := alchemymock.NewAlchemyWsMock(t)
-		a := newWsAlchemyOnMock(t, mock.URL())
+		mock := alchemymock.NewAlchemyWsMock(wsMockSetting, t)
+		a, err := mock.NewAlchemy()
+		require.NoError(t, err)
 
 		mock.RegisterResponderOnce("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x10"}`)
 
@@ -56,17 +51,19 @@ func TestAlchemyWsMock_RegisterResponderOnce(t *testing.T) {
 	})
 
 	t.Run("returns error when method is not mocked", func(t *testing.T) {
-		mock := alchemymock.NewAlchemyWsMock(t)
-		a := newWsAlchemyOnMock(t, mock.URL())
+		mock := alchemymock.NewAlchemyWsMock(wsMockSetting, t)
+		a, err := mock.NewAlchemy()
+		require.NoError(t, err)
 
 		// No responder registered -> mock returns -32601.
-		_, err := a.Core.GetBlockNumber()
+		_, err = a.Core.GetBlockNumber()
 		assert.Error(t, err)
 	})
 
 	t.Run("serves responses in FIFO order for the same method", func(t *testing.T) {
-		mock := alchemymock.NewAlchemyWsMock(t)
-		a := newWsAlchemyOnMock(t, mock.URL())
+		mock := alchemymock.NewAlchemyWsMock(wsMockSetting, t)
+		a, err := mock.NewAlchemy()
+		require.NoError(t, err)
 
 		mock.RegisterResponderOnce("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x1"}`)
 		mock.RegisterResponderOnce("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x2"}`)
@@ -82,8 +79,9 @@ func TestAlchemyWsMock_RegisterResponderOnce(t *testing.T) {
 	})
 
 	t.Run("multiple different methods can be mocked independently", func(t *testing.T) {
-		mock := alchemymock.NewAlchemyWsMock(t)
-		a := newWsAlchemyOnMock(t, mock.URL())
+		mock := alchemymock.NewAlchemyWsMock(wsMockSetting, t)
+		a, err := mock.NewAlchemy()
+		require.NoError(t, err)
 
 		mock.RegisterResponderOnce("eth_blockNumber", `{"jsonrpc":"2.0","id":1,"result":"0x42"}`)
 		mock.RegisterResponderOnce("eth_gasPrice", `{"jsonrpc":"2.0","id":1,"result":"0x3b9aca00"}`)
@@ -99,8 +97,9 @@ func TestAlchemyWsMock_RegisterResponderOnce(t *testing.T) {
 }
 
 func TestAlchemyWsMock_EmitNewHeads(t *testing.T) {
-	mock := alchemymock.NewAlchemyWsMock(t)
-	a := newWsAlchemyOnMock(t, mock.URL())
+	mock := alchemymock.NewAlchemyWsMock(wsMockSetting, t)
+	a, err := mock.NewAlchemy()
+	require.NoError(t, err)
 
 	sub, ok := a.GetProvider().(types.ISubscribeProvider)
 	require.True(t, ok, "WS provider must implement ISubscribeProvider")
@@ -127,8 +126,9 @@ func TestAlchemyWsMock_EmitNewHeads(t *testing.T) {
 }
 
 func TestAlchemyWsMock_EmitNewHeads_MultipleHeaders(t *testing.T) {
-	mock := alchemymock.NewAlchemyWsMock(t)
-	a := newWsAlchemyOnMock(t, mock.URL())
+	mock := alchemymock.NewAlchemyWsMock(wsMockSetting, t)
+	a, err := mock.NewAlchemy()
+	require.NoError(t, err)
 
 	sub := a.GetProvider().(types.ISubscribeProvider)
 
