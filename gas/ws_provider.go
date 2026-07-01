@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 
@@ -20,13 +19,6 @@ type WsAlchemyProvider struct {
 	config AlchemyConfig
 	eth    types.EtherApi
 }
-
-// compile-time assertions: WsAlchemyProvider serves both the base provider
-// surface and the focused subscribe path.
-var (
-	_ types.IAlchemyProvider   = (*WsAlchemyProvider)(nil)
-	_ types.ISubscribeProvider = (*WsAlchemyProvider)(nil)
-)
 
 func NewWsAlchemyProvider(config AlchemyConfig) types.IAlchemyProvider {
 	return &WsAlchemyProvider{config: config}
@@ -68,16 +60,6 @@ func (provider *WsAlchemyProvider) Send(method string, params types.RequestArgs)
 		return nil, constant.ErrResultIsNil
 	}
 	return result, nil
-}
-
-// Subscribe opens an eth_subscribe stream over the ws socket. The returned
-// *rpc.ClientSubscription satisfies ethereum.Subscription.
-func (provider *WsAlchemyProvider) Subscribe(ctx context.Context, channel any, params ...any) (ethereum.Subscription, error) {
-	client, err := provider.rpcClient()
-	if err != nil {
-		return nil, err
-	}
-	return client.EthSubscribe(ctx, channel, params...)
 }
 
 // rpcClient establishes (or reuses) Ether's persistent ws client and returns the

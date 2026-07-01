@@ -101,14 +101,11 @@ func TestAlchemyWsMock_EmitNewHeads(t *testing.T) {
 	a, err := mock.NewAlchemy()
 	require.NoError(t, err)
 
-	sub, ok := a.GetProvider().(types.ISubscribeProvider)
-	require.True(t, ok, "WS provider must implement ISubscribeProvider")
-
 	ch := make(chan *gethTypes.Header, 4)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	subscription, err := sub.Subscribe(ctx, ch, "newHeads")
+	subscription, err := a.WS.Subscribe(ctx, ch, "newHeads")
 	require.NoError(t, err)
 	defer subscription.Unsubscribe()
 
@@ -130,13 +127,11 @@ func TestAlchemyWsMock_EmitNewHeads_MultipleHeaders(t *testing.T) {
 	a, err := mock.NewAlchemy()
 	require.NoError(t, err)
 
-	sub := a.GetProvider().(types.ISubscribeProvider)
-
 	ch := make(chan *gethTypes.Header, 4)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	subscription, err := sub.Subscribe(ctx, ch, "newHeads")
+	subscription, err := a.WS.Subscribe(ctx, ch, "newHeads")
 	require.NoError(t, err)
 	defer subscription.Unsubscribe()
 
