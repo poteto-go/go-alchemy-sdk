@@ -7,7 +7,7 @@ require (
 	github.com/ethereum/go-ethereum v1.17.4
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.5.3
 	github.com/jarcoal/httpmock v1.4.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.53.0
