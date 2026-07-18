@@ -34,6 +34,7 @@ type EthClient interface {
 	StorageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*gethTypes.Block, error)
 	BlockByHash(ctx context.Context, hash common.Hash) (*gethTypes.Block, error)
+	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (tx *gethTypes.Transaction, isPending bool, err error)
 }
 

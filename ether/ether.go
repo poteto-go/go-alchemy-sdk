@@ -352,31 +352,31 @@ func (ether *Ether) GasPrice() (*big.Int, error) {
 	return res, nil
 }
 
-func (ether *Ether) GetBalance(address string, blockTag string) (*big.Int, error) {
-	if err := validate.BlockTag(blockTag); err != nil {
+func (ether *Ether) GetBalance(address, blockTag string) (*big.Int, error) {
+	err := ether.SetEthClient()
+	if err != nil {
+		return nil, err
+	}
+	defer ether.Close()
+
+	blockNumber, err := utils.ToBlockNumber(blockTag)
+	if err != nil {
 		return nil, err
 	}
 
-	balanceHex, err := ether.provider.Send(
-		constant.Eth_GetBalance,
-		types.RequestArgs{
-			strings.ToLower(address),
-			blockTag,
-		},
+	c := ether.Client()
+	res, err := internal.GethRequestTwoArgWithBackOff(
+		ether.config.backoffConfig,
+		ether.config.requestTimeout,
+		c.BalanceAt,
+		common.HexToAddress(address),
+		blockNumber,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	balanceStr, ok := balanceHex.(string)
-	if !ok {
-		return nil, constant.ErrUnexpectedResponseType
-	}
-	balance, err := utils.FromBigHex(balanceStr)
-	if err != nil {
-		return nil, err
-	}
-	return balance, nil
+	return res, nil
 }
 
 func (ether *Ether) CodeAt(address string, blockTag string) (string, error) {
