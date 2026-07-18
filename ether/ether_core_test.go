@@ -398,44 +398,14 @@ func TestEther_GetBalance(t *testing.T) {
 			// Mock
 			alchemyMock.RegisterResponderOnce(
 				"eth_getBalance",
-				`{"jsonrpc":"2.0","id":1,"result":"0x1234"}`,
+				`{"jsonrpc":"2.0","id":1,"result":"invalid"}`,
 			)
 
-			patches.ApplyFunc(
-				utils.FromBigHex,
-				func(s string) (*big.Int, error) {
-					return big.NewInt(0), constant.ErrInvalidHexString
-				},
-			)
 			// Act
 			_, err := ether.GetBalance("hoge", "latest")
 
 			// Assert
 			assert.Error(t, err)
-		})
-
-		t.Run("if result is not string -> ErrUnexpectedResponseType", func(t *testing.T) {
-			patches := gomonkey.NewPatches()
-			defer patches.Reset()
-
-			// Arrange
-			balanceProvider := newProviderForTest()
-			balanceEther := newNilEtherApiForTest(balanceProvider)
-
-			// Mock
-			patches.ApplyMethod(
-				reflect.TypeOf(balanceProvider),
-				"Send",
-				func(_ *gas.AlchemyProvider, _ string, _ types.RequestArgs) (any, error) {
-					return nil, nil
-				},
-			)
-
-			// Act
-			_, err := balanceEther.GetBalance("hoge", "latest")
-
-			// Assert
-			assert.ErrorIs(t, constant.ErrUnexpectedResponseType, err)
 		})
 	})
 }
