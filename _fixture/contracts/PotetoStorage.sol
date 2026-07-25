@@ -10,8 +10,11 @@ contract PotetoStorage {
 
 	uint256 value;
 
+	event Stored(address indexed sender, uint256 value);
+
 	function store(uint256 number) public{
 		value = number;
+		emit Stored(msg.sender, number);
 	}
 
 	function retrieve() public view returns (uint256){
