@@ -26,14 +26,14 @@ type IWS interface {
 	SubscribeTxReceipts(ctx context.Context, query *ethereum.TransactionReceiptsQuery, receiptsChan chan<- []*gethTypes.Receipt) (ethereum.Subscription, error)
 }
 
-func NewWSNamespace(ether types.EtherApi) IWS {
+func NewWSNamespace(ether types.WsEtherApi) IWS {
 	return &WS{
 		ether: ether,
 	}
 }
 
 type WS struct {
-	ether types.EtherApi
+	ether types.WsEtherApi
 }
 
 func (w *WS) Subscribe(ctx context.Context, channel any, params ...any) (ethereum.Subscription, error) {

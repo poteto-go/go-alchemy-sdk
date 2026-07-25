@@ -21,7 +21,7 @@ func newWsAlchemy(t *testing.T) gas.Alchemy {
 	port, err := strconv.Atoi(os.Getenv("RPC_PORT"))
 	require.NoError(t, err)
 
-	a, err := gas.NewAlchemy(gas.AlchemySetting{
+	a, err := gas.NewWsAlchemy(gas.AlchemySetting{
 		// A private-network url with the ws scheme makes Ether.isWebSocket() true,
 		// so the geth client dials a persistent WebSocket instead of per-call HTTP.
 		PrivateNetworkConfig: gas.PrivateNetworkConfig{

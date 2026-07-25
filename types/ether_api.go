@@ -38,7 +38,7 @@ type EthClient interface {
 	TransactionByHash(ctx context.Context, txHash common.Hash) (tx *gethTypes.Transaction, isPending bool, err error)
 }
 
-type EtherApi interface {
+type ClientLifecycle interface {
 	/*
 		set ether client if client is nil,
 		if client exists add connCount to re-use.
@@ -64,7 +64,31 @@ type EtherApi interface {
 		get raw ethclient
 	*/
 	Client() EthClient
+}
 
+/*
+SimulatedBackend is the driven side: the subset of go-ethereum's
+*ethclient/simulated.Backend that Ether calls into. SimulatedChain below is the
+driving side, exposed to SDK users, and its methods are implemented on top of
+these.
+
+SimulatedBackend is declared here instead of importing ethclient/simulated on
+purpose: that package pulls a full geth node - core/vm, eth, node, pebble, the
+p2p stack - into the dependency closure of every SDK user, simulated or not.
+Keeping the core packages behind this interface confines the full-node closure
+to ether/simulated.
+*/
+type SimulatedBackend interface {
+	// Commit seals a new block and returns its hash.
+	Commit() common.Hash
+
+	// Fork re-executes the chain from the block with the given hash.
+	Fork(parentHash common.Hash) error
+}
+
+// SimulatedChain is the user facing simulated API; it is backed by a
+// SimulatedBackend and returns an error when Ether has none.
+type SimulatedChain interface {
 	/*
 		Commit backend;
 		mined transaction
@@ -79,6 +103,10 @@ type EtherApi interface {
 	*/
 	Fork(snapShotHash common.Hash) error
 
+	DevChain
+}
+
+type BatchCaller interface {
 	/*
 		BatchCall sends multiple JSON-RPC requests in a single HTTP round-trip
 		using geth's underlying rpc.Client.
@@ -88,12 +116,11 @@ type EtherApi interface {
 		returned error is only set for I/O level failures.
 	*/
 	BatchCall(elems []rpc.BatchElem) error
+}
 
+type ChainReader interface {
 	/* get  the number of the most recent block. */
 	BlockNumber() (uint64, error)
-
-	/* Returns the best guess of the current gas price to use in a transaction. */
-	GasPrice() (*big.Int, error)
 
 	/* Returns the balance of a given address as of the provided block. */
 	GetBalance(address string, blockTag string) (*big.Int, error)
@@ -129,17 +156,59 @@ type EtherApi interface {
 	StorageAt(address, position, blockTag string) (string, error)
 
 	/*
-		Returns the ERC-20 token balances for a specific owner address w, w/o params
-	*/
-	GetTokenBalances(address string, params ...string) (TokenBalanceResponse, error)
-
-	/* Returns metadata for a given token contract address. */
-	GetTokenMetadata(address string) (TokenMetadataResponse, error)
-
-	/*
 		Returns an array of logs that match the provided filter.
 	*/
 	GetLogs(filter Filter) ([]LogResponse, error)
+
+	/*
+		Null if the tx has not been mined.
+		Returns the transaction receipt for hash.
+		To stall until the transaction has been mined, consider the waitForTransaction method below.
+	*/
+	GetTransactionReceipt(hash string) (*gethTypes.Receipt, error)
+
+	/*
+		An enhanced API that gets all transaction receipts for a given block by number or block hash.
+		Returns geth's Receipt.
+	*/
+	GetTransactionReceipts(arg BlockNumberOrHash) ([]*gethTypes.Receipt, error)
+
+	/*
+		Simple wrapper around eth_getBlockByNumber.
+		This returns the complete block information for the provided block number.
+	*/
+	GetBlockByNumber(blockNumber string) (*gethTypes.Block, error)
+
+	/*
+		Simple wrapper around eth_getBlockByHash.
+		This returns the complete block information for the provided block hash.
+	*/
+	GetBlockByHash(blockHash string) (*gethTypes.Block, error)
+
+	/*
+		ChainID retrieves the current chain ID for transaction replay protection.
+
+		internal call geth
+	*/
+	ChainID() (*big.Int, error)
+
+	/*
+		PeerCount returns the number of p2p peers as reported by the net_peerCount method.
+
+		internal call geth
+	*/
+	PeerCount() (uint64, error)
+
+	/*
+		Network returns the Alchemy network this client is connected to.
+		Returns an empty string for simulated backends.
+	*/
+	Network() Network
+}
+
+type GasEstimator interface {
+	/* Returns the best guess of the current gas price to use in a transaction. */
+	GasPrice() (*big.Int, error)
 
 	/*
 		Returns an estimate of the amount of gas that would be required to submit transaction to the network.
@@ -168,7 +237,27 @@ type EtherApi interface {
 		Returns an error on chains that do not support EIP-1559.
 	*/
 	SuggestEIP1559Fees() (maxPriorityFeePerGas *big.Int, maxFeePerGas *big.Int, err error)
+}
 
+type AlchemyEnhanced interface {
+	/*
+		Returns the ERC-20 token balances for a specific owner address w, w/o params
+	*/
+	GetTokenBalances(address string, params ...string) (TokenBalanceResponse, error)
+
+	/* Returns metadata for a given token contract address. */
+	GetTokenMetadata(address string) (TokenMetadataResponse, error)
+
+	/*
+		GetAssetTransfers fetches asset transfer history matching the given params.
+
+		NOTE: This is an Alchemy-specific API (alchemy_getAssetTransfers).
+		It is not available on non-Alchemy endpoints such as simulated backends.
+	*/
+	GetAssetTransfers(params AssetTransfersParams) (AssetTransfersResponse, error)
+}
+
+type ContractCaller interface {
 	/*
 		Read method call for Any Smart Contract
 	*/
@@ -191,64 +280,16 @@ type EtherApi interface {
 	CallContract(msg ethereum.CallMsg, blockTag string) ([]byte, error)
 
 	/*
-		Null if the tx has not been mined.
-		Returns the transaction receipt for hash.
-		To stall until the transaction has been mined, consider the waitForTransaction method below.
-	*/
-	GetTransactionReceipt(hash string) (*gethTypes.Receipt, error)
-
-	/*
-		An enhanced API that gets all transaction receipts for a given block by number or block hash.
-		Returns geth's Receipt.
-	*/
-	GetTransactionReceipts(arg BlockNumberOrHash) ([]*gethTypes.Receipt, error)
-
-	/*
-		Simple wrapper around eth_getBlockByNumber.
-		This returns the complete block information for the provided block number.
-	*/
-	GetBlockByNumber(blockNumber string) (*gethTypes.Block, error)
-
-	/*
-		Simple wrapper around eth_getBlockByHash.
-		This returns the complete block information for the provided block hash.
-	*/
-	GetBlockByHash(blockHash string) (*gethTypes.Block, error)
-
-	/*
-		PendingNonceAt returns the account nonce of the given account in the pending state.
-		This is the nonce that should be used for the next transaction.
+		ContractCall calls a contract.
 
 		internal call geth
 	*/
-	PendingNonceAt(address string) (uint64, error)
-
-	// send signed tx into the pending pool for execution w/geth
-	SendRawTransaction(signedTx *gethTypes.Transaction) error
-
-	/*
-		ChainID retrieves the current chain ID for transaction replay protection.
-
-		internal call geth
-	*/
-	ChainID() (*big.Int, error)
-
-	/*
-		PeerCount returns the number of p2p peers as reported by the net_peerCount method.
-
-		internal call geth
-	*/
-	PeerCount() (uint64, error)
-
-	/*
-		Deploy Contract to tx pool.
-
-		internal call geth
-	*/
-	DeployContract(
-		auth *bind.TransactOpts,
-		metaData *bind.MetaData,
-	) (*bind.DeploymentResult, error)
+	ContractCall(
+		contractAddress common.Address,
+		ops *bind.CallOpts,
+		callData []byte,
+		unpack func([]byte) (any, error),
+	) (any, error)
 
 	/*
 		ContractTransact transacts with a contract.
@@ -267,6 +308,31 @@ type EtherApi interface {
 		It stops waiting when ctx is canceled.
 	*/
 	WaitMined(ctx context.Context, hash common.Hash) (*gethTypes.Receipt, error)
+}
+
+type TransactionSender interface {
+	/*
+		PendingNonceAt returns the account nonce of the given account in the pending state.
+		This is the nonce that should be used for the next transaction.
+
+		internal call geth
+	*/
+	PendingNonceAt(address string) (uint64, error)
+
+	// send signed tx into the pending pool for execution w/geth
+	SendRawTransaction(signedTx *gethTypes.Transaction) error
+}
+
+type Deployer interface {
+	/*
+		Deploy Contract to tx pool.
+
+		internal call geth
+	*/
+	DeployContract(
+		auth *bind.TransactOpts,
+		metaData *bind.MetaData,
+	) (*bind.DeploymentResult, error)
 
 	/*
 		WaitDeployed waits for a contract deployment transaction with the provided hash and
@@ -274,7 +340,9 @@ type EtherApi interface {
 		It stops waiting when ctx is canceled.
 	*/
 	WaitDeployed(ctx context.Context, hash common.Hash) (common.Address, error)
+}
 
+type DevChain interface {
 	/*
 		Snapshot takes a snapshot of the current blockchain state with evm_snapshot
 		and returns the snapshot id.
@@ -290,13 +358,9 @@ type EtherApi interface {
 		Only supported on development chains (hardhat, anvil, ganache, ...).
 	*/
 	RevertTo(snapshotId *big.Int) (bool, error)
+}
 
-	/*
-		Network returns the Alchemy network this client is connected to.
-		Returns an empty string for simulated backends.
-	*/
-	Network() Network
-
+type EnsResolver interface {
 	/*
 		ResolveNameBy resolves an ENS name to a lowercase hex address using the
 		provided ENS registry contract address.
@@ -310,28 +374,33 @@ type EtherApi interface {
 		Returns an error when no reverse record is registered.
 	*/
 	LookupAddressBy(registryAddress string, address string) (string, error)
+}
 
-	/*
-		ContractCall calls a contract.
+type Subscriber interface {
+	Subscribe(ctx context.Context, channel any, params ...any) (ethereum.Subscription, error)
+	SubscribeNewHead(ctx context.Context, headerChan chan<- *gethTypes.Header) (ethereum.Subscription, error)
+	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, logChan chan<- gethTypes.Log) (ethereum.Subscription, error)
+	SubscribeTxReceipts(ctx context.Context, q *ethereum.TransactionReceiptsQuery, receiptsChan chan<- []*gethTypes.Receipt) (ethereum.Subscription, error)
+}
 
-		internal call geth
-	*/
-	ContractCall(
-		contractAddress common.Address,
-		ops *bind.CallOpts,
-		callData []byte,
-		unpack func([]byte) (any, error),
-	) (any, error)
+type EtherApi interface {
+	ClientLifecycle
 
-	/*
-		GetAssetTransfers fetches asset transfer history matching the given params.
+	// include DevChain
+	SimulatedChain
+	BatchCaller
+	ChainReader
+	GasEstimator
+	AlchemyEnhanced
+	ContractCaller
+	TransactionSender
+	Deployer
+	EnsResolver
+}
 
-		NOTE: This is an Alchemy-specific API (alchemy_getAssetTransfers).
-		It is not available on non-Alchemy endpoints such as simulated backends.
-	*/
-	GetAssetTransfers(params AssetTransfersParams) (AssetTransfersResponse, error)
+type WsEtherApi interface {
+	EtherApi
 
-	// ! WsEtherApi is the interface for Ether's websocket provider.
 	// to use this, you need set UseWebsocket: true
 	//
 	//  setting := gas.AlchemySetting{
@@ -339,12 +408,5 @@ type EtherApi interface {
 	//    Network:      types.EthSepolia,
 	//    UseWebsocket: true,
 	//  }
-	WsEtherApi
-}
-
-type WsEtherApi interface {
-	Subscribe(ctx context.Context, channel any, params ...any) (ethereum.Subscription, error)
-	SubscribeNewHead(ctx context.Context, headerChan chan<- *gethTypes.Header) (ethereum.Subscription, error)
-	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, logChan chan<- gethTypes.Log) (ethereum.Subscription, error)
-	SubscribeTxReceipts(ctx context.Context, q *ethereum.TransactionReceiptsQuery, receiptsChan chan<- []*gethTypes.Receipt) (ethereum.Subscription, error)
+	Subscriber
 }

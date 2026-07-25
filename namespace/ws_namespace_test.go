@@ -37,7 +37,7 @@ func newEtherWsApiForTest() *eth.Ether {
 		panic(err)
 	}
 
-	return ether.NewEtherApi(
+	return ether.NewWsEtherApi(
 		nil,
 		eth.NewEtherApiConfig(
 			config.GetUrl(),
@@ -60,7 +60,7 @@ func newWsNamespaceForTestWithUrl(wsUrl string) namespace.IWS {
 		panic(err)
 	}
 	provider := gas.NewWsAlchemyProvider(config)
-	e := ether.NewEtherApi(
+	e := ether.NewWsEtherApi(
 		provider,
 		eth.NewEtherApiConfig(
 			wsUrl,

@@ -8,9 +8,25 @@ sidebar_position: 2
 
 The `simulatedBackend` allows you to run high-speed tests without launching a real blockchain network. It is fully integrated with the `go-alchemy-sdk`, enabling you to use the SDK's namespaces (Core, Transact, Nft, etc.) in an in-process, deterministic environment.
 
+## Package
+
+Simulated support lives in its own package, `ether/simulated`:
+
+```go
+import (
+	gethSimulated "github.com/ethereum/go-ethereum/ethclient/simulated"
+	"github.com/poteto-go/go-alchemy-sdk/ether/simulated"
+)
+```
+
+It is deliberately separated from `gas`: geth's `ethclient/simulated` links a full
+node (`core/vm`, `eth`, `node`, pebble, the p2p stack, ...) and would grow the
+binary of every SDK user from ~12MB to ~49MB. Only importing `ether/simulated`
+pays that cost.
+
 ## Capabilities
 
-Using `gas.NewSimulatedAlchemy(backend)`, you can interact with a simulated environment as if it were a real network:
+Using `simulated.NewSimulatedAlchemy(backend)`, you can interact with a simulated environment as if it were a real network:
 - **Contract Deployment:** Deploy and interact with contracts.
 - **Transact:** Send transactions and mine them on-demand.
 - **ERC20/ERC721/StableCoin:** Full support for standard contract operations.
@@ -31,13 +47,13 @@ func TestMyContractInteraction(t *testing.T) {
 	balance := new(big.Int).Mul(big.NewInt(1_000), big.NewInt(1_000_000_000_000_000_000)) // 1000 ETH
 	initAddress := common.HexToAddress("0x...") // Your funded test address
 	
-	backend := simulated.NewBackend(gethTypes.GenesisAlloc{
+	backend := gethSimulated.NewBackend(gethTypes.GenesisAlloc{
 		initAddress: {Balance: balance},
 	})
 	defer backend.Close() // Essential cleanup
 
 	// 2. Initialize SimulatedAlchemy
-	alchemy, err := gas.NewSimulatedAlchemy(backend)
+	alchemy, err := simulated.NewSimulatedAlchemy(backend)
 	assert.NoError(t, err)
 
 	// 3. Deploy a contract

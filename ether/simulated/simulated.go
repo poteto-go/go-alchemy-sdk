@@ -1,13 +1,32 @@
-package gas
+/*
+Package simulated wires go-ethereum's in-process simulated backend into the SDK.
+
+It is kept out of the core packages on purpose: ethclient/simulated links a full
+geth node (core/vm, eth, node, pebble, the p2p stack, ...) which roughly triples
+the binary of an SDK user who never touches a simulated chain. Import this
+package only when you actually want a simulated chain.
+*/
+package simulated
 
 import (
 	"errors"
 
-	"github.com/ethereum/go-ethereum/ethclient/simulated"
+	gethSimulated "github.com/ethereum/go-ethereum/ethclient/simulated"
+
 	"github.com/poteto-go/go-alchemy-sdk/ether"
+	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/namespace"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 )
+
+/*
+NewSimulatedApi returns an EtherApi backed by geth's simulated backend.
+
+The backend is owned by the caller: the SDK never closes or re-creates it.
+*/
+func NewSimulatedApi(backend *gethSimulated.Backend) types.EtherApi {
+	return ether.NewSimulatedEtherApi(backend, backend.Client())
+}
 
 // simulated alchemy connect to simulated backend
 type SimulatedAlchemy struct {
@@ -32,15 +51,15 @@ This enables the execution of high-speed tests.
 		options...,
 	)
 	defer sim.Close()
-	alchemy := gas.NewSimulatedAlchemy(sim)
+	alchemy := simulated.NewSimulatedAlchemy(sim)
 */
-func NewSimulatedAlchemy(backend *simulated.Backend) (SimulatedAlchemy, error) {
+func NewSimulatedAlchemy(backend *gethSimulated.Backend) (SimulatedAlchemy, error) {
 	if backend == nil {
 		return SimulatedAlchemy{}, errors.New("no connected simulated backend")
 	}
 
-	alchemyProvider := NewAlchemyProvider(AlchemyConfig{})
-	eth := ether.NewSimulatedApi(backend)
+	alchemyProvider := gas.NewAlchemyProvider(gas.AlchemyConfig{})
+	eth := NewSimulatedApi(backend)
 	alchemyProvider.SetEth(eth)
 	coreNamespace := namespace.NewCore(eth)
 	transactNamespace := namespace.NewTransactNamespace(eth)

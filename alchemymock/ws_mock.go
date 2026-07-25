@@ -111,7 +111,7 @@ func NewAlchemyWsMock(setting gas.AlchemySetting, t testing.TB) *AlchemyWsMock {
 func (m *AlchemyWsMock) NewAlchemy() (gas.Alchemy, error) {
 	s := m.setting
 	s.PrivateNetworkConfig = gas.PrivateNetworkConfig{Url: m.URL()}
-	return gas.NewAlchemy(s)
+	return gas.NewWsAlchemy(s)
 }
 
 // URL returns the ws:// endpoint of the mock server.

@@ -219,11 +219,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient/simulated"
+	gethSimulated "github.com/ethereum/go-ethereum/ethclient/simulated"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/deployer"
-	"github.com/poteto-go/go-alchemy-sdk/gas"
+	"github.com/poteto-go/go-alchemy-sdk/ether/simulated"
 	"github.com/poteto-go/go-alchemy-sdk/typeddata"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/utils"
@@ -240,13 +240,13 @@ const (
 
 func main() {
 	oneEth := big.NewInt(1_000_000_000_000_000_000)
-	backend := simulated.NewBackend(gethTypes.GenesisAlloc{
+	backend := gethSimulated.NewBackend(gethTypes.GenesisAlloc{
 		common.HexToAddress(relayerAddr): {Balance: new(big.Int).Mul(big.NewInt(1000), oneEth)},
 		common.HexToAddress(holderAddr):  {Balance: new(big.Int).Mul(big.NewInt(1000), oneEth)},
 	})
 	defer backend.Close()
 
-	alchemy, _ := gas.NewSimulatedAlchemy(backend)
+	alchemy, _ := simulated.NewSimulatedAlchemy(backend)
 
 	w, _ := wallet.New(relayerPK) // relayer wallet (pays gas)
 	w.Connect(alchemy.GetProvider())
