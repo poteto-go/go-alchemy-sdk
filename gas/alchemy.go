@@ -30,28 +30,48 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 		alchemyProvider,
 		alchemyConfig.toEtherApiConfig(),
 	)
-	alchemyProvider.SetEth(eth)
-	coreNamespace := namespace.NewCore(eth)
-	transactNamespace := namespace.NewTransactNamespace(eth)
-	nftNamespace := namespace.NewNftNamespace(eth)
-	erc1155Namespace := namespace.NewErc1155Namespace(eth)
-	erc20Namespace := namespace.NewERC20Namespace(eth)
-	stableCoinNamespace := namespace.NewStableCoinNamespace(eth)
-	debugNamespace := namespace.NewDebugNamespace(eth)
-	wsNamespace := namespace.NewWSNamespace(eth)
+
+	// WS is left nil: subscriptions need a websocket endpoint, use NewWsAlchemy.
+	return newAlchemy(alchemyConfig, alchemyProvider, eth), nil
+}
+
+func NewWsAlchemy(setting AlchemySetting) (Alchemy, error) {
+	alchemyConfig, err := NewAlchemyConfig(setting)
+	if err != nil {
+		return Alchemy{}, err
+	}
+
+	alchemyProvider := newProvider(alchemyConfig)
+	eth := ether.NewWsEtherApi(
+		alchemyProvider,
+		alchemyConfig.toEtherApiConfig(),
+	)
+
+	alchemy := newAlchemy(alchemyConfig, alchemyProvider, eth)
+	alchemy.WS = namespace.NewWSNamespace(eth)
+	return alchemy, nil
+}
+
+// newAlchemy wires every transport-agnostic namespace onto eth. Transport
+// specific extras (WS) are added by the caller.
+func newAlchemy(
+	config AlchemyConfig,
+	provider types.IAlchemyProvider,
+	eth types.EtherApi,
+) Alchemy {
+	provider.SetEth(eth)
 
 	return Alchemy{
-		config:     alchemyConfig,
-		Core:       coreNamespace,
-		Transact:   transactNamespace,
-		Nft:        nftNamespace,
-		ERC1155:    erc1155Namespace,
-		ERC20:      erc20Namespace,
-		StableCoin: stableCoinNamespace,
-		Debug:      debugNamespace,
-		WS:         wsNamespace,
-		provider:   alchemyProvider,
-	}, nil
+		config:     config,
+		Core:       namespace.NewCore(eth),
+		Transact:   namespace.NewTransactNamespace(eth),
+		Nft:        namespace.NewNftNamespace(eth),
+		ERC1155:    namespace.NewErc1155Namespace(eth),
+		ERC20:      namespace.NewERC20Namespace(eth),
+		StableCoin: namespace.NewStableCoinNamespace(eth),
+		Debug:      namespace.NewDebugNamespace(eth),
+		provider:   provider,
+	}
 }
 
 func (gas *Alchemy) GetProvider() types.IAlchemyProvider {

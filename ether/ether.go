@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/ethclient/simulated"
 
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -38,12 +37,30 @@ type Ether struct {
 	mu              *sync.Mutex
 	httpClient      *http.Client // shared across all rpc.Client creations
 
-	// simulated backend
-	simBackend *simulated.Backend
-	simClient  *simulated.Client
+	// simulated backend.
+	// Held as interfaces so this package never imports ethclient/simulated;
+	// see types.SimulatedBackend and the ether/simulated sub package.
+	simBackend types.SimulatedBackend
+	simClient  types.EthClient
 }
 
 func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.EtherApi {
+	if isWsUrl(config.url) {
+		panic("unexpected websocket host")
+	}
+
+	return newEther(provider, config)
+}
+
+func NewWsEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.WsEtherApi {
+	if !isWsUrl(config.url) {
+		panic("unexpected not websocket host")
+	}
+
+	return newEther(provider, config)
+}
+
+func newEther(provider types.IAlchemyProvider, config EtherApiConfig) *Ether {
 	return &Ether{
 		provider:   provider,
 		config:     config,
@@ -54,8 +71,15 @@ func NewEtherApi(provider types.IAlchemyProvider, config EtherApiConfig) types.E
 	}
 }
 
-func NewSimulatedApi(backend *simulated.Backend) types.EtherApi {
-	client := backend.Client()
+/*
+NewSimulatedEtherApi builds an EtherApi on top of an already created simulated
+backend and its client.
+
+Prefer the ether/simulated sub package: `simulated.NewSimulatedApi(backend)`
+takes geth's *simulated.Backend directly. This low level entry point exists so
+the core ether package stays free of the ethclient/simulated import.
+*/
+func NewSimulatedEtherApi(backend types.SimulatedBackend, client types.EthClient) types.EtherApi {
 	return &Ether{
 		// The simulated backend is in-process, so only the request timeout and
 		// backoff config (used by the geth-request dispatcher) matter here.
@@ -65,12 +89,18 @@ func NewSimulatedApi(backend *simulated.Backend) types.EtherApi {
 		connCount:  0,
 		client:     nil,
 		mu:         &sync.Mutex{},
-		simClient:  &client,
+		simClient:  client,
 	}
 }
 
+// isWsUrl reports whether url targets a websocket endpoint (ws:// and wss://).
+// gas.AlchemyConfig.isWebSocket mirrors this rule to pick the provider.
+func isWsUrl(url string) bool {
+	return strings.HasPrefix(url, "ws")
+}
+
 func (ether *Ether) isWebSocket() bool {
-	return strings.HasPrefix(ether.config.url, "ws") // ws:// and wss://
+	return isWsUrl(ether.config.url)
 }
 
 // it will return nil on simulated alchemy
@@ -273,7 +303,7 @@ func (ether *Ether) Client() types.EthClient {
 	ether.mu.Lock()
 	defer ether.mu.Unlock()
 	if ether.simBackend != nil {
-		return *ether.simClient
+		return ether.simClient
 	}
 	return ether.client
 }

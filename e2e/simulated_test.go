@@ -9,11 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient/simulated"
+	gethSimulated "github.com/ethereum/go-ethereum/ethclient/simulated"
 	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
 	"github.com/poteto-go/go-alchemy-sdk/deployer"
-	"github.com/poteto-go/go-alchemy-sdk/gas"
+	"github.com/poteto-go/go-alchemy-sdk/ether/simulated"
 	"github.com/poteto-go/go-alchemy-sdk/typeddata"
 	"github.com/poteto-go/go-alchemy-sdk/types"
 	"github.com/poteto-go/go-alchemy-sdk/wallet"
@@ -35,16 +35,16 @@ import (
 //
 // Debug.Snapshot / Debug.RevertTo are available via SimulatedDebug, which uses
 // Commit/Fork on the simulated backend instead of evm_snapshot / evm_revert.
-func newSimulatedAlchemy(t *testing.T) (gas.SimulatedAlchemy, func()) {
+func newSimulatedAlchemy(t *testing.T) (simulated.SimulatedAlchemy, func()) {
 	t.Helper()
 
 	balance := new(big.Int).Mul(big.NewInt(1_000_000), big.NewInt(1_000_000_000_000_000_000)) // 1e24 wei
-	backend := simulated.NewBackend(gethTypes.GenesisAlloc{
+	backend := gethSimulated.NewBackend(gethTypes.GenesisAlloc{
 		common.HexToAddress(initAddress):  {Balance: balance},
 		common.HexToAddress(otherAddress): {Balance: balance},
 	})
 
-	alc, err := gas.NewSimulatedAlchemy(backend)
+	alc, err := simulated.NewSimulatedAlchemy(backend)
 	if err != nil {
 		_ = backend.Close()
 		t.Fatalf("failed to create simulated alchemy: %v", err)

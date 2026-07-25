@@ -66,6 +66,28 @@ type ClientLifecycle interface {
 	Client() EthClient
 }
 
+/*
+SimulatedBackend is the driven side: the subset of go-ethereum's
+*ethclient/simulated.Backend that Ether calls into. SimulatedChain below is the
+driving side, exposed to SDK users, and its methods are implemented on top of
+these.
+
+SimulatedBackend is declared here instead of importing ethclient/simulated on
+purpose: that package pulls a full geth node - core/vm, eth, node, pebble, the
+p2p stack - into the dependency closure of every SDK user, simulated or not.
+Keeping the core packages behind this interface confines the full-node closure
+to ether/simulated.
+*/
+type SimulatedBackend interface {
+	// Commit seals a new block and returns its hash.
+	Commit() common.Hash
+
+	// Fork re-executes the chain from the block with the given hash.
+	Fork(parentHash common.Hash) error
+}
+
+// SimulatedChain is the user facing simulated API; it is backed by a
+// SimulatedBackend and returns an error when Ether has none.
 type SimulatedChain interface {
 	/*
 		Commit backend;
@@ -354,6 +376,13 @@ type EnsResolver interface {
 	LookupAddressBy(registryAddress string, address string) (string, error)
 }
 
+type Subscriber interface {
+	Subscribe(ctx context.Context, channel any, params ...any) (ethereum.Subscription, error)
+	SubscribeNewHead(ctx context.Context, headerChan chan<- *gethTypes.Header) (ethereum.Subscription, error)
+	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, logChan chan<- gethTypes.Log) (ethereum.Subscription, error)
+	SubscribeTxReceipts(ctx context.Context, q *ethereum.TransactionReceiptsQuery, receiptsChan chan<- []*gethTypes.Receipt) (ethereum.Subscription, error)
+}
+
 type EtherApi interface {
 	ClientLifecycle
 
@@ -367,8 +396,11 @@ type EtherApi interface {
 	TransactionSender
 	Deployer
 	EnsResolver
+}
 
-	// ! WsEtherApi is the interface for Ether's websocket provider.
+type WsEtherApi interface {
+	EtherApi
+
 	// to use this, you need set UseWebsocket: true
 	//
 	//  setting := gas.AlchemySetting{
@@ -376,12 +408,5 @@ type EtherApi interface {
 	//    Network:      types.EthSepolia,
 	//    UseWebsocket: true,
 	//  }
-	WsEtherApi
-}
-
-type WsEtherApi interface {
-	Subscribe(ctx context.Context, channel any, params ...any) (ethereum.Subscription, error)
-	SubscribeNewHead(ctx context.Context, headerChan chan<- *gethTypes.Header) (ethereum.Subscription, error)
-	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, logChan chan<- gethTypes.Log) (ethereum.Subscription, error)
-	SubscribeTxReceipts(ctx context.Context, q *ethereum.TransactionReceiptsQuery, receiptsChan chan<- []*gethTypes.Receipt) (ethereum.Subscription, error)
+	Subscriber
 }

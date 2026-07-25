@@ -63,7 +63,7 @@ func newWsProviderForTest(t *testing.T) *WsAlchemyProvider {
 	require.NoError(t, err)
 
 	provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
-	eth := ether.NewEtherApi(
+	eth := ether.NewWsEtherApi(
 		provider,
 		// override the derived alchemy endpoint with the in-process ws url.
 		ether.NewEtherApiConfig(wsUrl, 0, 2*time.Second, &types.DefaultBackoffConfig, []http.Header{}, nil, 5<<20, nil),
@@ -149,7 +149,7 @@ func TestWsAlchemyProvider_Send(t *testing.T) {
 
 		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
 		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
-		provider.SetEth(ether.NewSimulatedApi(backend))
+		provider.SetEth(ether.NewSimulatedEtherApi(backend, backend.Client()))
 
 		_, err := provider.Send("eth_blockNumber", types.RequestArgs{})
 		assert.ErrorIs(t, err, constant.ErrUnSupportSimulatedMethod)
@@ -159,7 +159,7 @@ func TestWsAlchemyProvider_Send(t *testing.T) {
 		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
 		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
 		// nothing listens on port 1 -> the ws dial inside SetEthClient fails.
-		provider.SetEth(ether.NewEtherApi(provider, ether.NewEtherApiConfig(
+		provider.SetEth(ether.NewWsEtherApi(provider, ether.NewEtherApiConfig(
 			"ws://127.0.0.1:1", 0, 500*time.Millisecond, &types.DefaultBackoffConfig, []http.Header{}, nil, 5<<20, nil,
 		)))
 

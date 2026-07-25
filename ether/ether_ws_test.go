@@ -39,7 +39,7 @@ func newEtherWsApiForTest() *eth.Ether {
 		panic(err)
 	}
 
-	return ether.NewEtherApi(
+	return ether.NewWsEtherApi(
 		provider,
 		eth.NewEtherApiConfig(
 			config.GetUrl(),
@@ -59,7 +59,7 @@ func newEtherWsApiForTest() *eth.Ether {
 // Alchemy endpoint.
 func newEtherWsApiForTestWithUrl(wsUrl string) *eth.Ether {
 	provider := newProviderForTest()
-	return ether.NewEtherApi(
+	return ether.NewWsEtherApi(
 		provider,
 		eth.NewEtherApiConfig(
 			wsUrl,

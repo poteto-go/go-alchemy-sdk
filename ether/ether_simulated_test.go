@@ -31,7 +31,7 @@ func newSimulatedEtherForTest(t *testing.T) (*eth.Ether, func()) {
 		from: {Balance: balance},
 	})
 
-	e := eth.NewSimulatedApi(backend).(*eth.Ether)
+	e := eth.NewSimulatedEtherApi(backend, backend.Client()).(*eth.Ether)
 	return e, func() { _ = backend.Close() }
 }
 
