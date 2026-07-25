@@ -1,13 +1,20 @@
 package e2e
 
 import (
+	"context"
 	"math/big"
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/poteto-go/go-alchemy-sdk/_fixture/artifacts"
 	"github.com/poteto-go/go-alchemy-sdk/gas"
 	"github.com/poteto-go/go-alchemy-sdk/types"
+	"github.com/poteto-go/go-alchemy-sdk/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +44,6 @@ func newWsAlchemy(t *testing.T) gas.Alchemy {
 // connection to anvil — a ws Alchemy serves the whole surface over one socket.
 func TestScenario_Ws_BaseMethod(t *testing.T) {
 	wsAlchemy := newWsAlchemy(t)
-	// Close() is a no-op on ws, so the socket is persistent; shut it down explicitly.
 	defer wsAlchemy.GetProvider().Eth().Shutdown()
 
 	t.Run("GetBlockNumber over ws", func(t *testing.T) {
@@ -94,5 +100,136 @@ func TestScenario_Ws_BaseMethod(t *testing.T) {
 		require.NoError(t, eth.SetEthClient())
 		eth.Close() // no-op on ws
 		require.NotNil(t, eth.Client())
+	})
+}
+
+// subscribeTimeout bounds how long a subscription assertion waits for its
+// event, so a subscription that never fires fails the test instead of hanging
+// until the go test panic timeout.
+const subscribeTimeout = 30 * time.Second
+
+func TestSenario_Ws_Subscribe(t *testing.T) {
+	wsAlchemy := newWsAlchemy(t)
+	defer wsAlchemy.GetProvider().Eth().Shutdown()
+
+	w, _ := wallet.New(initPrivateKey)
+	w.Connect(wsAlchemy.GetProvider())
+
+	t.Run("can subscribe new head", func(t *testing.T) {
+		headers := make(chan *gethTypes.Header)
+
+		sub, err := wsAlchemy.WS.SubscribeNewHead(
+			context.Background(),
+			headers,
+		)
+		require.NoError(t, err)
+		defer sub.Unsubscribe()
+
+		txRequest := types.TransactionRequest{
+			From:     initAddress,
+			To:       otherAddress,
+			Value:    "0x123",
+			GasLimit: 300000,
+		}
+
+		txHash, err := w.SendTransaction(txRequest)
+		require.NoError(t, err)
+
+		txReceipt, err := wsAlchemy.Core.GetTransactionReceipt(txHash.Hex())
+		require.NoError(t, err)
+
+		for {
+			select {
+			case err := <-sub.Err():
+				require.FailNow(t, "unexpected err: "+err.Error())
+			case <-time.After(subscribeTimeout):
+				require.FailNow(t, "timed out waiting for a new head")
+			case header := <-headers:
+				assert.Equal(t, txReceipt.BlockNumber.Uint64(), header.Number.Uint64())
+				return
+			}
+		}
+	})
+
+	t.Run("can subscribe contract event by subscribe log", func(t *testing.T) {
+		contract := artifacts.NewPotetoStorage()
+		contractAddress, err := w.DeployContract(context.Background(), &artifacts.PotetoStorageMetaData)
+		require.NoError(t, err)
+
+		logs := make(chan gethTypes.Log)
+		sub, err := wsAlchemy.WS.SubscribeLogs(
+			context.Background(),
+			ethereum.FilterQuery{
+				Addresses: []common.Address{
+					contractAddress,
+				},
+			},
+			logs,
+		)
+		require.NoError(t, err)
+		defer sub.Unsubscribe()
+
+		// store() emits Stored(address indexed sender, uint256 value),
+		// so this tx is what pushes a log down the subscription.
+		data := contract.PackStore(big.NewInt(42))
+		receipt, err := w.ContractTransact(context.Background(), contractAddress.Hex(), data)
+		require.NoError(t, err)
+
+		for {
+			select {
+			case err := <-sub.Err():
+				require.FailNow(t, "unexpected err: "+err.Error())
+			case <-time.After(subscribeTimeout):
+				require.FailNow(t, "timed out waiting for the contract event")
+			case log := <-logs:
+				assert.Equal(t, receipt.BlockNumber.Uint64(), log.BlockNumber)
+
+				event, err := contract.UnpackStoredEvent(&log)
+				require.NoError(t, err)
+				assert.Equal(t, common.HexToAddress(initAddress), event.Sender)
+				assert.Equal(t, uint64(42), event.Value.Uint64())
+
+				return
+			}
+		}
+	})
+
+	t.Run("can subscribe contract event by subscribe contract log", func(t *testing.T) {
+		contract := artifacts.NewPotetoStorage()
+		contractAddress, err := w.DeployContract(context.Background(), &artifacts.PotetoStorageMetaData)
+		require.NoError(t, err)
+
+		logs := make(chan gethTypes.Log)
+		sub, err := wsAlchemy.WS.SubscribeContractLogs(
+			context.Background(),
+			contractAddress,
+			logs,
+		)
+		require.NoError(t, err)
+		defer sub.Unsubscribe()
+
+		// store() emits Stored(address indexed sender, uint256 value),
+		// so this tx is what pushes a log down the subscription.
+		data := contract.PackStore(big.NewInt(42))
+		receipt, err := w.ContractTransact(context.Background(), contractAddress.Hex(), data)
+		require.NoError(t, err)
+
+		for {
+			select {
+			case err := <-sub.Err():
+				require.FailNow(t, "unexpected err: "+err.Error())
+			case <-time.After(subscribeTimeout):
+				require.FailNow(t, "timed out waiting for the contract event")
+			case log := <-logs:
+				assert.Equal(t, receipt.BlockNumber.Uint64(), log.BlockNumber)
+
+				event, err := contract.UnpackStoredEvent(&log)
+				require.NoError(t, err)
+				assert.Equal(t, common.HexToAddress(initAddress), event.Sender)
+				assert.Equal(t, uint64(42), event.Value.Uint64())
+
+				return
+			}
+		}
 	})
 }

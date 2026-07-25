@@ -26,9 +26,9 @@ var (
 
 // PotetoStorageMetaData contains all meta data concerning the PotetoStorage contract.
 var PotetoStorageMetaData = bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"retrieve\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"number\",\"type\":\"uint256\"}],\"name\":\"store\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Stored\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"retrieve\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"number\",\"type\":\"uint256\"}],\"name\":\"store\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 	ID:  "9dd2cd8c45e1186b82c402350e1b9df1e6",
-	Bin: "0x6080604052348015600e575f5ffd5b506101298061001c5f395ff3fe6080604052348015600e575f5ffd5b50600436106030575f3560e01c80632e64cec11460345780636057361d14604e575b5f5ffd5b603a6066565b60405160459190608d565b60405180910390f35b606460048036038101906060919060cd565b606e565b005b5f5f54905090565b805f8190555050565b5f819050919050565b6087816077565b82525050565b5f602082019050609e5f8301846080565b92915050565b5f5ffd5b60af816077565b811460b8575f5ffd5b50565b5f8135905060c78160a8565b92915050565b5f6020828403121560df5760de60a4565b5b5f60ea8482850160bb565b9150509291505056fea2646970667358221220526ad04d169847529a898a88dd9dd46c6b4f07e916d1f44d4528760afc07be3864736f6c634300081e0033",
+	Bin: "0x6080604052348015600e575f5ffd5b506101918061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610034575f3560e01c80632e64cec1146100385780636057361d14610056575b5f5ffd5b610040610072565b60405161004d91906100e9565b60405180910390f35b610070600480360381019061006b9190610130565b61007a565b005b5f5f54905090565b805f819055503373ffffffffffffffffffffffffffffffffffffffff167febfcf7c0a1b09f6499e519a8d8bb85ce33cd539ec6cbd964e116cd74943ead1a826040516100c691906100e9565b60405180910390a250565b5f819050919050565b6100e3816100d1565b82525050565b5f6020820190506100fc5f8301846100da565b92915050565b5f5ffd5b61010f816100d1565b8114610119575f5ffd5b50565b5f8135905061012a81610106565b92915050565b5f6020828403121561014557610144610102565b5b5f6101528482850161011c565b9150509291505056fea2646970667358221220d066542b4f92e39c3ad04b021821e2f19be6c01ce6734afd178f96a11584626864736f6c634300081e0033",
 }
 
 // PotetoStorage is an auto generated Go binding around an Ethereum contract.
@@ -106,4 +106,49 @@ func (potetoStorage *PotetoStorage) PackStore(number *big.Int) []byte {
 // Solidity: function store(uint256 number) returns()
 func (potetoStorage *PotetoStorage) TryPackStore(number *big.Int) ([]byte, error) {
 	return potetoStorage.abi.Pack("store", number)
+}
+
+// PotetoStorageStored represents a Stored event raised by the PotetoStorage contract.
+type PotetoStorageStored struct {
+	Sender common.Address
+	Value  *big.Int
+	Raw    *types.Log // Blockchain specific contextual infos
+}
+
+const PotetoStorageStoredEventName = "Stored"
+
+// ContractEventName returns the user-defined event name.
+func (PotetoStorageStored) ContractEventName() string {
+	return PotetoStorageStoredEventName
+}
+
+// UnpackStoredEvent is the Go binding that unpacks the event data emitted
+// by contract.
+//
+// Solidity: event Stored(address indexed sender, uint256 value)
+func (potetoStorage *PotetoStorage) UnpackStoredEvent(log *types.Log) (*PotetoStorageStored, error) {
+	event := "Stored"
+	if len(log.Topics) == 0 {
+		return nil, bind.ErrNoEventSignature
+	}
+	if log.Topics[0] != potetoStorage.abi.Events[event].ID {
+		return nil, bind.ErrEventSignatureMismatch
+	}
+	out := new(PotetoStorageStored)
+	if len(log.Data) > 0 {
+		if err := potetoStorage.abi.UnpackIntoInterface(out, event, log.Data); err != nil {
+			return nil, err
+		}
+	}
+	var indexed abi.Arguments
+	for _, arg := range potetoStorage.abi.Events[event].Inputs {
+		if arg.Indexed {
+			indexed = append(indexed, arg)
+		}
+	}
+	if err := abi.ParseTopics(out, indexed, log.Topics[1:]); err != nil {
+		return nil, err
+	}
+	out.Raw = log
+	return out, nil
 }
