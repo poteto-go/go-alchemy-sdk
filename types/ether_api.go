@@ -406,7 +406,7 @@ type WsEtherApi interface {
 	//  setting := gas.AlchemySetting{
 	//    ApiKey:       "<alchemy-api-key>",
 	//    Network:      types.EthSepolia,
-	//    UseWebsocket: true,
 	//  }
+	//  wsAlchemy := gas.NewWsAlchemy(setting)
 	Subscriber
 }

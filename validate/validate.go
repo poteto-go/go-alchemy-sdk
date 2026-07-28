@@ -1,6 +1,7 @@
 package validate
 
 import (
+	"errors"
 	"math/big"
 	"net/url"
 
@@ -61,15 +62,47 @@ func Url(rawUrl string) error {
 		return nil
 	}
 	u, _ := url.Parse(rawUrl)
-	if u == nil || !isAllowedScheme(u.Scheme) || u.Hostname() == "" {
+	if u == nil || !isHttpAllowedScheme(u.Scheme) || u.Hostname() == "" {
+		if isWsAllowedScheme(u.Scheme) {
+			return errors.Join(
+				constant.ErrInvalidPrivateNetworkUrl,
+				errors.New("detect websocket scheme use NewWsAlchemy"),
+			)
+		}
 		return constant.ErrInvalidPrivateNetworkUrl
 	}
 	return nil
 }
 
-func isAllowedScheme(scheme string) bool {
+func WsUrl(rawUrl string) error {
+	if rawUrl == "" {
+		return nil
+	}
+	u, _ := url.Parse(rawUrl)
+	if u == nil || !isWsAllowedScheme(u.Scheme) || u.Hostname() == "" {
+		if isHttpAllowedScheme(u.Scheme) {
+			return errors.Join(
+				constant.ErrInvalidPrivateNetworkUrl,
+				errors.New("detect http scheme use NewAlchemy"),
+			)
+		}
+		return constant.ErrInvalidPrivateNetworkUrl
+	}
+	return nil
+}
+
+func isWsAllowedScheme(scheme string) bool {
 	switch scheme {
-	case "http", "https", "ws", "wss":
+	case "ws", "wss":
+		return true
+	default:
+		return false
+	}
+}
+
+func isHttpAllowedScheme(scheme string) bool {
+	switch scheme {
+	case "http", "https":
 		return true
 	default:
 		return false

@@ -47,10 +47,6 @@ type AlchemySetting struct {
 	// http.DefaultTransport. The SDK always applies its response-size cap on top of it.
 	Transport http.RoundTripper `yaml:"-"`
 
-	// UseWebsocket enables the Ws subscription namespace. Regular calls stay on
-	// HTTP in v1; this only turns on eth_subscribe push subscriptions.
-	UseWebsocket bool `yaml:"use_websocket"`
-
 	/*
 		return true => p8net is selected
 

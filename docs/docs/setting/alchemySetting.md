@@ -55,7 +55,7 @@ func main() {
 
 ### WebSocket
 
-Set `UseWebsocket: true` to make the geth client dial a **persistent WebSocket** connection instead of issuing per-call HTTP requests. This is the transport used for push subscriptions (`eth_subscribe`), and it also serves regular geth-client calls (`GetBlockNumber`, `GetGasPrice`, `EstimateGas`, …) over the same socket.
+Use `gas.NewWsAlchemy` to make the geth client dial a **persistent WebSocket** connection instead of issuing per-call HTTP requests. This is the transport used for push subscriptions (`eth_subscribe`), and it also serves regular geth-client calls (`GetBlockNumber`, `GetGasPrice`, `EstimateGas`, …) over the same socket.
 
 ```go
 func main() {
@@ -65,7 +65,7 @@ func main() {
 		UseWebsocket: true,
 	}
 
-	alchemy := gas.NewAlchemy(setting)
+	alchemy := gas.NewWsAlchemy(setting)
 	// The WebSocket socket is persistent; close it when you are done.
 	defer alchemy.GetProvider().Eth().Shutdown()
 
@@ -73,7 +73,7 @@ func main() {
 }
 ```
 
-For a **public network**, `UseWebsocket` selects the `wss://<network>.ws.alchemyapi.io/v2/<api-key>` endpoint. For a **private / custom** node, just pass a `ws://` or `wss://` url — the scheme decides, so the flag is not needed:
+For a **public network**, selects the `wss://<network>.ws.alchemyapi.io/v2/<api-key>` endpoint. For a **private / custom** node, just pass a `ws://` or `wss://` url — the scheme decides, so the flag is not needed:
 
 ```go
 func main() {
@@ -83,7 +83,7 @@ func main() {
 		},
 	}
 
-	alchemy := gas.NewAlchemy(setting)
+	alchemy := gas.NewWsAlchemy(setting)
 }
 ```
 
@@ -99,10 +99,10 @@ A WebSocket `Alchemy` routes **everything over the same socket**. Alchemy JSON-R
 
 Some HTTP settings change meaning when the connection is a WebSocket:
 
-| Setting | Meaning on WebSocket |
-| --- | --- |
-| `RequestTimeout` | handshake (dial) timeout |
-| `MaxResponseBytes` | inbound message size limit (default 32 MiB) |
+| Setting                       | Meaning on WebSocket                                         |
+| ----------------------------- | ------------------------------------------------------------ |
+| `RequestTimeout`              | handshake (dial) timeout                                     |
+| `MaxResponseBytes`            | inbound message size limit (default 32 MiB)                  |
 | `JwtSecret` (private network) | sent as `Authorization: Bearer <token>` during the handshake |
 
 ### Custom Header

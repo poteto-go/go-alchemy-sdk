@@ -36,7 +36,7 @@ func TestNewAlchemy_SelectsProviderByScheme(t *testing.T) {
 	})
 
 	t.Run("ws setting -> WsAlchemyProvider", func(t *testing.T) {
-		alchemy, err := NewWsAlchemy(AlchemySetting{ApiKey: "hoge", Network: "fuga", UseWebsocket: true})
+		alchemy, err := NewWsAlchemy(AlchemySetting{ApiKey: "hoge", Network: "fuga"})
 		assert.NoError(t, err)
 		assert.IsType(t, &WsAlchemyProvider{}, alchemy.GetProvider())
 	})

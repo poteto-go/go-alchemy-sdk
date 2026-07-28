@@ -45,11 +45,10 @@ func TestNewAlchemyConfig(t *testing.T) {
 
 	t.Run("ws mode", func(t *testing.T) {
 		// Act
-		config, err := NewAlchemyConfig(
+		config, err := NewWsAlchemyConfig(
 			AlchemySetting{
-				ApiKey:       "api-key",
-				Network:      types.MaticMainnet,
-				UseWebsocket: true,
+				ApiKey:  "api-key",
+				Network: types.MaticMainnet,
 			},
 		)
 
@@ -103,6 +102,24 @@ func TestNewAlchemyConfig_PrivateNetworkUrlValidation(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
+	})
+
+	t.Run("valid http url but ws mode return errors", func(t *testing.T) {
+		_, err := NewWsAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Url: "http://localhost:8545",
+			},
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("valid ws url but http mode return errors", func(t *testing.T) {
+		_, err := NewAlchemyConfig(AlchemySetting{
+			PrivateNetworkConfig: PrivateNetworkConfig{
+				Url: "ws://localhost:8545",
+			},
+		})
+		assert.Error(t, err)
 	})
 
 	t.Run("invalid scheme returns error", func(t *testing.T) {

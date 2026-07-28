@@ -56,9 +56,8 @@ func newWsProviderForTest(t *testing.T) *WsAlchemyProvider {
 	wsUrl := "ws" + strings.TrimPrefix(ts.URL, "http")
 
 	config, err := NewAlchemyConfig(AlchemySetting{
-		ApiKey:       "hoge",
-		Network:      "fuga",
-		UseWebsocket: true,
+		ApiKey:  "hoge",
+		Network: "fuga",
 	})
 	require.NoError(t, err)
 
@@ -83,7 +82,6 @@ func TestNewWsAlchemyProvider(t *testing.T) {
 	config, err := NewAlchemyConfig(AlchemySetting{
 		ApiKey:        "hoge",
 		Network:       "fuga",
-		UseWebsocket:  true,
 		CustomHeaders: customHeaders,
 	})
 	require.NoError(t, err)
@@ -136,7 +134,7 @@ func TestWsAlchemyProvider_Send(t *testing.T) {
 	})
 
 	t.Run("returns error if eth client is not set", func(t *testing.T) {
-		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
+		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n"})
 		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
 
 		_, err := provider.Send("eth_blockNumber", types.RequestArgs{})
@@ -147,7 +145,7 @@ func TestWsAlchemyProvider_Send(t *testing.T) {
 		backend := simulated.NewBackend(gethCoreTypes.GenesisAlloc{})
 		defer backend.Close()
 
-		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
+		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n"})
 		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
 		provider.SetEth(ether.NewSimulatedEtherApi(backend, backend.Client()))
 
@@ -156,7 +154,7 @@ func TestWsAlchemyProvider_Send(t *testing.T) {
 	})
 
 	t.Run("propagates a SetEthClient dial error", func(t *testing.T) {
-		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n", UseWebsocket: true})
+		config, _ := NewAlchemyConfig(AlchemySetting{ApiKey: "k", Network: "n"})
 		provider := NewWsAlchemyProvider(config).(*WsAlchemyProvider)
 		// nothing listens on port 1 -> the ws dial inside SetEthClient fails.
 		provider.SetEth(ether.NewWsEtherApi(provider, ether.NewEtherApiConfig(

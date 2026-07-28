@@ -11,10 +11,9 @@ func main() {
 	setting := gas.AlchemySetting{
 		ApiKey:       "<alchemy-api-key>",
 		Network:      types.EthSepolia,
-		UseWebsocket: true,
 	}
 
-	alchemy := gas.NewAlchemy(setting)
+	alchemy := gas.NewWsAlchemy(setting)
 	// The WebSocket socket is persistent; close it when you are done.
 	defer alchemy.GetProvider().Eth().Shutdown()
 }

@@ -87,6 +87,16 @@ func newProviderForTest() *gas.AlchemyProvider {
 	return gas.NewAlchemyProvider(config).(*gas.AlchemyProvider)
 }
 
+func newWsProviderForTest() *gas.WsAlchemyProvider {
+	config, err := gas.NewAlchemyConfig(
+		utAlchemySetting,
+	)
+	if err != nil {
+		panic(err)
+	}
+	return gas.NewWsAlchemyProvider(config).(*gas.WsAlchemyProvider)
+}
+
 func newAlchemyMockOnEtherTest(t *testing.T) *alchemymock.AlchemyHttpMock {
 	return alchemymock.NewAlchemyHttpMock(utAlchemySetting, t)
 }

@@ -34,6 +34,19 @@ func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
 		return AlchemyConfig{}, err
 	}
 
+	return newAlchemyConfig(setting, resolvedUrl)
+}
+
+func NewWsAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
+	resolvedUrl := settingToWsUrl(setting)
+	if err := validate.WsUrl(resolvedUrl); err != nil {
+		return AlchemyConfig{}, err
+	}
+
+	return newAlchemyConfig(setting, resolvedUrl)
+}
+
+func newAlchemyConfig(setting AlchemySetting, rpcUrl string) (AlchemyConfig, error) {
 	decodedJwt, err := internal.DecodeHex(setting.PrivateNetworkConfig.JwtSecret)
 	if err != nil {
 		return AlchemyConfig{}, err
@@ -46,7 +59,7 @@ func NewAlchemyConfig(setting AlchemySetting) (AlchemyConfig, error) {
 	config := AlchemyConfig{
 		apiKey:               setting.ApiKey,
 		network:              setting.Network,
-		url:                  resolvedUrl,
+		url:                  rpcUrl,
 		maxRetries:           setting.MaxRetries,
 		requestTimeout:       setting.RequestTimeout,
 		isRequestBatch:       setting.IsRequestBatch,
@@ -77,10 +90,16 @@ func settingToUrl(setting AlchemySetting) string {
 	if isPrivateNetwork(setting) {
 		return resolvePrivateNetUrl(setting)
 	}
-	if setting.UseWebsocket {
-		return "wss://" + string(setting.Network) + ".ws.alchemyapi.io/v2/" + setting.ApiKey
-	}
+
 	return "https://" + string(setting.Network) + ".g.alchemy.com/v2/" + setting.ApiKey
+}
+
+func settingToWsUrl(setting AlchemySetting) string {
+	if isPrivateNetwork(setting) {
+		return resolvePrivateNetUrl(setting)
+	}
+
+	return "wss://" + string(setting.Network) + ".ws.alchemyapi.io/v2/" + setting.ApiKey
 }
 
 func resolvePrivateNetUrl(setting AlchemySetting) string {
