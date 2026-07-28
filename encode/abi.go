@@ -5,17 +5,14 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/poteto-go/go-alchemy-sdk/constant"
-	"golang.org/x/crypto/sha3"
 )
 
 // ReadCalldata builds eth_call calldata for a contract read: the 4-byte
 // selector (keccak256(signature)[:4]) followed by the ABI-encoded args.
 func ReadCalldata(signature []byte, args ...[]byte) []byte {
-	hash := sha3.NewLegacyKeccak256()
-	// keccak Write never returns an error.
-	hash.Write(signature)
-	methodID := hash.Sum(nil)[:4]
+	methodID := crypto.Keccak256Hash(signature).Bytes()[:4]
 
 	total := 4
 	for _, arg := range args {
