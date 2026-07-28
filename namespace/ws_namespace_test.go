@@ -28,7 +28,6 @@ var utWsAlchemySetting = gas.AlchemySetting{
 	BackoffConfig: &types.BackoffConfig{
 		MaxRetries: 0,
 	},
-	UseWebsocket: true,
 }
 
 func newEtherWsApiForTest() *eth.Ether {

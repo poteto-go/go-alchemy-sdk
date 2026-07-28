@@ -21,20 +21,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var utWsAlchemySetting = gas.AlchemySetting{
-	ApiKey:  "hoge",
-	Network: "fuga",
-	BackoffConfig: &types.BackoffConfig{
-		MaxRetries: 0,
-	},
-	UseWebsocket: true,
-}
-
 // newEtherWsApiForTest builds a ws Ether pointed at the derived Alchemy endpoint.
 // That endpoint is unreachable in tests, so use it to exercise dial-failure paths.
 func newEtherWsApiForTest() *eth.Ether {
-	provider := newProviderForTest()
-	config, err := gas.NewAlchemyConfig(utWsAlchemySetting)
+	provider := newWsProviderForTest()
+	config, err := gas.NewWsAlchemyConfig(utAlchemySetting)
 	if err != nil {
 		panic(err)
 	}
@@ -58,7 +49,7 @@ func newEtherWsApiForTest() *eth.Ether {
 // (e.g. the one served by alchemymock.AlchemyWsMock) instead of the derived
 // Alchemy endpoint.
 func newEtherWsApiForTestWithUrl(wsUrl string) *eth.Ether {
-	provider := newProviderForTest()
+	provider := newWsProviderForTest()
 	return ether.NewWsEtherApi(
 		provider,
 		eth.NewEtherApiConfig(
@@ -124,7 +115,7 @@ func Test_EtherWsClientLifeCycle(t *testing.T) {
 
 	t.Run("ws server up", func(t *testing.T) {
 		// Arrange: stand up an in-process WebSocket JSON-RPC mock.
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		// Act & Assert: dial happens eagerly inside DialOptions, so a successful
@@ -178,7 +169,7 @@ func Test_EtherWsSubscribe(t *testing.T) {
 
 	t.Run("streams subscription notifications over the ws socket", func(t *testing.T) {
 		// Arrange
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		ch := make(chan *gethTypes.Header, 1)
@@ -216,7 +207,7 @@ func Test_EtherWsSubscribe(t *testing.T) {
 
 	t.Run("propagates an EthSubscribe error when the context is cancelled", func(t *testing.T) {
 		// Arrange: the socket is live, but the subscribe context is already dead.
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -257,7 +248,7 @@ func Test_EtherWsSubscribeNewHead(t *testing.T) {
 
 	t.Run("streams new head notifications over the ws socket", func(t *testing.T) {
 		// Arrange
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		ch := make(chan *gethTypes.Header, 1)
@@ -295,7 +286,7 @@ func Test_EtherWsSubscribeNewHead(t *testing.T) {
 
 	t.Run("propagates an EthSubscribe error when the context is cancelled", func(t *testing.T) {
 		// Arrange: the socket is live, but the subscribe context is already dead.
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -338,7 +329,7 @@ func Test_EtherWsSubscribeFilterLogs(t *testing.T) {
 
 	t.Run("streams log notifications over the ws socket", func(t *testing.T) {
 		// Arrange
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		ch := make(chan gethTypes.Log, 1)
@@ -379,7 +370,7 @@ func Test_EtherWsSubscribeFilterLogs(t *testing.T) {
 
 	t.Run("propagates an EthSubscribe error when the context is cancelled", func(t *testing.T) {
 		// Arrange: the socket is live, but the subscribe context is already dead.
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -422,7 +413,7 @@ func Test_EtherWsSubscribeTxReceipts(t *testing.T) {
 
 	t.Run("streams tx receipt notifications over the ws socket", func(t *testing.T) {
 		// Arrange
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		ch := make(chan []*gethTypes.Receipt, 1)
@@ -464,7 +455,7 @@ func Test_EtherWsSubscribeTxReceipts(t *testing.T) {
 
 	t.Run("propagates an EthSubscribe error when the context is cancelled", func(t *testing.T) {
 		// Arrange: the socket is live, but the subscribe context is already dead.
-		mock := alchemymock.NewAlchemyWsMock(utWsAlchemySetting, t)
+		mock := alchemymock.NewAlchemyWsMock(utAlchemySetting, t)
 		wsEther := newEtherWsApiForTestWithUrl(mock.URL())
 
 		ctx, cancel := context.WithCancel(context.Background())

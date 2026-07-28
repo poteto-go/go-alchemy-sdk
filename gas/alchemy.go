@@ -36,7 +36,7 @@ func NewAlchemy(setting AlchemySetting) (Alchemy, error) {
 }
 
 func NewWsAlchemy(setting AlchemySetting) (Alchemy, error) {
-	alchemyConfig, err := NewAlchemyConfig(setting)
+	alchemyConfig, err := NewWsAlchemyConfig(setting)
 	if err != nil {
 		return Alchemy{}, err
 	}
